@@ -570,8 +570,13 @@ static AieRC XAieSim_GetStackRange(const char *MapPtr,
 *		any context of the whole section or the elf.
 *
 *******************************************************************************/
+#ifdef __AIESIM__
 AieRC XAie_LoadElfPartial(XAie_DevInst *DevInst, XAie_LocType Loc,
 		const char* ElfPtr, u8 Sections, u8 LoadSym)
+#else
+AieRC XAie_LoadElfPartial(XAie_DevInst *DevInst, XAie_LocType Loc,
+		const char* ElfPtr, u8 Sections)
+#endif
 {
 	FILE *Fd;
 	int Ret;
@@ -727,8 +732,12 @@ AieRC XAie_LoadElf(XAie_DevInst *DevInst, XAie_LocType Loc, const char *ElfPtr,
 		return XAIE_INVALID_ARGS;
 	}
 
-
+#ifdef __AIESIM__
 	return XAie_LoadElfPartial(DevInst, Loc, ElfPtr, XAIE_LOAD_ELF_ALL, LoadSym);
+#else
+	(void)LoadSym;
+	return XAie_LoadElfPartial(DevInst, Loc, ElfPtr, XAIE_LOAD_ELF_ALL);
+#endif
 }
 
 /*****************************************************************************/
