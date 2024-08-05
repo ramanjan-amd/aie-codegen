@@ -44,6 +44,8 @@ XAIE_AIG_EXPORT AieRC XAie_DataMemRdWord(XAie_DevInst *DevInst, XAie_LocType Loc
 		u32 Addr, u32 *Data);
 XAIE_AIG_EXPORT AieRC XAie_DataMemBlockWrite(XAie_DevInst *DevInst, XAie_LocType Loc, u32 Addr,
 		const void *Src, u32 Size);
+XAIE_AIG_EXPORT AieRC XAie_SharedDataMemBlockWrite(XAie_DevInst *DevInst, XAie_LocType Loc,
+		u32 Addr, const void *Src, u32 Size);
 XAIE_AIG_EXPORT AieRC XAie_DataMemBlockRead(XAie_DevInst *DevInst, XAie_LocType Loc, u32 Addr,
 		void *Dst, u32 Size);
 

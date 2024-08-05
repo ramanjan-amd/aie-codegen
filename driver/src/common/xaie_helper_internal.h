@@ -42,4 +42,5 @@ u8 _XAie_IsDeviceGenSupportDualApp(u8 DevGen);
 u8 _XAie_IsTileResourceInSharedAddrSpace(u8 DevGen, u8 TileType);
 s8 _XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode,
 		s8 elementValue);
+u8 _XAie_IsUcModulePresent(XAie_DevInst* DevInst, u8 TileType);
 #endif

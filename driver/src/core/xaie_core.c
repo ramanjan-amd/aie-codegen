@@ -498,6 +498,7 @@ AieRC XAie_CoreGetPCValue(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u8 TileType;
 	u64 RegAddr;
 	const XAie_CoreMod *CoreMod;
+	const XAie_CoreIntMod *CoreIntMod;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -511,9 +512,18 @@ AieRC XAie_CoreGetPCValue(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_TILE;
 	}
 
-	CoreMod = DevInst->DevProp.DevMod[TileType].CoreMod;
-	RegAddr = CoreMod->CorePCOff +
-		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+	CoreIntMod = DevInst->DevProp.DevMod[TileType].CoreIntMod;
+	if(CoreIntMod!=NULL)
+	{
+		RegAddr = CoreIntMod->CorePCOff +
+			_XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+	}
+	else
+	{
+		CoreMod = DevInst->DevProp.DevMod[TileType].CoreMod;
+		RegAddr = CoreMod->CorePCOff +
+			XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+	}
 
 	return  XAie_Read32(DevInst, RegAddr, PCValue);
 }
@@ -537,6 +547,7 @@ AieRC XAie_CoreGetSPValue(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u8 TileType;
 	u64 RegAddr;
 	const XAie_CoreMod *CoreMod;
+	const XAie_CoreIntMod *CoreIntMod;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -550,9 +561,18 @@ AieRC XAie_CoreGetSPValue(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_TILE;
 	}
 
-	CoreMod = DevInst->DevProp.DevMod[TileType].CoreMod;
-	RegAddr = CoreMod->CoreSPOff +
-		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+	CoreIntMod = DevInst->DevProp.DevMod[TileType].CoreIntMod;
+	if(CoreIntMod!=NULL)
+	{
+		RegAddr = CoreIntMod->CoreSPOff +
+			XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+	}
+	else
+	{
+		CoreMod = DevInst->DevProp.DevMod[TileType].CoreMod;
+		RegAddr = CoreMod->CoreSPOff +
+			_XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+	}
 
 	return  XAie_Read32(DevInst, RegAddr, SPValue);
 }
@@ -576,6 +596,7 @@ AieRC XAie_CoreGetLRValue(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u8 TileType;
 	u64 RegAddr;
 	const XAie_CoreMod *CoreMod;
+	const XAie_CoreIntMod *CoreIntMod;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -589,9 +610,18 @@ AieRC XAie_CoreGetLRValue(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_TILE;
 	}
 
-	CoreMod = DevInst->DevProp.DevMod[TileType].CoreMod;
-	RegAddr = CoreMod->CoreLROff +
-		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+	CoreIntMod = DevInst->DevProp.DevMod[TileType].CoreIntMod;
+	if(CoreIntMod!=NULL)
+	{
+		RegAddr = CoreIntMod->CoreLROff +
+			_XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+	}
+	else
+	{
+		CoreMod = DevInst->DevProp.DevMod[TileType].CoreMod;
+		RegAddr = CoreMod->CoreLROff +
+			XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+	}
 
 	return  XAie_Read32(DevInst, RegAddr, LRValue);
 }
