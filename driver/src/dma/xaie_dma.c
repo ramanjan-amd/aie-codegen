@@ -36,6 +36,7 @@
 #include "xaie_dma.h"
 #include "xaie_feature_config.h"
 #include "xaie_helper.h"
+#include "xaie_helper_internal.h"
 #include "xaiegbl_regdef.h"
 
 #ifdef XAIE_FEATURE_DMA_ENABLE
@@ -49,6 +50,27 @@
 
 #define XAIE_DMA_PAD_WORDS_MAX				0x3FU /* 6 bits */
 /************************** Function Definitions *****************************/
+
+u8 _XAie_DmaGetMaxNumChannels(XAie_DevInst *DevInst, const XAie_DmaMod *DmaMod,
+				    u8 TileType, u8 Dir)
+{
+	u8 NumElements;
+
+	if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) {
+		if (((TileType == XAIEGBL_TILE_TYPE_SHIMNOC) ||
+		     (TileType == XAIEGBL_TILE_TYPE_SHIMPL)) &&
+		     (Dir == DMA_MM2S_CTRL))
+			NumElements = DmaMod->NumMm2sCtrlChannels;
+		else
+			NumElements = (Dir == DMA_S2MM) ? DmaMod->NumChannels :
+				DmaMod->NumMm2sChannels;
+	} else {
+		/* For Legacy Specs (<AIE4) */
+		NumElements = DmaMod->NumChannels;
+	}
+
+	return _XAie_GetMaxElementValue(DevInst->DevProp.DevGen, TileType, DevInst->AppMode, NumElements);
+}
 /*****************************************************************************/
 /**
 *

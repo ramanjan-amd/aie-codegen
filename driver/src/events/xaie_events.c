@@ -32,6 +32,7 @@
 #include "xaie_feature_config.h"
 #include "xaie_helper.h"
 #include "xaie_helper_internal.h"
+#include "xaie_ss.h"
 
 #ifdef XAIE_FEATURE_EVENTS_ENABLE
 
@@ -83,6 +84,11 @@ AieRC XAie_EventGenerate(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	RC = XAie_CheckModule(DevInst, Loc, Module);
 	if(RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -162,14 +168,19 @@ static AieRC _XAie_EventComboControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
 	if (Module == XAIE_PL_MOD) {
 		EvntMod = &DevInst->DevProp.DevMod[TileType].EvntMod[0U];
 	} else {
 		EvntMod = &DevInst->DevProp.DevMod[TileType].EvntMod[Module];
 	}
-	RegOffset = EvntMod->ComboCtrlRegOff;
-	FldMask = EvntMod->ComboConfigMask << ((u8)ComboId * EvntMod->ComboConfigOff);
-	FldVal = XAie_SetField(Op, (u8)ComboId * EvntMod->ComboConfigOff, FldMask);
+	RegOffset = EvntMod->ComboCtrlRegOff + (u32)((ComboId / 4) * 4);
+	FldMask = EvntMod->ComboConfigMask << ((u8)(ComboId % 4) * EvntMod->ComboConfigOff);
+	FldVal = XAie_SetField(Op, (u8)(ComboId % 4) * EvntMod->ComboConfigOff, FldMask);
 	RegAddr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) + RegOffset;
 
 	RC = XAie_MaskWrite32(DevInst, RegAddr, FldMask, FldVal);
@@ -178,7 +189,7 @@ static AieRC _XAie_EventComboControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	/* Skip combo input event register config for XAIE_COMBO2 combo ID */
-	if (ComboId == XAIE_EVENT_COMBO2) {
+	if ((ComboId == XAIE_EVENT_COMBO2) || (ComboId == XAIE_EVENT_COMBO6)) {
 		return XAIE_OK;
 	}
 
@@ -200,9 +211,9 @@ static AieRC _XAie_EventComboControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RegOffset = EvntMod->ComboInputRegOff;
-	Event1Lsb = ((u8)ComboId * 2U) * EvntMod->ComboEventOff;
-	Event2Lsb = ((u8)ComboId * 2U + 1U) * EvntMod->ComboEventOff;
+	RegOffset = EvntMod->ComboInputRegOff + (u32)((ComboId / 4) * 4);
+	Event1Lsb = ((u8)(ComboId % 4) * 2U) * EvntMod->ComboEventOff;
+	Event2Lsb = ((u8)(ComboId % 4) * 2U + 1U) * EvntMod->ComboEventOff;
 	Event1Mask = EvntMod->ComboEventMask << Event1Lsb;
 	Event2Mask = EvntMod->ComboEventMask << Event2Lsb;
 	FldVal = XAie_SetField(MappedEvent1, Event1Lsb, Event1Mask) |
@@ -303,6 +314,11 @@ AieRC XAie_EventGetComboEventBase(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
 	if (TileType == XAIEGBL_TILE_TYPE_AIETILE) {
 		EventMod = &DevInst->DevProp.DevMod[TileType].EvntMod[Module];
 	} else {
@@ -337,6 +353,7 @@ AieRC XAie_EventComboReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 {
 	u8 TileType;
 	XAie_Events Event;
+	AieRC RC;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -351,6 +368,11 @@ AieRC XAie_EventComboReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	if(XAie_CheckModule(DevInst, Loc, Module) != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -399,8 +421,8 @@ static AieRC _XAie_EventSelectStrmPortConfig(XAie_DevInst *DevInst,
 {
 	AieRC RC;
 	u64 RegAddr;
-	u32 RegOffset, FldVal, PortIdMask, PortMstrSlvMask;
-	u8 TileType, SelectRegOffId, PortIdx, PortIdLsb, PortMstrSlvLsb;
+	u32 RegOffset, FldVal, PortIdMask, PortMstrSlvMask, Port_32b_512b_Mask;
+	u8 TileType, SelectRegOffId, PortIdx, Select_32b_512b, PortIdLsb, PortMstrSlvLsb, Port_32b_512b_Lsb;
 	const XAie_StrmMod *StrmMod;
 	const XAie_EvntMod *EvntMod;
 
@@ -426,14 +448,18 @@ static AieRC _XAie_EventSelectStrmPortConfig(XAie_DevInst *DevInst,
 		return XAIE_INVALID_ARGS;
 	}
 
-	/* Get stream switch module pointer from device instance */
-	StrmMod = DevInst->DevProp.DevMod[TileType].StrmSw;
 
-	if (PortIntf == XAIE_STRMSW_SLAVE) {
-		RC = _XAie_GetSlaveIdx(StrmMod, Port, PortNum, &PortIdx);
+	/* Get stream switch module pointer from device instance */
+	if (Port <= _512B_PORT_END)
+	{
+		StrmMod =  DevInst->DevProp.DevMod[TileType].StrmSw;
+		Select_32b_512b = 0;
 	} else {
-		RC = _XAie_GetMstrIdx(StrmMod, Port, PortNum, &PortIdx);
+		StrmMod =  DevInst->DevProp.DevMod[TileType].StrmSw32b;
+		Select_32b_512b = 1;
 	}
+
+	RC = _XAie_GetPortIdx(DevInst, TileType, StrmMod, Port, PortNum, &PortIdx, PortIntf);
 	if(RC != XAIE_OK) {
 		XAIE_ERROR("Unable to compute port index\n");
 		return RC;
@@ -448,8 +474,13 @@ static AieRC _XAie_EventSelectStrmPortConfig(XAie_DevInst *DevInst,
 				(SelectId % EvntMod->StrmPortSelectIdsPerReg);
 	PortMstrSlvMask = EvntMod->PortMstrSlvMask << (8U *
 				(SelectId % EvntMod->StrmPortSelectIdsPerReg));
+	Port_32b_512b_Lsb = EvntMod->Port32b512bOff + 8U *
+				(SelectId % EvntMod->StrmPortSelectIdsPerReg);
+	Port_32b_512b_Mask = EvntMod->Port32b512bMask << (8U *
+				(SelectId % EvntMod->StrmPortSelectIdsPerReg));
 	FldVal = XAie_SetField(PortIdx, PortIdLsb, PortIdMask) |
-		 XAie_SetField(PortIntf, PortMstrSlvLsb, PortMstrSlvMask);
+		 XAie_SetField(PortIntf, PortMstrSlvLsb, PortMstrSlvMask) |
+		 XAie_SetField(Select_32b_512b, Port_32b_512b_Lsb, Port_32b_512b_Mask) ;
 	RegAddr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) + RegOffset;
 
 	return XAie_MaskWrite32(DevInst, RegAddr, PortIdMask | PortMstrSlvMask,
@@ -535,7 +566,10 @@ AieRC XAie_EventSelectStrmPortReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 		Port = CORE;
 	} else if (TileType == XAIEGBL_TILE_TYPE_SHIMPL ||
 		TileType == XAIEGBL_TILE_TYPE_SHIMNOC) {
-		Port = CTRL;
+		if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))
+			Port = _32B_CTRL;  	/*CTRL is part of 32b stream-switch for AIE4*/
+		else
+			Port = CTRL;
 	} else if (TileType == XAIEGBL_TILE_TYPE_MEMTILE) {
 		Port = DMA;
 	} else {
@@ -628,7 +662,7 @@ static AieRC _XAie_EventSelectDmaChannelConfig(XAie_DevInst *DevInst,
 {
 	u64 RegAddr;
 	u32 FldVal, ChannelIdLsb, ChannelDirLsb, ChannelIdMask;
-	u8 TileType;
+	u8 TileType, MaxNumChannels;
 	const XAie_EvntMod *EvntMod;
 	const XAie_DmaMod *DmaMod;
 
@@ -641,13 +675,14 @@ static AieRC _XAie_EventSelectDmaChannelConfig(XAie_DevInst *DevInst,
 	EvntMod = &DevInst->DevProp.DevMod[TileType].EvntMod[0];
 	DmaMod = DevInst->DevProp.DevMod[TileType].DmaMod;
 
-	if(SelectId >= EvntMod->NumDmaChannelSelectIds) {
-		XAIE_ERROR("Invalid selection ID\n");
+	MaxNumChannels = _XAie_DmaGetMaxNumChannels(DevInst, DmaMod, TileType, DmaDir);
+	if(ChannelNum >= MaxNumChannels) {
+		XAIE_ERROR("Invalid Channel number\n");
 		return XAIE_INVALID_ARGS;
 	}
 
-	if(ChannelNum >= DmaMod->NumChannels) {
-		XAIE_ERROR("Invalid channel number\n");
+	if(SelectId >= EvntMod->NumDmaChannelSelectIds) {
+		XAIE_ERROR("Invalid selection ID\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -696,11 +731,20 @@ AieRC XAie_EventSelectDmaChannel(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	/* Register only in memtiles */
+	/* Register only in memtiles for legacy and Shim/memtile AIE4 onwards */
 	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
-	if(TileType != XAIEGBL_TILE_TYPE_MEMTILE) {
-		XAIE_ERROR("Tile is not memory tile\n");
-		return XAIE_INVALID_TILE;
+	if(!_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) {
+		if (TileType != XAIEGBL_TILE_TYPE_MEMTILE) {
+			XAIE_ERROR("Tile is not memory tile\n");
+			return XAIE_INVALID_TILE;
+		}
+	} else {
+		if ((TileType != XAIEGBL_TILE_TYPE_MEMTILE) && 
+			(TileType != XAIEGBL_TILE_TYPE_SHIMPL) && 
+			(TileType != XAIEGBL_TILE_TYPE_SHIMNOC)) {
+			XAIE_ERROR("Tile is not memory/shim tile\n");
+			return XAIE_INVALID_TILE;
+		}
 	}
 
 	return _XAie_EventSelectDmaChannelConfig(DevInst, Loc, SelectId,
@@ -735,11 +779,20 @@ AieRC XAie_EventSelectDmaChannelReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	/* Register only in memtiles */
+	/* Register only in memtiles for legacy and Shim/memtile AIE4 onwards */
 	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
-	if(TileType != XAIEGBL_TILE_TYPE_MEMTILE) {
-		XAIE_ERROR("Tile is not memory tile\n");
-		return XAIE_INVALID_TILE;
+	if(!_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) {
+		if (TileType != XAIEGBL_TILE_TYPE_MEMTILE) {
+			XAIE_ERROR("Tile is not memory tile\n");
+			return XAIE_INVALID_TILE;
+		}
+	} else {
+		if ((TileType != XAIEGBL_TILE_TYPE_MEMTILE) && 
+			(TileType != XAIEGBL_TILE_TYPE_SHIMPL) && 
+			(TileType != XAIEGBL_TILE_TYPE_SHIMNOC)) {
+			XAIE_ERROR("Tile is not memory/shim tile\n");
+			return XAIE_INVALID_TILE;
+		}
 	}
 
 	return _XAie_EventSelectDmaChannelConfig(DevInst, Loc, SelectId,
@@ -781,6 +834,11 @@ static AieRC _XAie_EventBroadcastConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	RC = XAie_CheckModule(DevInst, Loc, Module);
 	if(RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -876,6 +934,7 @@ AieRC XAie_EventBroadcastReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 {
 	u8 TileType;
 	XAie_Events Event;
+	AieRC RC;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -890,6 +949,11 @@ AieRC XAie_EventBroadcastReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	if(XAie_CheckModule(DevInst, Loc, Module) != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -961,6 +1025,11 @@ AieRC XAie_EventBroadcastBlockDir(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	RC = XAie_CheckModule(DevInst, Loc, Module);
 	if(RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -1054,6 +1123,11 @@ AieRC XAie_EventBroadcastBlockMapDir(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
 	if(Dir & ~(u8)XAIE_EVENT_BROADCAST_ALL) {
 		XAIE_ERROR("Invalid broadcast direction\n");
 		return XAIE_INVALID_ARGS;
@@ -1144,6 +1218,11 @@ AieRC XAie_EventBroadcastUnblockDir(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
 	if(Dir & ~(u8)XAIE_EVENT_BROADCAST_ALL) {
 		XAIE_ERROR("Invalid broadcast direction\n");
 		return XAIE_INVALID_ARGS;
@@ -1219,6 +1298,11 @@ static AieRC _XAie_EventGroupConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
 	if (Module == XAIE_PL_MOD) {
 		EvntMod = &DevInst->DevProp.DevMod[TileType].EvntMod[0U];
 	} else {
@@ -1227,8 +1311,17 @@ static AieRC _XAie_EventGroupConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	for(u32 Index = 0; Index < EvntMod->NumGroupEvents; Index++) {
 		if(GroupEvent == EvntMod->Group[Index].GroupEvent) {
-			RegOffset = EvntMod->BaseGroupEventRegOff +
+			if ((_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) &&
+					(GroupEvent == XAIE_EVENT_GROUP_DMA_ACTIVITY_PL) &&
+					(EvntMod->GroupDmaRegSelect == 1)) {
+				RegOffset = EvntMod->BaseGroupEventRegOff +
+					(u32)((EvntMod->Group[Index].GroupOff + 1) * 4U);
+			}
+			else
+			{
+				RegOffset = EvntMod->BaseGroupEventRegOff +
 					(u32)(EvntMod->Group[Index].GroupOff * 4U);
+			}
 			RegAddr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 					RegOffset;
 
@@ -1296,6 +1389,75 @@ AieRC XAie_EventGroupControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 /*****************************************************************************/
 /**
 *
+* This API enables or disables events in a group event in the given module for AIE4 devices.
+*
+* @param	DevInst: Device Instance
+* @param	Loc: Location of AIE Tile
+* @param	Module: Module of tile.
+*			for AIE Tile - XAIE_MEM_MOD or XAIE_CORE_MOD,
+*			for Shim tile - XAIE_PL_MOD,
+*			for Mem tile - XAIE_MEM_MOD.
+* @param	GroupEvent: Group event ID.
+* @param	GroupBitMap: Bit mask.
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		None.
+*
+******************************************************************************/
+AieRC XAie4_EventGroupControl(XAie_DevInst* DevInst, XAie_LocType Loc,
+	XAie_ModuleType Module, XAie_Events GroupEvent, u64 GroupBitMap)
+{
+	u8 TileType;
+	AieRC RC = XAIE_OK ;
+	u32 UpperBitMap, LowerBitMap;
+	XAie_EvntMod* EvntMod;
+
+	if ((DevInst == XAIE_NULL) ||
+		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
+		XAIE_ERROR("Invalid device instance\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+	if (TileType == XAIEGBL_TILE_TYPE_MAX) {
+		XAIE_ERROR("Invalid tile type\n");
+		return XAIE_INVALID_TILE;
+	}
+
+	RC = XAie_CheckModule(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
+	/*As the group event XAIE_EVENT_GROUP_DMA_ACTIVITY_PL contains of more than  32 events
+	 * we segregate 64bit bitmap to two 32bit bitmaps. so only for XAIE_EVENT_GROUP_DMA_ACTIVITY_PL
+	 * the UpperBitMap is valid bitmap and for rest others group events  it will be 0*/
+
+	UpperBitMap = (u32)(GroupBitMap >> 32);
+	LowerBitMap = (u32)GroupBitMap;
+
+	/*This below condition is only for group event XAIE_EVENT_GROUP_DMA_ACTIVITY_PL,
+	 * when the UpperBitMap is non-zero, we pass this information to calling APIs by setting
+	 *  GroupDmaRegSelect to 1 and after that we clear it*/
+	if ((_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) &&
+			(UpperBitMap)  && (Module == XAIE_PL_MOD) &&
+			(GroupEvent == XAIE_EVENT_GROUP_DMA_ACTIVITY_PL)) {
+		EvntMod = (XAie_EvntMod*)&DevInst->DevProp.DevMod[TileType].EvntMod[0U];
+		EvntMod->GroupDmaRegSelect = 1;
+		RC = _XAie_EventGroupConfig(DevInst, Loc, Module, GroupEvent,
+			UpperBitMap, (u8)XAIE_RESETDISABLE);
+		EvntMod->GroupDmaRegSelect = 0;
+	}
+
+	return  ((RC) | (_XAie_EventGroupConfig(DevInst, Loc, Module, GroupEvent,
+		LowerBitMap, (u8)XAIE_RESETDISABLE)));
+
+}
+
+/*****************************************************************************/
+/**
+*
 * This API resets group event register in the given module.
 *
 * @param	DevInst: Device Instance
@@ -1315,6 +1477,8 @@ AieRC XAie_EventGroupReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 		XAie_ModuleType Module, XAie_Events GroupEvent)
 {
 	u8 TileType;
+	AieRC RC = XAIE_OK ;
+	XAie_EvntMod* EvntMod;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -1328,8 +1492,23 @@ AieRC XAie_EventGroupReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_TILE;
 	}
 
-	return _XAie_EventGroupConfig(DevInst, Loc, Module, GroupEvent, 0U,
-			(u8)XAIE_RESETENABLE);
+	RC = XAie_CheckModule(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
+	if ((_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) &&
+			(Module == XAIE_PL_MOD) &&
+			(GroupEvent == XAIE_EVENT_GROUP_DMA_ACTIVITY_PL)) {
+		EvntMod = (XAie_EvntMod* )&DevInst->DevProp.DevMod[TileType].EvntMod[0U];
+		EvntMod->GroupDmaRegSelect = 1;
+		RC = _XAie_EventGroupConfig(DevInst, Loc, Module, GroupEvent,
+			0U, (u8)XAIE_RESETENABLE);
+		EvntMod->GroupDmaRegSelect = 0;
+	}
+
+	return ((RC) | (_XAie_EventGroupConfig(DevInst, Loc, Module, GroupEvent, 0U,
+			(u8)XAIE_RESETENABLE)));
 }
 
 /*****************************************************************************/
@@ -1384,6 +1563,11 @@ AieRC XAie_EventEdgeControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
 	if (Module == XAIE_PL_MOD) {
 		EvntMod = &DevInst->DevProp.DevMod[TileType].EvntMod[0U];
 	} else {
@@ -1410,9 +1594,10 @@ AieRC XAie_EventEdgeControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 			EvntMod->EdgeDetectEvent.Mask) |
 		XAie_SetField(Trigger, EvntMod->EdgeDetectTrigger.Lsb,
 			EvntMod->EdgeDetectTrigger.Mask)) <<
-		(SelectId * EvntMod->EdgeEventSelectIdOff);
-	RegAddr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
-			EvntMod->EdgeEventRegOff;
+		((SelectId % 2) * EvntMod->EdgeEventSelectIdOff);
+
+	RegAddr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) + (EvntMod->EdgeEventRegOff +  (4 * SelectId/2)) ;
+
 
 	return XAie_Write32(DevInst, RegAddr, FldVal);
 }
@@ -1633,6 +1818,11 @@ AieRC XAie_EventLogicalToPhysicalConv(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
 	if(Module == XAIE_PL_MOD) {
 		EvntMod = &DevInst->DevProp.DevMod[TileType].EvntMod[0U];
 	} else {
@@ -1689,6 +1879,11 @@ AieRC XAie_EventPhysicalToLogicalConv(XAie_DevInst *DevInst, XAie_LocType Loc,
 	/* check for module and tiletype combination */
 	RC = XAie_CheckModule(DevInst, Loc, Module);
 	if(RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -1751,6 +1946,11 @@ AieRC XAie_EventReadStatus(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	RC = XAie_CheckModule(DevInst, Loc, Module);
 	if(RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -1819,6 +2019,11 @@ AieRC XAie_EventGetUserEventBase(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
 	if (TileType == XAIEGBL_TILE_TYPE_AIETILE) {
 		EventMod = &DevInst->DevProp.DevMod[TileType].EvntMod[Module];
 	} else {
@@ -1871,6 +2076,11 @@ AieRC XAie_EventRegStatus(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	RC = XAie_CheckModule(DevInst, Loc, Module);
 	if(RC != XAIE_OK) {
+		return XAIE_INVALID_ARGS;
+	}
+
+	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
+	if (RC != XAIE_OK) {
 		return XAIE_INVALID_ARGS;
 	}
 

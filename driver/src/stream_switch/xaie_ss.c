@@ -55,6 +55,220 @@
 #define XAIE_SS_DETERMINISTIC_MERGE_MAX_PKT_CNT (64U - 1U) /* 6 bits */
 
 /************************** Function Definitions *****************************/
+/*
+ * This API is to give maximum number of stream switch ports
+ * for a given tiletype, based on application mode (dual/single)
+ */
+static AieRC _GetMaxNumSsPorts(XAie_DevInst *DevInst, u8 TileType,
+		const XAie_StrmPort *PortPtr, StrmSwPortType PortType, u8 *MaxNumPorts)
+{
+	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))) {
+		*MaxNumPorts = PortPtr->NumPorts;
+	} else {
+		if (DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE) {
+			/* No streams to East and West side in dual app mode */
+			if ((PortType == EAST) || (PortType == WEST) ||
+				(PortType == _32B_EAST) || (PortType == _32B_WEST)) {
+				return XAIE_ERR_STREAM_PORT;
+			}
+			if (TileType == XAIEGBL_TILE_TYPE_AIETILE) {
+				if ((PortType == NORTH) || (PortType == SOUTH) ||
+					(PortType == _32B_NORTH) || (PortType == _32B_SOUTH)) {
+					/* In Dual app mode for AIE tile, only half of the
+					 * north and south tiles will be available, as the
+					 * remaining will be used for shadow logic to bypass
+					 * the streams to App_B tiles
+					 */
+					*MaxNumPorts = PortPtr->NumPorts / 2;
+				} else {
+					*MaxNumPorts = PortPtr->NumPorts;
+				}
+			} else {
+				*MaxNumPorts = PortPtr->NumPorts;
+			}
+		} else {
+			/* For AIE tile PortPtr will have full number of ports
+			 * For SHIM tiles WEST & EAST port PortPtr will have full number of ports
+			 * Below check verifies the same
+			 */
+			if ((TileType == XAIEGBL_TILE_TYPE_AIETILE) ||
+				((TileType == XAIEGBL_TILE_TYPE_SHIMNOC) &&
+				 ((PortType == EAST) || (PortType == WEST) ||
+				  (PortType == _32B_EAST) || (PortType == _32B_WEST))))
+				*MaxNumPorts = PortPtr->NumPorts;
+			else
+				*MaxNumPorts = PortPtr->NumPorts * 2;
+		}
+	}
+
+	return XAIE_OK;
+}
+/*
+ * This is an internal API
+ */
+static AieRC _XAie_GetPortIdxLegacy(const XAie_StrmMod *StrmMod,
+		StrmSwPortType PortType, u8 PortNum, u8 *PortIdx,
+		XAie_StrmPortIntf Port)
+{
+	u32 BaseAddr;
+	u32 RegAddr;
+	const XAie_StrmPort *PortPtr;
+
+	/* Get Base Addr of the slave/master tile from Stream Switch Module */
+	if (Port == XAIE_STRMSW_SLAVE) {
+			PortPtr = &StrmMod->SlvConfig[PortType];
+			BaseAddr = StrmMod->SlvConfigBaseAddr;
+	} else {
+			PortPtr = &StrmMod->MstrConfig[PortType];
+			BaseAddr = StrmMod->MstrConfigBaseAddr;
+	}
+
+	RegAddr = PortPtr->PortBaseAddr + StrmMod->PortOffset * PortNum;
+	*PortIdx = (u8)((RegAddr - BaseAddr) / 4U);
+
+	return XAIE_OK;
+}
+
+/*
+ * This is an internal API, this returns Port ID which should be configured in
+ * master port configuration register.
+ */
+static AieRC _XAie_GetPortIdxAie4Plus(XAie_DevInst *DevInst, u8 TileType,
+	StrmSwPortType PortType, const XAie_StrmPort *PortPtr, u8 PortNum,
+	u8 *PortIdx, XAie_StrmPortIntf Port)
+{
+	u8 AddPlaceHolderPortPhyIds = 0;
+	if (DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE) {
+		*PortIdx = PortPtr->PortLogicalId + PortNum;
+	} else {
+		/* For North and South ports, there are one/two extra port which
+		 * has been provided as a placeholder for future devices,
+		 * so if the PortNum is greater than half of the Maxports,
+		 * It requires to add correspoding number of physicalIDs (of placeholder Ports)
+		 * to match with the value provided in the spec.
+		 */
+		switch (TileType) {
+		case XAIEGBL_TILE_TYPE_AIETILE:
+			if (((Port == XAIE_STRMSW_SLAVE) && (PortType == NORTH)) ||
+			    ((Port == XAIE_STRMSW_MASTER) && (PortType == SOUTH))) {
+				if (PortNum >= (PortPtr->NumPorts / 2))
+					AddPlaceHolderPortPhyIds = 1;
+			}
+			break;
+		case XAIEGBL_TILE_TYPE_MEMTILE:
+			if (((Port == XAIE_STRMSW_SLAVE) && (PortType == NORTH)) ||
+			    ((Port == XAIE_STRMSW_MASTER) && (PortType == SOUTH))) {
+				if (PortNum >= (PortPtr->NumPorts))
+					AddPlaceHolderPortPhyIds = 1;
+				} else if ((Port == XAIE_STRMSW_SLAVE) && (PortType == SOUTH)) {
+					if (PortNum >= PortPtr->NumPorts)
+						AddPlaceHolderPortPhyIds = 2;
+			}
+			break;
+		case XAIEGBL_TILE_TYPE_SHIMNOC:
+			if ((Port == XAIE_STRMSW_MASTER) && (PortType == NORTH)) {
+				if (PortNum >= PortPtr->NumPorts)
+					AddPlaceHolderPortPhyIds = 1;
+			}
+			break;
+		default:
+			return XAIE_INVALID_TILE;
+		}
+
+		*PortIdx = PortPtr->PortPhysicalId + PortNum + AddPlaceHolderPortPhyIds;
+	}
+
+	return XAIE_OK;
+}
+/*
+ * This API is to validate Port number.
+ * 
+ * In V1.2 spec, for memtile (MM2S5 & MM2S11) and shimtile(S2MM1 & S2MM3) are
+ * removed. But the port numbers not adjusted sequentially.
+ * So this API checks for the same and validates. 
+ */
+static AieRC _XAie_ValidatePortNumber(XAie_DevInst* DevInst, u8 TileType,
+	StrmSwPortType PortType, XAie_StrmPortIntf Port, u8 PortNum, u8 MaxPorts)
+{
+	if (MaxPorts == 0)
+		return XAIE_ERR_STREAM_PORT;
+
+	if (!_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) {
+		if (PortNum >= MaxPorts)
+			return XAIE_ERR_STREAM_PORT;
+
+		return XAIE_OK;
+	}
+
+	if (DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE) {
+		if ((PortType == DMA) &&
+			(((TileType == XAIEGBL_TILE_TYPE_MEMTILE) && (Port == XAIE_STRMSW_SLAVE)) ||
+			 ((TileType == XAIEGBL_TILE_TYPE_SHIMNOC) && (Port == XAIE_STRMSW_MASTER)))) {
+			if (PortNum == MaxPorts / 2)
+				return XAIE_ERR_STREAM_PORT;
+			if (PortNum > MaxPorts)
+				return XAIE_ERR_STREAM_PORT;
+		}
+	} else {
+		if (PortNum >= MaxPorts)
+			return XAIE_ERR_STREAM_PORT;
+	}
+
+	return XAIE_OK;
+}
+/*****************************************************************************/
+/**
+*
+* To configure stream switch master registers, slave index has to be calculated
+* from the internal data structure. The routine calculates the slave index for
+* any tile type.
+*
+* @param	DevInst: Device Instance
+* @param	TileType: Tile Type
+* @param	StrmMod: Stream Module pointer
+* @param	Slave: Stream switch port type
+* @param	PortNum: Slave port number
+* @param	SlaveIdx: Place holder for the routine to store the slave idx
+* @param	Port: Port interface type
+*
+* @return	XAIE_OK on success and XAIE_ERR_STREAM_PORT on failure
+*
+* @note		Internal API only.
+*
+******************************************************************************/
+AieRC _XAie_GetPortIdx(XAie_DevInst *DevInst, u8 TileType,
+		const XAie_StrmMod *StrmMod, StrmSwPortType PortType,
+		u8 PortNum, u8 *PortIdx, XAie_StrmPortIntf Port)
+{
+	AieRC RC;
+	const XAie_StrmPort *PortPtr;
+	u8 MaxNumPorts;
+
+	if (Port == XAIE_STRMSW_SLAVE)
+		PortPtr = &StrmMod->SlvConfig[PortType];
+	else
+		PortPtr = &StrmMod->MstrConfig[PortType];
+
+	RC = _GetMaxNumSsPorts(DevInst, TileType, PortPtr, PortType, &MaxNumPorts);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Invalid stream port\n");
+		return RC;
+	}
+
+	RC = _XAie_ValidatePortNumber(DevInst, TileType, PortType, Port, PortNum, MaxNumPorts);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Invalid stream port\n");
+		return RC;
+	}
+
+	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
+		_XAie_GetPortIdxLegacy(StrmMod, PortType, PortNum, PortIdx, Port);
+	else
+		_XAie_GetPortIdxAie4Plus(DevInst, TileType, PortType, PortPtr,
+			PortNum, PortIdx, Port);
+
+	return XAIE_OK;
+}
 /*****************************************************************************/
 /**
 *
