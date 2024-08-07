@@ -71,8 +71,12 @@ AieRC _XAie_TileCtrlSetIsolation(XAie_DevInst *DevInst, XAie_LocType Loc,
 	TCtrlMod = DevInst->DevProp.DevMod[TileType].TileCtrlMod;
 	RegAddr = TCtrlMod->TileCtrlRegOff +
 		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
-	Mask = TCtrlMod->IsolateEast.Mask | TCtrlMod->IsolateNorth.Mask |
-		TCtrlMod->IsolateWest.Mask | TCtrlMod->IsolateSouth.Mask;
+	if(DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE) {
+		Mask = TCtrlMod->IsolateEast.Mask | TCtrlMod->IsolateWest.Mask;
+	} else {
+		Mask = TCtrlMod->IsolateEast.Mask | TCtrlMod->IsolateNorth.Mask |
+					TCtrlMod->IsolateWest.Mask | TCtrlMod->IsolateSouth.Mask;
+	}
 	/*
 	 * This is internal function, the Dir input masks matches the register
 	 * isolation mask, there is no need to calculate each direction bit.

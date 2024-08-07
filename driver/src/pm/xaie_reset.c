@@ -20,6 +20,7 @@
 #include "xaie_npi.h"
 #include "xaie_reset.h"
 #include "xaiegbl.h"
+#include "xaie_helper_internal.h"
 
 #ifdef XAIE_FEATURE_PRIVILEGED_ENABLE
 
@@ -108,12 +109,12 @@ static void _XAie_RstSetBlockShimNocAxiMmNsuErr(XAie_DevInst *DevInst,
 	u8 TileType;
 	u32 FldVal;
 	u64 RegAddr;
-	const XAie_PlIfMod *PlIfMod;
+	const XAie_NocMod  *NocMod;
 	const XAie_ShimNocAxiMMConfig *ShimNocAxiMM;
 
 	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
-	PlIfMod = DevInst->DevProp.DevMod[TileType].PlIfMod;
-	ShimNocAxiMM = PlIfMod->ShimNocAxiMM;
+	NocMod = DevInst->DevProp.DevMod[TileType].NocMod;
+	ShimNocAxiMM = NocMod->ShimNocAxiMM;
 	RegAddr = ShimNocAxiMM->RegOff +
 		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
 	FldVal = XAie_SetField(Enable,
@@ -227,6 +228,14 @@ AieRC XAie_ResetPartition(XAie_DevInst *DevInst)
 {
 	AieRC RC;
 
+	#if !defined(__AIESOCKET__) && !defined(__AIEBAREMETAL__) && !defined(__AIEDEBUG__)
+		if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen) )
+		{
+			XAIE_ERROR("XAie_ResetPartition API is not supported in AIE4 for CDO & Controlcode backend\n");
+			return XAIE_FEATURE_NOT_SUPPORTED;
+		}
+	#endif
+
 	if((DevInst == XAIE_NULL) ||
 		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
 		XAIE_ERROR("Invalid Device Instance\n");
@@ -238,14 +247,23 @@ AieRC XAie_ResetPartition(XAie_DevInst *DevInst)
 		return RC;
 	}
 
-	_XAie_RstSetAllColumnsReset(DevInst, XAIE_ENABLE);
+	if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))
+	{
+		DevInst->DevOps->SetPartColShimReset(DevInst, XAIE_ENABLE);
+	}
+	else
+	{
+		_XAie_RstSetAllColumnsReset(DevInst, XAIE_ENABLE);
+	}
 
 	RC = _XAie_PmSetPartitionClock(DevInst, XAIE_ENABLE);
 	if(RC != XAIE_OK) {
 		return RC;
 	}
 
-	_XAie_RstAllShims(DevInst);
+	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))) {
+		_XAie_RstAllShims(DevInst);
+	}
 
 	_XAie_RstSetBlockAllShimsNocAxiMmNsuErr(DevInst, XAIE_ENABLE);
 
@@ -326,13 +344,11 @@ AieRC XAie_ClearPartitionMems(XAie_DevInst *DevInst)
 			u8 TileType;
 
 			TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
-			if(TileType == XAIEGBL_TILE_TYPE_SHIMNOC ||
-			   TileType == XAIEGBL_TILE_TYPE_SHIMPL) {
+			if(TileType == XAIEGBL_TILE_TYPE_SHIMNOC || TileType == XAIEGBL_TILE_TYPE_SHIMPL) {
 				continue;
 			}
 
-			if(_XAie_PmIsTileRequested(DevInst, Loc) ==
-			   XAIE_DISABLE) {
+			if(_XAie_PmIsTileRequested(DevInst, Loc) == XAIE_DISABLE) {
 				continue;
 			}
 

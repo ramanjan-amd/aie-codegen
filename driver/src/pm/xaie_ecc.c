@@ -28,6 +28,7 @@
 #include "xaie_helper.h"
 #include "xaie_helper_internal.h"
 #include "xaie_perfcnt.h"
+#include "xaie_io_privilege.h"
 
 #if defined(XAIE_FEATURE_PRIVILEGED_ENABLE) && \
 	defined(XAIE_FEATURE_PERFCOUNT_ENABLE) && \
@@ -37,7 +38,6 @@
 #define XAIE_BROADCAST_CHANNEL_6		6U
 #define XAIE_ECC_SCRUB_CLOCK_COUNT		1000000U
 #define XAIE_ECC_PERFCOUNTER_ID			0U
-
 /************************** Function Definitions *****************************/
 /*****************************************************************************/
 /**
@@ -115,11 +115,16 @@ static AieRC _XAie_EccPerfCntConfig(XAie_DevInst *DevInst, XAie_LocType Loc)
 AieRC _XAie_EccOnDM(XAie_DevInst *DevInst, XAie_LocType Loc)
 {
 	AieRC RC;
-	u8 Dir, TileType;
+	u8 TileType;
 	u32 RegVal, CheckTileEccStatus;
 	u64 RegAddr;
 	const XAie_MemMod *MemMod;
 	const XAie_EvntMod *EvntMod;
+
+	if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))
+	{
+		return XAIE_FEATURE_NOT_SUPPORTED;
+	}
 
 	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
 
@@ -158,21 +163,10 @@ AieRC _XAie_EccOnDM(XAie_DevInst *DevInst, XAie_LocType Loc)
 	 * Module east broadcast event interface is internally connected to
 	 * memory module west broadcast event interface.
 	 */
-	Dir = (u8)XAIE_EVENT_BROADCAST_SOUTH | (u8)XAIE_EVENT_BROADCAST_WEST |
-		(u8)XAIE_EVENT_BROADCAST_NORTH;
 	RC = XAie_EventBroadcastBlockDir(DevInst, Loc, XAIE_CORE_MOD,
-		XAIE_EVENT_SWITCH_A, XAIE_BROADCAST_CHANNEL_6, Dir);
+		XAIE_EVENT_SWITCH_A, XAIE_BROADCAST_CHANNEL_6, (u8)XAIE_EVENT_BROADCAST_ALL);
 	if(RC != XAIE_OK) {
 		XAIE_ERROR("Unable to block broadcast from core module\n");
-		return RC;
-	}
-
-	/* Block broadcast of event in all direction from Mem module */
-	RC = XAie_EventBroadcastBlockDir(DevInst, Loc, XAIE_MEM_MOD,
-		XAIE_EVENT_SWITCH_A, XAIE_BROADCAST_CHANNEL_6,
-		(u8)XAIE_EVENT_BROADCAST_ALL);
-	if(RC != XAIE_OK) {
-		XAIE_ERROR("Unable to block broadcast from mem module\n");
 		return RC;
 	}
 
@@ -234,6 +228,11 @@ AieRC _XAie_EccOnPM(XAie_DevInst *DevInst, XAie_LocType Loc)
 	const XAie_CoreMod *CoreMod;
 	const XAie_EvntMod *EvntMod;
 
+	if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))
+	{
+		return XAIE_FEATURE_NOT_SUPPORTED;
+	}
+
 	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
 
 	/* Check if tile is shim noc or shim pl */
@@ -242,7 +241,8 @@ AieRC _XAie_EccOnPM(XAie_DevInst *DevInst, XAie_LocType Loc)
 		XAIE_ERROR("ECC cannot be enabled for this tile.\n");
 		return XAIE_INVALID_ARGS;
 	}
-
+	CheckTileEccStatus = _XAie_GetTileBitPosFromLoc(DevInst, Loc);
+	
 	CoreMod = DevInst->DevProp.DevMod[TileType].CoreMod;
 	EvntMod = &DevInst->DevProp.DevMod[TileType].EvntMod[XAIE_CORE_MOD];
 
@@ -256,7 +256,6 @@ AieRC _XAie_EccOnPM(XAie_DevInst *DevInst, XAie_LocType Loc)
 	}
 
 	/* Before configuring performance counter check if the DM in use */
-	CheckTileEccStatus = _XAie_GetTileBitPosFromLoc(DevInst, Loc);
 	if(CheckBit(DevInst->DevOps->MemInUse, CheckTileEccStatus)) {
 		return XAIE_OK;
 	}
@@ -385,6 +384,11 @@ AieRC _XAie_EccOnMemTile(XAie_DevInst *DevInst, XAie_LocType Loc)
 	const XAie_MemMod *MemMod;
 	const XAie_EvntMod *EvntMod;
 
+	if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))
+	{
+		return XAIE_FEATURE_NOT_SUPPORTED;
+	}
+
 	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
 	/* Check if tile type is Mem tile */
 	if(TileType != XAIEGBL_TILE_TYPE_MEMTILE) {
@@ -393,6 +397,7 @@ AieRC _XAie_EccOnMemTile(XAie_DevInst *DevInst, XAie_LocType Loc)
 	}
 
 	MemMod = DevInst->DevProp.DevMod[TileType].MemMod;
+
 	EvntMod = DevInst->DevProp.DevMod[TileType].EvntMod;
 
 	RegAddr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +

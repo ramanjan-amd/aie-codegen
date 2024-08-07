@@ -26,6 +26,7 @@
 #include "xaie_reset_aie.h"
 #include "xaie_feature_config.h"
 #include "xaie_helper.h"
+#include "xaie_helper_internal.h"
 
 #ifdef XAIE_FEATURE_PRIVILEGED_ENABLE
 
@@ -52,6 +53,14 @@ AieRC XAie_PmRequestTiles(XAie_DevInst *DevInst, XAie_LocType *Loc,
 		u32 NumTiles)
 {
 	XAie_BackendTilesArray TilesArray;
+
+#if !defined(__AIESOCKET__) && !defined(__AIEBAREMETAL__) && !defined(__AIEDEBUG__)
+		if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen) )
+		{
+			XAIE_ERROR("XAie_PmRequestTiles API is not supported in AIE4 for CDO & Controlcode backend\n");
+			return XAIE_FEATURE_NOT_SUPPORTED;
+		}
+#endif
 
 	if((DevInst == XAIE_NULL) ||
 		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -144,6 +153,14 @@ AieRC XAie_PmSetColumnClk(XAie_DevInst *DevInst, u32 StartCol, u32 NumCols,
 		u8 Enable)
 {
 	XAie_BackendColumnReq  ColumnReq;
+
+#if !defined(__AIESOCKET__) && !defined(__AIEBAREMETAL__) && !defined(__AIEDEBUG__)
+		if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen) )
+		{
+			XAIE_ERROR("XAie_PmSetColumnClk API is not supported in AIE4 for CDO & Controlcode backend\n");
+			return XAIE_FEATURE_NOT_SUPPORTED;
+		}
+#endif
 
 	if((DevInst == XAIE_NULL) ||
 		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
