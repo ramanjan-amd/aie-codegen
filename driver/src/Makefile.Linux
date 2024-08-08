@@ -15,10 +15,14 @@ DOCS_DIR = ../tmp
 DOXYGEN_CONFIG_FILE = ../docs/aie_driver_docs_config.dox
 
 OUTS = $(LIBSOURCES:.c=.o)
-INCLUDEFILES = ./*/xaie_clock.h ./*/xaie_reset.h ./*/xaie_core.h ./*/xaie_dma.h ./*/xaie_elfloader.h ./*/xaie_events.h ./*/xaie_events_aie.h ./*/xaie_events_aieml.h ./*/xaie_interrupt.h ./*/xaie_lite.h ./*/xaie_lite_util.h ./*/xaie_locks.h ./*/xaie_mem.h ./*/xaie_perfcnt.h ./*/xaie_plif.h ./*/xaie_ss.h ./*/xaie_timer.h ./*/xaie_trace.h ./*/xaie_util_events.h ./*/xaiegbl.h ./*/xaiegbl_defs.h ./*/xaiegbl_dynlink.h ./*/xaiegbl_regdef.h ./*/xaie_io.h ./*/xaie_feature_config.h ./*/xaie_helper.h ./*/xaie_helper_internal.h ./*/xaie_lite_hwcfg.h ./*/xaiegbl_params.h ./xaiengine.h ./*/xaie_txn.h
+INCLUDEFILES = ./*/xaie_clock.h ./*/xaie_reset.h ./*/xaie_core.h ./*/xaie_dma.h ./*/xaie_elfloader.h ./*/xaie_events.h ./*/xaie_events_aie.h ./*/xaie_events_aieml.h ./*/xaie_interrupt.h ./*/xaie_lite.h ./*/xaie_lite_util.h ./*/xaie_locks.h ./*/xaie_mem.h ./*/xaie_perfcnt.h ./*/xaie_plif.h ./*/xaie_ss.h ./*/xaie_timer.h ./*/xaie_trace.h ./*/xaie_util_events.h ./*/xaiegbl.h ./*/xaiegbl_defs.h ./*/xaiegbl_dynlink.h ./*/xaiegbl_regdef.h ./*/xaie_io.h ./*/xaie_feature_config.h ./*/xaie_helper.h ./*/xaie_helper_internal.h ./*/xaie_lite_hwcfg.h ./*/xaiegbl_params.h ./xaiengine.h ./*/xaie_txn.h ./*/xaie_noc.h
 INTERNALFILES = ./*/*.h ./*/*/*.h
 INCLUDEDIR = ../include
 INTERNALDIR = ../internal
+
+EXTERNAL_INCLUDEFILES = ./*/xaie_clock.h ./*/xaie_reset.h ./*/xaie_core.h ./*/xaie_dma.h ./*/xaie_elfloader.h ./*/xaie_events.h ./*/xaie_events_aie.h ./*/xaie_events_aieml.h ./*/xaie_interrupt.h ./*/xaie_lite.h ./*/xaie_lite_util.h ./*/xaie_locks.h ./*/xaie_mem.h ./*/xaie_perfcnt.h ./*/xaie_plif.h ./*/xaie_ss.h ./*/xaie_timer.h ./*/xaie_trace.h ./*/xaie_util_events.h ./*/xaiegbl.h ./*/xaiegbl_dynlink.h ./*/xaiegbl_defs.h ./*/xaiegbl_regdef.h ./*/xaie_io.h ./*/xaie_feature_config.h ./*/xaie_helper.h ./*/xaie_lite_hwcfg.h ./*/xaie_txn.h ./*/xaie_noc.h
+EXTERNAL_INCLUDEDIR = ../externalInclude
+
 NAME := xaiengine
 MAJOR = 3
 MINOR = 5
@@ -26,6 +30,11 @@ VERSION = $(MAJOR).$(MINOR)
 
 all: include lib$(NAME).so
 
+externalInclude:
+	mkdir $(EXTERNAL_INCLUDEDIR)/xaiengine -p
+	$(CP) xaiengine.h $(EXTERNAL_INCLUDEDIR)
+	$(CP) $(EXTERNAL_INCLUDEFILES) $(EXTERNAL_INCLUDEDIR)/xaiengine
+	
 include:
 	mkdir $(INCLUDEDIR)/xaiengine -p
 	mkdir $(INTERNALDIR)/xaiengine -p
@@ -90,3 +99,4 @@ clean:
 	rm -rf $(OUTS) *.so *.so.*
 	rm -rf $(INCLUDEDIR)
 	rm -rf $(INTERNALDIR)
+	rm -rf $(EXTERNAL_INCLUDEDIR)

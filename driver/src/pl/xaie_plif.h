@@ -55,16 +55,4 @@ XAIE_AIG_EXPORT AieRC XAie_AieToPlIntfEnable(XAie_DevInst *DevInst, XAie_LocType
 		u8 PortNum, XAie_PlIfWidth Width);
 XAIE_AIG_EXPORT AieRC XAie_AieToPlIntfDisable(XAie_DevInst *DevInst, XAie_LocType Loc,
 		u8 PortNum, XAie_PlIfWidth Width);
-XAIE_AIG_EXPORT AieRC XAie_EnableShimDmaToAieStrmPort(XAie_DevInst *DevInst, XAie_LocType Loc,
-		u8 PortNum);
-XAIE_AIG_EXPORT AieRC XAie_EnableAieToShimDmaStrmPort(XAie_DevInst *DevInst, XAie_LocType Loc,
-		u8 PortNum);
-XAIE_AIG_EXPORT AieRC XAie_EnableNoCToAieStrmPort(XAie_DevInst *DevInst, XAie_LocType Loc,
-		u8 PortNum);
-XAIE_AIG_EXPORT AieRC XAie_EnableAieToNoCStrmPort(XAie_DevInst *DevInst, XAie_LocType Loc,
-		u8 PortNum);
-XAIE_AIG_EXPORT AieRC XAie_EnablePlToAieStrmPort(XAie_DevInst *DevInst, XAie_LocType Loc,
-		u8 PortNum);
-XAIE_AIG_EXPORT AieRC XAie_EnableAieToPlStrmPort(XAie_DevInst *DevInst, XAie_LocType Loc,
-		u8 PortNum);
 #endif		/* end of protection macro */
