@@ -199,8 +199,8 @@ static AieRC _XAie_DataMemoryBlockWrite(XAie_DevInst* DevInst, XAie_LocType Loc,
 		 * write at unaligned offset
 		 */
 		for(u32 UnalignedByte = FirstWriteOffset;
-			UnalignedByte < (u8)((XAIE_MEM_WORD_ALIGN_SIZE != 0U) &&
-			(RemBytes != 0U)); UnalignedByte++, RemBytes--) {
+				(u8)((UnalignedByte < XAIE_MEM_WORD_ALIGN_SIZE) != 0U) && (RemBytes != 0U);
+				UnalignedByte++, RemBytes--) {
 			TempWord |= (u32)(Src[BytePtr++] << (UnalignedByte * 8U));
 			Mask |= (u32)(0xFFU << (UnalignedByte * 8U));
 		}

@@ -35,7 +35,7 @@
 		.StartCol = (_StartCol), \
 		.NumCols = (_NumCols), \
 		.NumRows = (XAIE_NUM_ROWS), \
-		.L2Preserve = 0;
+		.L2PreserveMem = 0, \
 	}
 
 /* Macro for Initialization of AIE4 Device Instance */
