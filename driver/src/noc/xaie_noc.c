@@ -232,7 +232,7 @@ AieRC XAie_EnableAieToShimDmaStrmPort(XAie_DevInst *DevInst, XAie_LocType Loc,
 	
 	if((PortNum != XAIE_STREAM_SOUTH_PORT_2) &&
 			(PortNum != XAIE_STREAM_SOUTH_PORT_3)) {
-				XAIE_ERROR("Invalid port number\n", PortNum);
+				XAIE_ERROR("Invalid port number %d\n", PortNum);
 		return XAIE_ERR_STREAM_PORT;
 	}
 

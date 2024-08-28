@@ -156,8 +156,7 @@ AieRC XAie_CfgInitialize(XAie_DevInst *InstPtr, XAie_Config *ConfigPtr)
 	AieRC RC;
 
 	if((InstPtr == XAIE_NULL) || (ConfigPtr == XAIE_NULL)) {
-		XAIE_ERROR("Invalid input arguments\n",
-				XAIE_INVALID_ARGS);
+		XAIE_ERROR("Invalid input arguments\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -209,8 +208,7 @@ AieRC XAie_CfgInitialize(XAie_DevInst *InstPtr, XAie_Config *ConfigPtr)
 		InstPtr->DevOps = &Aie4MedusaDevOps;
 #endif
 	} else {
-		XAIE_ERROR("Invalid device\n",
-				XAIE_INVALID_DEVICE);
+		XAIE_ERROR("Invalid device\n");
 		return XAIE_INVALID_DEVICE;
 	}
 
