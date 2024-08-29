@@ -642,7 +642,8 @@ static inline void _XAie_LSetPartDmaPause(XAie_DevInst *DevInst,
 		XAie_LocType Loc)
 {
 	u64 RegAddr, RegAddr_uC_A, RegAddr_uC_B;
-	u32 FldVal, FldVal_uC_A, FldVal_uC_B;
+	u32 FldVal = 0;
+	u32 FldVal_uC_A, FldVal_uC_B;
 
 	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_PL_MOD_DMA_PAUSE_REGOFF;
 	RegAddr_uC_A = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_PL_MOD_UC_DMA_A_PAUSE_REGOFF;
@@ -725,7 +726,7 @@ static inline void _XAie_LSetPartColShimReset(XAie_DevInst *DevInst,
 		XAie_LocType Loc, u8 Reset)
 {
 	u64 RegAddr;
-	u32 FldVal;
+	u32 FldVal = 0;
 
 	/* Pause DMA */
 	_XAie_LSetPartDmaPause(DevInst, Loc);

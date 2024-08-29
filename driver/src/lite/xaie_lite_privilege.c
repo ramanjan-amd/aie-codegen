@@ -579,11 +579,15 @@ AieRC XAie_PartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 
 	/* Set Dual App Mode Registers */
 	if (_XAie_LIsDeviceGenSupportDualApp()) {
-		if(Opts->Locs != NULL && DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE){
-			RC =_XAie_LSetDualAppModePrivileged(DevInst, Opts);
-			if(RC != XAIE_OK) {
-				XAIE_ERROR("Dual APP setting failed\n");
-				return RC;
+		if(DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE){
+			if(Opts->Locs != NULL) {
+				RC =_XAie_LSetDualAppModePrivileged(DevInst, Opts);
+				if(RC != XAIE_OK) {
+					XAIE_ERROR("Dual APP setting failed\n");
+					return RC;
+				}
+			} else {
+				XAIE_ERROR("Tile location in XAie_PartInitOpts cannot be NULL in Dual App Mode\n");
 			}
 		}
 	}
@@ -653,6 +657,8 @@ AieRC XAie_PartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 				}
 			}
 		}
+	} else {
+		XAIE_DBG("XAie_PartInitOpts is NULL. Entire array will be initialized\n");
 	}
 
 	/**

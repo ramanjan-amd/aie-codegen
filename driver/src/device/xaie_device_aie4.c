@@ -255,7 +255,7 @@ AieRC _XAie4_SetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_BackendTilesAr
 	u32 FldVal, Mask;
 	u64 RegAddr;
 
-	if(Args->Locs == NULL && DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE) {
+	if(Args->Locs == NULL) {
 		XAIE_ERROR("Tile location cannot be empty in Dual App mode\n");
 		return XAIE_INVALID_ARGS;
 	}

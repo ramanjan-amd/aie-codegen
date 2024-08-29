@@ -228,19 +228,19 @@ AieRC XAie_ResetPartition(XAie_DevInst *DevInst)
 {
 	AieRC RC;
 
-	#if !defined(__AIESOCKET__) && !defined(__AIEBAREMETAL__) && !defined(__AIEDEBUG__)
-		if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen) )
-		{
-			XAIE_ERROR("XAie_ResetPartition API is not supported in AIE4 for CDO & Controlcode backend\n");
-			return XAIE_FEATURE_NOT_SUPPORTED;
-		}
-	#endif
-
 	if((DevInst == XAIE_NULL) ||
 		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
 		XAIE_ERROR("Invalid Device Instance\n");
 		return XAIE_INVALID_ARGS;
 	}
+
+#if !defined(__AIESOCKET__) && !defined(__AIEBAREMETAL__) && !defined(__AIEDEBUG__)
+	if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen) )
+	{
+		XAIE_ERROR("XAie_ResetPartition API is not supported in AIE4 for CDO & Controlcode backend\n");
+		return XAIE_FEATURE_NOT_SUPPORTED;
+	}
+#endif
 
 	RC = _XAie_PmSetPartitionClock(DevInst, XAIE_DISABLE);
 	if(RC != XAIE_OK) {

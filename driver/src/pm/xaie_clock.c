@@ -54,6 +54,12 @@ AieRC XAie_PmRequestTiles(XAie_DevInst *DevInst, XAie_LocType *Loc,
 {
 	XAie_BackendTilesArray TilesArray;
 
+	if((DevInst == XAIE_NULL) ||
+		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
+		XAIE_ERROR("Invalid Device Instance\n");
+		return XAIE_INVALID_ARGS;
+	}
+
 #if !defined(__AIESOCKET__) && !defined(__AIEBAREMETAL__) && !defined(__AIEDEBUG__)
 		if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen) )
 		{
@@ -61,12 +67,6 @@ AieRC XAie_PmRequestTiles(XAie_DevInst *DevInst, XAie_LocType *Loc,
 			return XAIE_FEATURE_NOT_SUPPORTED;
 		}
 #endif
-
-	if((DevInst == XAIE_NULL) ||
-		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
-		XAIE_ERROR("Invalid Device Instance\n");
-		return XAIE_INVALID_ARGS;
-	}
 
 	if(NumTiles > (u32)(DevInst->NumRows * DevInst->NumCols)) {
 		XAIE_ERROR("Invalid NumTiles\n");
@@ -154,6 +154,12 @@ AieRC XAie_PmSetColumnClk(XAie_DevInst *DevInst, u32 StartCol, u32 NumCols,
 {
 	XAie_BackendColumnReq  ColumnReq;
 
+	if((DevInst == XAIE_NULL) ||
+		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
+		XAIE_ERROR("Invalid Device Instance\n");
+		return XAIE_INVALID_ARGS;
+	}
+
 #if !defined(__AIESOCKET__) && !defined(__AIEBAREMETAL__) && !defined(__AIEDEBUG__)
 		if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen) )
 		{
@@ -161,12 +167,6 @@ AieRC XAie_PmSetColumnClk(XAie_DevInst *DevInst, u32 StartCol, u32 NumCols,
 			return XAIE_FEATURE_NOT_SUPPORTED;
 		}
 #endif
-
-	if((DevInst == XAIE_NULL) ||
-		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
-		XAIE_ERROR("Invalid Device Instance\n");
-		return XAIE_INVALID_ARGS;
-	}
 
 	u32 PartEndCol = (u32)(DevInst->StartCol + DevInst->NumCols - 1U);
 
