@@ -957,7 +957,7 @@ static AieRC _XAie_StrmSlaveSlotConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 		}
 	}
 
-	RegAddr |= _XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
+	RegAddr |= XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 				StrmMod->SlvSlotConfig[Slave].PortBaseAddr +
 				(SlvPortNum + AddPlaceHolderPort) * StrmMod->SlotOffsetPerPort +
 				SlotNum * StrmMod->SlotOffset;

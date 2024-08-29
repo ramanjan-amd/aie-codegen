@@ -162,9 +162,6 @@ static const char* XAie_DmaMM2SStatus_Strings[] = {
 
 
 /**************************** Function Prototypes *******************************/
-#define TRUE   1u
-#define FALSE  0u
-
 int XAie_CoreStatus_CSV(u32 Reg, char *Buf, u32 BufSize);
 int XAie_DmaS2MMStatus_CSV(u32 Reg, char *Buf, u32 BufSize, u8 );
 int XAie_DmaMM2SStatus_CSV(u32 Reg, char *Buf, u32 BufSize, u8 );
