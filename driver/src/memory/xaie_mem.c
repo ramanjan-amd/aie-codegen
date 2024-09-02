@@ -178,7 +178,7 @@ AieRC XAie_DataMemRdWord(XAie_DevInst *DevInst, XAie_LocType Loc,
 *******************************************************************************/
 static AieRC _XAie_DataMemoryBlockWrite(XAie_DevInst* DevInst, XAie_LocType Loc,
 		u32 Offset, u32 DMBaseAddr, unsigned char *Src, u32 Size) {
-	AieRC RC;
+	AieRC RC = XAIE_OK;
 	u32 BytePtr = 0, RemBytes = Size, TempWord = 0, Mask = 0;
 	u64 DmAddrRoundDown, DmAddrRoundUp;
 	u8 FirstWriteOffset = (u8)(Offset & XAIE_MEM_WORD_ALIGN_MASK);

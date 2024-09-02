@@ -174,7 +174,7 @@ AieRC _XAie4_LockSetValue(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 	}
 
 	RegAddr = (u64)(RegOff +
-		LockMod->LockSetValOff * Lock.LockId) +
+		LockMod->LockSetValOff * (u64)Lock.LockId) +
 		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
 
 	RegVal = XAie_SetField(Lock.LockVal, LockMod->LockInit->Lsb,

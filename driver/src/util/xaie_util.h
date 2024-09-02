@@ -73,12 +73,16 @@ static int _XAie_strcpy(char* Destination, u32 DestSize, const char* Source,
 {
 
     int len = 0;
+
+    if (Destination == NULL || Source == NULL ) {
+    	return -1;
+    }
     const char* Ptr = Source;
     u32 RegStrSize = (u32)_XAie_Length(Ptr);
 
     RegStrSize += (CommaNeeded != 0U) ? 1U: 0U;
 
-    if (Destination == NULL || Source == NULL || DestSize < RegStrSize) {
+    if (DestSize < RegStrSize) {
         return -1;
     }
     while (*Source != '\0')

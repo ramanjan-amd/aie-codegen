@@ -440,6 +440,7 @@ AieRC _XAie_RequestTiles(XAie_DevInst *DevInst, XAie_BackendTilesArray *Args)
 
 	if(Args->Locs == NULL) {
 		u32 NumTiles;
+		AieRC RC;
 
 		XAie_LocType TileLoc = XAie_TileLoc(0, 1);
 		NumTiles =(u32)((DevInst->NumRows - 1U) * (DevInst->NumCols));
@@ -447,7 +448,11 @@ AieRC _XAie_RequestTiles(XAie_DevInst *DevInst, XAie_BackendTilesArray *Args)
 		SetTileStatus = _XAie_GetTileBitPosFromLoc(DevInst, TileLoc);
 		_XAie_SetBitInBitmap(DevInst->DevOps->TilesInUse, SetTileStatus,
 				NumTiles);
-		_XAie_PmSetPartitionClock(DevInst, XAIE_ENABLE);
+		RC = _XAie_PmSetPartitionClock(DevInst, XAIE_ENABLE);
+		if(RC != XAIE_OK) {
+			XAIE_ERROR("Failed to enable clock buffers.\n");
+			return RC;
+		}
 
 		return XAIE_OK;
 	}

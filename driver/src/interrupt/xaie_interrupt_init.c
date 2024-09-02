@@ -92,7 +92,7 @@ static AieRC _XAie_IntrCtrlL1Config(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	RegAddr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) + RegOffset +
-					(u8)Switch * L1IntrMod->SwOff;
+					(u32)((u8)Switch * L1IntrMod->SwOff);
 
 	return XAie_Write32(DevInst, RegAddr,(u32)(XAIE_ENABLE << IntrId));
 }

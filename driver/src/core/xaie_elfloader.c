@@ -577,6 +577,7 @@ AieRC XAie_LoadElfPartial(XAie_DevInst *DevInst, XAie_LocType Loc,
 	int Ret;
 	unsigned char *ElfMem;
 	u8 TileType;
+	long int ElfSize;
 	u64 ElfSz;
 	AieRC RC;
 
@@ -662,7 +663,15 @@ AieRC XAie_LoadElfPartial(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ELF;
 	}
 
-	ElfSz = (u64)ftell(Fd);
+	ElfSize = ftell(Fd);
+	if (ElfSize < 0) {
+		XAIE_ERROR("Failed to determine file size, %d: %s\n",
+				errno, strerror(errno));
+		fclose(Fd);
+		return XAIE_INVALID_ELF;
+	}
+
+	ElfSz = (u64)ElfSize;
 	rewind(Fd);
 	XAIE_DBG("Elf size is %ld bytes\n", ElfSz);
 

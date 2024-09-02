@@ -1201,7 +1201,7 @@ AieRC XAie_DmaChannelReset(XAie_DevInst *DevInst, XAie_LocType Loc, u8 ChNum,
 	if (!_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 				DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
-				(u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels;
+				(u32)((u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	else
 		Addr = _XAie4_GetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);
 
@@ -1345,7 +1345,7 @@ AieRC XAie_DmaChannelPauseStream(XAie_DevInst *DevInst, XAie_LocType Loc,
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 			DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
-			(u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels;
+			(u32)((u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	else
 		Addr = _XAie4_GetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);
 
@@ -1413,7 +1413,7 @@ AieRC XAie_DmaChannelPauseMem(XAie_DevInst *DevInst, XAie_LocType Loc, u8 ChNum,
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 			DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
-			(u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels;
+			(u32)((u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	else
 		Addr = _XAie4_GetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);
 
@@ -1511,7 +1511,7 @@ AieRC XAie_DmaChannelPushBdToQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 			DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
-			(u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels;
+			(u32)((u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	else
 		Addr = _XAie4_GetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);
 
@@ -1569,7 +1569,7 @@ static AieRC _XAie_DmaChannelControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 		DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
-		(u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels;
+		(u32)((u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels);
 
 	return XAie_MaskWrite32(DevInst,
 			Addr + (u64)(DmaMod->ChProp->Enable.Idx * 4U),
@@ -2037,7 +2037,7 @@ AieRC XAie_DmaChannelSetStartQueueGeneric(XAie_DevInst *DevInst,
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))) {
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 			DmaMod->StartQueueBase + ChNum * DmaMod->ChIdxOffset +
-			(u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels;
+			(u32)((u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	} else {
 		Addr = _XAie4_GetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);
 		/* Status Register = Ctrl register addr + 0x04 */
@@ -2328,7 +2328,7 @@ AieRC XAie_DmaWriteChannel(XAie_DevInst *DevInst,
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 			DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
-			(u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels;
+			(u32)((u8)Dir * DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	else
 		Addr = _XAie4_GetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);
 
@@ -2613,7 +2613,7 @@ AieRC XAie_DmaGetBdLen(XAie_DevInst *DevInst, XAie_LocType Loc, u32 *Len,
 			return XAIE_INVALID_BD_NUM;
 		}
 
-		RegAddr = (u64)(DmaMod->BaseAddr + BdNum * DmaMod->IdxOffset) +
+		RegAddr = (u64)(DmaMod->BaseAddr + BdNum * (u64)DmaMod->IdxOffset) +
 			XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 			DmaMod->BdProp->BdEn->ValidBd.Idx * 4U;
 		RC = XAie_Read32(DevInst, RegAddr, &RegVal);
@@ -2624,7 +2624,7 @@ AieRC XAie_DmaGetBdLen(XAie_DevInst *DevInst, XAie_LocType Loc, u32 *Len,
 		Valid = XAie_GetField(RegVal, DmaMod->BdProp->BdEn->ValidBd.Lsb,
 				DmaMod->BdProp->BdEn->ValidBd.Mask);
 		if(Valid == 1U) {
-			RegAddr = (u64)(DmaMod->BaseAddr + BdNum * DmaMod->IdxOffset)
+			RegAddr = (u64)(DmaMod->BaseAddr + BdNum * (u64)DmaMod->IdxOffset)
 				+ XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 				DmaMod->BdProp->BufferLen.Idx * 4U;
 			RC = XAie_Read32(DevInst, RegAddr, &RegVal);
