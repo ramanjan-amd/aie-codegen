@@ -1364,8 +1364,12 @@ static inline AieRC _XAie_LTileClockControl(XAie_DevInst *DevInst, XAie_LocType 
 			/* Disable/Enable Compute Tile Module Clock */
 			RegAddr = _XAie_LGetTileAddr(Loc[i].Row, Loc[i].Col) + XAIE_AIE_TILE_MODULE_CLOCKCTR_REGOFF;
 			FldVal = XAie_SetField(Enable,
-						XAIE_AIE_TILE_MODULE_CLOCKCTR_LSB,
-						XAIE_AIE_TILE_MODULE_CLOCKCTR_MASK);
+						XAIE_AIE_TILE_MODULE_CLOCKCTR_CORE_MODULE_LSB,
+						XAIE_AIE_TILE_MODULE_CLOCKCTR_CORE_MODULE_MASK);
+
+			FldVal |= XAie_SetField(Enable,
+					XAIE_AIE_TILE_MODULE_CLOCKCTR_MEMORY_MODULE_LSB,
+						XAIE_AIE_TILE_MODULE_CLOCKCTR_MEMORY_MODULE_MASK);
 			_XAie_LPartMaskWrite32(DevInst, RegAddr,
 					XAIE_AIE_TILE_MODULE_CLOCKCTR_MASK, FldVal);
 		}

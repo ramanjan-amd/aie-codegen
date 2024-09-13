@@ -588,6 +588,7 @@ AieRC XAie_PartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 				}
 			} else {
 				XAIE_ERROR("Tile location in XAie_PartInitOpts cannot be NULL in Dual App Mode\n");
+				return XAIE_INVALID_ARGS;
 			}
 		}
 	}
