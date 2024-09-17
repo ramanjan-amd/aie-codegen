@@ -35,6 +35,8 @@ typedef enum {
 	XAIE_IO_MASKPOLL,
 	XAIE_IO_NOOP,
 	XAIE_IO_PREEMPT,
+	XAIE_IO_MASKPOLL_BUSY,
+	XAIE_IO_LOADPDI,
 	XAIE_CONFIG_SHIMDMA_BD,
 	XAIE_CONFIG_SHIMDMA_DMABUF_BD,
 	XAIE_IO_CUSTOM_OP_BEGIN = 1U<<7U,
@@ -55,7 +57,8 @@ struct XAie_TxnCmd {
 	u32 Size;
 	u64 DataPtr;
 	u8 Preempt_level;
-	u8 Reserved[7];
+	u16 PdiId;
+	u8 Reserved[5];
 };
 
 #endif
