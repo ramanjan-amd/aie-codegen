@@ -213,7 +213,8 @@ static u64 _GetShimTileCtrlMm2sChanBdBaseAddr(const XAie_DmaMod *DmaMod,
 
 	BdBaseAddr |= DmaMod->BaseAddr +
 			(DmaMod->NumBds * (u64)DmaMod->IdxOffset) + /* size of Shared BD pool */
-			(ChNum * DmaMod->NumMm2sCtrlBds * (u64)DmaMod->IdxOffset); /* Size of channel's Private BD pool */
+			(ChNum * DmaMod->NumMm2sCtrlBds * (u64)DmaMod->IdxOffset) + /* Size of channel's Private BD pool */
+			(BdNum * (u64)DmaMod->IdxOffset);
 
 	return BdBaseAddr;
 }

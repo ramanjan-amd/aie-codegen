@@ -224,7 +224,6 @@ static AieRC _XAie4_ValidateBd(XAie_DevInst* DevInst, u8 TileType,
 	return XAIE_OK;
 }
 
-
 /*****************************************************************************/
 /**
 *
