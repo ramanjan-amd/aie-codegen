@@ -919,7 +919,7 @@ AieRC _XAie4_ShimTileDmaUpdateBdAddr(XAie_DevInst *DevInst,
 
 	RegAddr = BaseAddr + (DmaMod->BdProp->Buffer->ShimDmaBuff.AddrHigh.Idx * 4U);
 	Mask = DmaMod->BdProp->Buffer->ShimDmaBuff.AddrHigh.Mask;
-	RegVal = XAie_SetField(Addr,
+	RegVal = XAie_SetField(Addr >> 32,
 			DmaMod->BdProp->Buffer->ShimDmaBuff.AddrHigh.Lsb, Mask);
 
 	/* Addrhigh maps to a single register without other fields */
