@@ -566,7 +566,6 @@ AieRC XAie_PartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 			XAIE_ERROR_RETURN((appMode != XAIE_DEVICE_SINGLE_APP_MODE),
 					XAIE_INVALID_ARGS,
 					XAIE_ERROR_MSG("Partition has more than one column, so dual app is not supported\n"));
-			DevInst->AppMode = XAIE_DEVICE_SINGLE_APP_MODE;
 		}
 	} else {
 		DevInst->AppMode = XAIE_DEVICE_SINGLE_APP_MODE;

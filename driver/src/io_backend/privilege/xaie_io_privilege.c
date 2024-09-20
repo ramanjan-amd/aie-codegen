@@ -479,6 +479,14 @@ AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 	XAie_BackendTilesArray TilesArray;
 	AieRC RC;
 
+	if(DevInst == NULL) {
+		bool isValidInstance = (DevInst != NULL);
+		if(!isValidInstance) {
+			XAIE_ERROR("Partition initialization failed, invalid partition instance\n");
+			return XAIE_INVALID_ARGS;
+		}
+	}
+
 	if(Opts != NULL) {
 		OptFlags = Opts->InitOpts;
 		AppMode = (OptFlags & XAIE_PART_INIT_OPT_APP_MODE) >> XAIE_APP_MODE_SHIFT;
@@ -490,22 +498,27 @@ AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 	}
 
 	/* Set Single or Dual App mode. In Dual App Mode set App A or App B */
-		if (_XAie_IsDeviceGenSupportDualApp(DevInst->DevProp.DevGen)) {
-			if (AppMode == XAIE_DEVICE_INVALID_MODE) {
-				XAIE_ERROR("App Mode is invalid\n");
-				return XAIE_INVALID_DEVICE;
-			}
-			if(DevInst->NumCols == XAIE_MIN_COLUMN_REQUEST || AppMode == XAIE_DEVICE_SINGLE_APP_MODE) {
-				DevInst->AppMode = AppMode;
-			} else {
-				XAIE_ERROR("Partition has more than one column, so dual app is not supported\n");
-				return XAIE_INVALID_DEVICE;
-			}
-		} else {
-			DevInst->AppMode = XAIE_DEVICE_SINGLE_APP_MODE;
+	bool isDualAppSupported = _XAie_IsDeviceGenSupportDualApp(DevInst->DevProp.DevGen);
+	if (isDualAppSupported) {
+		if((AppMode == (unsigned)XAIE_DEVICE_DUAL_APP_MODE_B) || (AppMode == (unsigned)XAIE_DEVICE_INVALID_MODE)) {
+			XAIE_ERROR("This API should be called only for App A mode or single App Mode\n");
+			return XAIE_INVALID_ARGS;
 		}
 
+		if(DevInst->NumCols == 1U) {
+			DevInst->AppMode = AppMode;
+		} else {
+			if(AppMode != (unsigned)XAIE_DEVICE_SINGLE_APP_MODE) {
+				XAIE_ERROR("Partition has more than one column, so dual app is not supported\n");
+				return XAIE_INVALID_ARGS;
+			}
+		}
+	} else {
+		DevInst->AppMode = (unsigned)XAIE_DEVICE_SINGLE_APP_MODE;
+	}
 
+	/* The NPI open/close aperture is defeatured in AIE4, But need to open aperture
+	   for main aie-rt driver code. */
 	RC = _XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_ENABLE);
 	if(RC != XAIE_OK) {
 		XAIE_ERROR("Failed to initialize partition, enable protected registers failed.\n");
@@ -562,7 +575,7 @@ AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 
 	if((OptFlags & XAIE_PART_INIT_OPT_BLOCK_NOCAXIMMERR) != 0U) {
 		RC = _XAie_PrivilegeSetPartBlockAxiMmNsuErr(DevInst,
-			XAIE_ENABLE, XAIE_ENABLE);
+				XAIE_ENABLE, XAIE_ENABLE);
 		if(RC != XAIE_OK) {
 			_XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
 			return RC;
@@ -614,8 +627,8 @@ AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 	if (((OptFlags & XAIE_PART_INIT_OPT_CONFIG_MEMINTERLEAVING)) !=
 			XAIE_MEM_INTERLEAVING_MODE_ENABLE) {
 		RC = _XAie_PrivilegeConfigMemInterleaving(DevInst,
-			((OptFlags & XAIE_PART_INIT_OPT_CONFIG_MEMINTERLEAVING) >>
-			  XAIE_MEMINTERLEAVE_MODE_SHIFT));
+				((OptFlags & XAIE_PART_INIT_OPT_CONFIG_MEMINTERLEAVING) >>
+				 XAIE_MEMINTERLEAVE_MODE_SHIFT));
 		if(RC != XAIE_OK) {
 			_XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
 			return RC;
@@ -643,7 +656,7 @@ AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 	/* Enable only the tiles requested in Opts parameter */
 	if(Opts != NULL) {
 		RC = XAie_RunOp(DevInst, XAIE_BACKEND_OP_REQUEST_TILES,
-		(void *)&TilesArray);
+				(void *)&TilesArray);
 
 		if(RC != XAIE_OK) {
 			_XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);

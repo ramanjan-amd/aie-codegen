@@ -538,17 +538,45 @@ static inline void _XAie_ClearCoreReg(XAie_DevInst *DevInst)
 
 /*****************************************************************************/
 /**
-*
-* This API sets Single App or Dual App mode.
-*
-* @param	DevInst: Device Instance
-* @param	XAie_PartInitOpts: Partition init options
-*
-* @return	None.
-*
-* @note		Internal only.
-*
-******************************************************************************/
+ * This API Calculates All the App B tiles and set App B Bottom and App B Tiles
+ * accordingly.
+ *
+ * @param        DevInst: Device Instance
+ * @param        AtopRow: Row Value for A_TOP for Application A
+ * @param        Col: Partition Column Number
+ *
+ *
+ ******************************************************************************/
+static inline void _XAie4_SetAppBTiles(XAie_DevInst *DevInst, u8 AtopRow, u8 Col)
+{
+	u64 RegAddr;
+	u8 AppBTiles = XAIE_AIE_TILE_NUM_ROWS - AtopRow;
+	u8 AppBbottom = AtopRow + 1;
+
+        RegAddr = _XAie_LGetTileAddr(AppBbottom, Col) + XAIE_CORE_MOD_DUAL_APP_MODE;
+        _XAie_LPartWrite32(DevInst, RegAddr, XAIE_CORE_MOD_DUALAPP_B_BOTTOM);
+
+	for(int i = 1; i < AppBTiles; i++) {
+		RegAddr = _XAie_LGetTileAddr(i + AppBbottom, Col) + XAIE_CORE_MOD_DUAL_APP_MODE;
+		_XAie_LPartWrite32(DevInst, RegAddr, XAIE_CORE_MOD_DUALAPP_B);
+	}
+}
+
+
+
+/*****************************************************************************/
+/**
+ *
+ * This API sets Single App or Dual App mode.
+ *
+ * @param	DevInst: Device Instance
+ * @param	XAie_PartInitOpts: Partition init options
+ *
+ * @return	None.
+ *
+ * @note		Internal only.
+ *
+ ******************************************************************************/
 static inline AieRC _XAie_LSetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 {
 	u64 RegAddr;
@@ -561,16 +589,17 @@ static inline AieRC _XAie_LSetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_
 		}
 
 		if (Loc.Row == XAIE_SHIM_ROW) {
-				RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_PL_MOD_DUAL_APP_MODE;
-				_XAie_LPartWrite32(DevInst, RegAddr, XAIE_ENABLE);
+			RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_PL_MOD_DUAL_APP_MODE;
+			_XAie_LPartWrite32(DevInst, RegAddr, XAIE_ENABLE);
 
 		} else if (Loc.Row >= XAIE_MEM_TILE_ROW_START && Loc.Row < XAIE_AIE_TILE_ROW_START ) {
-				RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_MEM_TILE_DUAL_APP_MODE;
-				_XAie_LPartWrite32(DevInst, RegAddr, XAIE_ENABLE);
+			RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_MEM_TILE_DUAL_APP_MODE;
+			_XAie_LPartWrite32(DevInst, RegAddr, XAIE_ENABLE);
 
 		} else if (Loc.Row >= XAIE_AIE_TILE_ROW_START) {
 			/* APP A requested tiles should not be >= to total no of AIE Tiles*/
 			u32 AieTiles = Opts->NumUseTiles - (XAIE_SHIM_NUM_ROWS + XAIE_MEM_TILE_NUM_ROWS);
+			u8 AtopRow;
 
 			if(AieTiles >= XAIE_AIE_TILE_NUM_ROWS) {
 				XAIE_ERROR("In Dual App Mode at-least 1 compute tile should be alloted to App B\n");
@@ -581,22 +610,20 @@ static inline AieRC _XAie_LSetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_
 			if(Loc.Row == ((AieTiles  + XAIE_AIE_TILE_ROW_START) - 1)) {
 				RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_CORE_MOD_DUAL_APP_MODE;
 				_XAie_LPartWrite32(DevInst, RegAddr, XAIE_CORE_MOD_DUALAPP_A_TOP);
+				AtopRow = Loc.Row;
+				/*Function to set app B tiles. Once We got A_TOP tile, below
+				  function will set all remaining tiles for App_B */
+				_XAie4_SetAppBTiles(DevInst, AtopRow, Loc.Col);
+
 			}
 			else if(Loc.Row < ((AieTiles  + XAIE_AIE_TILE_ROW_START) - 1) &&
-										Loc.Row >= XAIE_AIE_TILE_ROW_START) {
+					Loc.Row >= XAIE_AIE_TILE_ROW_START) {
 				/* Configure App A compute Tiles */
 				RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_CORE_MOD_DUAL_APP_MODE;
 				_XAie_LPartWrite32(DevInst, RegAddr, XAIE_CORE_MOD_DUALAPP_A);
 			}
-			/* Configure App B compute Tiles */
-			else if(Loc.Row == ((AieTiles  + XAIE_AIE_TILE_ROW_START))) {
-				RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_CORE_MOD_DUAL_APP_MODE;
-				_XAie_LPartWrite32(DevInst, RegAddr, XAIE_CORE_MOD_DUALAPP_B_BOTTOM);
-			}
-			/* Configure App B Bottom compute Tile */
 			else {
-				RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_CORE_MOD_DUAL_APP_MODE;
-				_XAie_LPartWrite32(DevInst, RegAddr, XAIE_CORE_MOD_DUALAPP_B);
+				XAIE_ERROR("InValid Tile Location Has been passed \n");
 			}
 		}
 	}
