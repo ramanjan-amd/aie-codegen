@@ -907,7 +907,7 @@ AieRC _XAie4_ShimTileDmaUpdateBdAddr(XAie_DevInst *DevInst,
 
 	RegAddr = BaseAddr + (DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Idx * 4U);
 	Mask = DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Mask;
-	RegVal = XAie_SetField(Addr,
+	RegVal = XAie_SetField(Addr >> DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb,
 			DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb, Mask);
 
 	/* Addrlow maps to a single register without other fields */
@@ -925,7 +925,7 @@ AieRC _XAie4_ShimTileDmaUpdateBdAddr(XAie_DevInst *DevInst,
 	/* Addrhigh maps to a single register without other fields */
 	RC = XAie_Write32(DevInst, RegAddr, RegVal);
 	if(RC != XAIE_OK)
-		XAIE_ERROR("Failed to update 30_46 bits of address\n");
+		XAIE_ERROR("Failed to update 32_56 bits of address\n");
 
 ret:
 	return RC;
