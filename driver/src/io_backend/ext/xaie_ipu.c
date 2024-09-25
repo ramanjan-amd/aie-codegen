@@ -140,7 +140,7 @@ static AieRC XAie_IpuIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 static AieRC XAie_IpuIO_Read32(void *IOInst, u64 RegOff, u32 *Data)
 {
 	XAie_IpuIO *IpuIOInst = (XAie_IpuIO *)IOInst;
-	u64 RegAdd = IpuIOInst->BaseAddr + RegOff;
+	u64 RegAddr = IpuIOInst->BaseAddr + RegOff;
 #if UINTPTR_MAX == 0xFFFFFFFF  // 32-bit system
     if ((RegAddr) > UINTPTR_MAX) {
     	return XAIE_ERR;
