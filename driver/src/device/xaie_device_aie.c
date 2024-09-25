@@ -65,6 +65,12 @@ static AieRC _XAie_PmSetColumnClockBuffer(XAie_DevInst *DevInst,
 	PlIfMod = DevInst->DevProp.DevMod[TileType].PlIfMod;
 	ClkBufCntr = PlIfMod->ClkBufCntr;
 
+	if (_XAie_CheckPrecisionExceeds(ClkBufCntr->ClkBufEnable.Lsb,
+			_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
+
 	RegAddr = ClkBufCntr->RegOff +
 			XAie_GetTileAddr(DevInst, 0U, Loc.Col);
 	FldVal = XAie_SetField(Enable, ClkBufCntr->ClkBufEnable.Lsb,
@@ -186,6 +192,12 @@ static AieRC _XAie_SetShimReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
 	PlIfMod = DevInst->DevProp.DevMod[TileType].PlIfMod;
 	ShimTileRst = PlIfMod->ShimTileRst;
+
+	if (_XAie_CheckPrecisionExceeds(ShimTileRst->RstCntr.Lsb,
+			_XAie_MaxBitsNeeded(RstEnable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 
 	RegAddr = ShimTileRst->RegOff +
 		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
@@ -414,6 +426,13 @@ static void _XAie_PmUngateTiles(XAie_DevInst *DevInst, XAie_LocType FromLoc,
 		TileLoc.Row = R;
 		TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, TileLoc);
 		ClockMod = DevInst->DevProp.DevMod[TileType].ClockMod;
+
+		if (_XAie_CheckPrecisionExceeds(ClockMod->NextTileClockCntrl.Lsb,
+				_XAie_MaxBitsNeeded(1U), MAX_VALID_AIE_REG_BIT_INDEX)) {
+			XAIE_ERROR("Check Precision Exceeds Failed\n");
+			return;
+		}
+
 		RegAddr = XAie_GetTileAddr(DevInst, TileLoc.Row, TileLoc.Col) +
 				ClockMod->ClockRegOff;
 		XAie_MaskWrite32(DevInst, RegAddr,

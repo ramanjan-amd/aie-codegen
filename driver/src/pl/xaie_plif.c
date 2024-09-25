@@ -98,6 +98,11 @@ static AieRC _XAie_PlIfBliBypassConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	Mask = PlIfMod->DownSzrByPass[PortNum].Mask;
+	if (_XAie_CheckPrecisionExceeds(PlIfMod->DownSzrByPass[PortNum].Lsb,
+			_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	FldVal = XAie_SetField(Enable, PlIfMod->DownSzrByPass[PortNum].Lsb,
 			Mask);
 
@@ -159,6 +164,11 @@ static AieRC _XAie_PlIfDownSzrPortEnableReg(XAie_DevInst *DevInst,
 
 	/* Enable or Disable stream port in PL2ME downsizer enable register */
 	Mask = PlIfMod->DownSzrEn[PortNum].Mask;
+	if (_XAie_CheckPrecisionExceeds(PlIfMod->DownSzrEn[PortNum].Lsb,
+			_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	FldVal = XAie_SetField(Enable, PlIfMod->DownSzrEn[PortNum].Lsb, Mask);
 
 	/* Compute register address */
@@ -242,6 +252,12 @@ static AieRC _XAie_AieToPlIntfConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 		 */
 		Idx = PortNum / 2U;
 		FldMask = PlIfMod->UpSzr128Bit[Idx].Mask;
+
+		if (_XAie_CheckPrecisionExceeds(PlIfMod->UpSzr128Bit[Idx].Lsb,
+				_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+			XAIE_ERROR("Check Precision Exceeds Failed\n");
+			return XAIE_ERR;
+		}
 		FldVal = XAie_SetField(Enable,
 				PlIfMod->UpSzr128Bit[Idx].Lsb,
 				FldMask);
@@ -251,6 +267,12 @@ static AieRC _XAie_AieToPlIntfConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 		 * Field Value has to be set to 1 for 64 Bit interface
 		 * and 0 for 32 Bit interface
 		 */
+
+		if (_XAie_CheckPrecisionExceeds(PlIfMod->UpSzr32_64Bit[PortNum].Lsb,
+				_XAie_MaxBitsNeeded((u8)Width >> (u8)XAIE_PLIF_WIDTH_64SHIFT), MAX_VALID_AIE_REG_BIT_INDEX)) {
+			XAIE_ERROR("Check Precision Exceeds Failed\n");
+			return XAIE_ERR;
+		}
 		FldVal = XAie_SetField((u8)Width >> (u8)XAIE_PLIF_WIDTH_64SHIFT,
 				PlIfMod->UpSzr32_64Bit[PortNum].Lsb,
 				FldMask);
@@ -346,6 +368,12 @@ static AieRC _XAie_PlToAieIntfConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 		 */
 		Idx = PortNum / 2U;
 		FldMask = PlIfMod->DownSzr128Bit[Idx].Mask;
+
+		if (_XAie_CheckPrecisionExceeds(PlIfMod->DownSzr128Bit[Idx].Lsb,
+				_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+			XAIE_ERROR("Check Precision Exceeds Failed\n");
+			return XAIE_ERR;
+		}
 		FldVal = XAie_SetField(Enable,
 				PlIfMod->DownSzr128Bit[Idx].Lsb,
 				FldMask);
@@ -356,6 +384,12 @@ static AieRC _XAie_PlToAieIntfConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 		 * and 0 for 32 Bit interface. Width is shifted to move 64(2^6)
 		 * to LSB. When width is 32, the shift results in 0.
 		 */
+
+		if (_XAie_CheckPrecisionExceeds(PlIfMod->DownSzr32_64Bit[PortNum].Lsb,
+				_XAie_MaxBitsNeeded((u8)Width >> (u8)XAIE_PLIF_WIDTH_64SHIFT), MAX_VALID_AIE_REG_BIT_INDEX)) {
+			XAIE_ERROR("Check Precision Exceeds Failed\n");
+			return XAIE_ERR;
+		}
 		FldVal = XAie_SetField((u8)Width >> (u8)XAIE_PLIF_WIDTH_64SHIFT,
 				PlIfMod->DownSzr32_64Bit[PortNum].Lsb,
 				FldMask);
@@ -367,6 +401,12 @@ static AieRC _XAie_PlToAieIntfConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 	 * downsizer enable register.
 	 */
 	DwnSzrEnMask = PlIfMod->DownSzrEn[PortNum].Mask;
+
+	if (_XAie_CheckPrecisionExceeds(PlIfMod->DownSzrEn[PortNum].Lsb,
+					_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	DwnSzrEnVal = XAie_SetField(Enable,
 			PlIfMod->DownSzrEn[PortNum].Lsb, DwnSzrEnMask);
 
@@ -375,6 +415,12 @@ static AieRC _XAie_PlToAieIntfConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 		PortNum = ((PortNum % 2U) != 0U) ? (PortNum - 1U) : (PortNum + 1U);
 
 		DwnSzrEnMask |= PlIfMod->DownSzrEn[PortNum].Mask;
+
+		if (_XAie_CheckPrecisionExceeds(PlIfMod->DownSzrEn[PortNum].Lsb,
+				_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+			XAIE_ERROR("Check Precision Exceeds Failed\n");
+			return XAIE_ERR;
+		}
 		DwnSzrEnVal |= XAie_SetField(Enable,
 				PlIfMod->DownSzrEn[PortNum].Lsb,
 				PlIfMod->DownSzrEn[PortNum].Mask);

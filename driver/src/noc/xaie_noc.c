@@ -98,6 +98,11 @@ static AieRC _XAie_ConfigShimNocMux(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	NocMod = DevInst->DevProp.DevMod[TileType].NocMod;
+	if (_XAie_CheckPrecisionExceeds(NocMod->ShimNocMux[PortNum].Lsb,
+			_XAie_MaxBitsNeeded(InputConnectionType), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 
 	FldVal = (u32)(InputConnectionType << NocMod->ShimNocMux[PortNum].Lsb);
 	FldMask = NocMod->ShimNocMux[PortNum].Mask;
@@ -159,6 +164,11 @@ static AieRC _XAie_ConfigShimNocDeMux(XAie_DevInst *DevInst, XAie_LocType Loc,
 	PortNum -= 2U;
 
 	NocMod = DevInst->DevProp.DevMod[TileType].NocMod;
+	if (_XAie_CheckPrecisionExceeds(NocMod->ShimNocDeMux[PortNum].Lsb,
+				_XAie_MaxBitsNeeded(OutputConnectionType), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 
 	FldVal = (u32)(OutputConnectionType << NocMod->ShimNocDeMux[PortNum].Lsb);
 	FldMask = NocMod->ShimNocDeMux[PortNum].Mask;

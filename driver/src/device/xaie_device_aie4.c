@@ -106,6 +106,13 @@ AieRC _XAie4_ZeroInitUcMemory(XAie_DevInst *DevInst) {
 		MemCtrlUcMod = DevInst->DevProp.DevMod[TileType].MemCtrlUcMod;
 		MemCtrlUcMod_B = DevInst->DevProp.DevMod[TileType].MemCtrlUcMod_B;
 		Loc = XAie_TileLoc(C, 0U);
+		if ((_XAie_CheckPrecisionExceeds(MemCtrlUcMod->MemZeroisation.Lsb,
+				_XAie_MaxBitsNeeded(XAIE_ENABLE), MAX_VALID_AIE_REG_BIT_INDEX)) ||
+				((_XAie_CheckPrecisionExceeds(MemCtrlUcMod_B->MemZeroisation.Lsb,
+						_XAie_MaxBitsNeeded(XAIE_ENABLE), MAX_VALID_AIE_REG_BIT_INDEX)))) {
+			XAIE_ERROR("Check Precision Exceeds Failed\n");
+			return XAIE_ERR;
+		}
 		if(DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE) {
 			RegAddr = MemCtrlUcMod->MemZeroisationCtrlRegOff + XAie_GetTileAddr(DevInst, 0U, C);
 			FldVal =  XAie_SetField(XAIE_ENABLE, MemCtrlUcMod->MemZeroisation.Lsb,MemCtrlUcMod->MemZeroisation.Mask);
@@ -195,6 +202,12 @@ static AieRC _XAie4_PmSetColumnClockBuffer(XAie_DevInst *DevInst,
 	PlIfMod = DevInst->DevProp.DevMod[TileType].PlIfMod;
 	ClkBufCntr = PlIfMod->ClkBufCntr;
 
+	if (_XAie_CheckPrecisionExceeds(ClkBufCntr->ClkBufEnable.Lsb, \
+			_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
+
 	RegAddr = ClkBufCntr->RegOff +
 			XAie_GetTileAddr(DevInst, 0U, Loc.Col);
 	FldVal = XAie_SetField(Enable, ClkBufCntr->ClkBufEnable.Lsb,
@@ -219,13 +232,18 @@ static AieRC _XAie4_PmSetColumnClockBuffer(XAie_DevInst *DevInst,
 ******************************************************************************/
 AieRC _XAie4_SetUCMemoryPrivileged(XAie_DevInst *DevInst, u8 Enable) {
 	AieRC RC = XAIE_OK;
-	const XAie_MemCtrlMod *MemCtrlUcMod;
 	u64 RegAddr;
 	u8 TileType = XAIEGBL_TILE_TYPE_SHIMNOC;
 	u32 FldVal;
+	const XAie_MemCtrlMod *MemCtrlUcMod = DevInst->DevProp.DevMod[TileType].MemCtrlUcMod;
+
+	if (_XAie_CheckPrecisionExceeds(MemCtrlUcMod->MemPrivilegeCtrl.Lsb, \
+				_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+			XAIE_ERROR("Check Precision Exceeds Failed\n");
+			return XAIE_ERR;
+	}
 
 	for(u8 C = 0; C < DevInst->NumCols; C++) {
-		MemCtrlUcMod = DevInst->DevProp.DevMod[TileType].MemCtrlUcMod;
 		RegAddr = MemCtrlUcMod->MemPrivilegeCtrlRegOff + XAie_GetTileAddr(DevInst, 0U, C);
 		FldVal =  XAie_SetField(Enable, MemCtrlUcMod->MemPrivilegeCtrl.Lsb,MemCtrlUcMod->MemPrivilegeCtrl.Mask);
 		RC = XAie_MaskWrite32(DevInst, RegAddr,
@@ -267,9 +285,19 @@ AieRC _XAie4_SetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_BackendTilesAr
 						XAie_GetTileAddr(DevInst, Args->Locs[i].Row, Args->Locs[i].Col);
 			Mask = TCtrlMod->DualAppControl.Mask;
 			if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_A || DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B ) {
+				if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+						_XAie_MaxBitsNeeded(XAIE_ENABLE), MAX_VALID_AIE_REG_BIT_INDEX)) {
+					XAIE_ERROR("Check Precision Exceeds Failed\n");
+					return XAIE_ERR;
+				}
 				FldVal = XAie_SetField(XAIE_ENABLE,
 							TCtrlMod->DualAppControl.Lsb, Mask);
 			} else {
+				if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+						_XAie_MaxBitsNeeded(XAIE_DISABLE), MAX_VALID_AIE_REG_BIT_INDEX)) {
+					XAIE_ERROR("Check Precision Exceeds Failed\n");
+					return XAIE_ERR;
+				}
 				FldVal = XAie_SetField(XAIE_DISABLE,
 							TCtrlMod->DualAppControl.Lsb, Mask);
 			}
@@ -285,9 +313,19 @@ AieRC _XAie4_SetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_BackendTilesAr
 						XAie_GetTileAddr(DevInst, Args->Locs[i].Row, Args->Locs[i].Col);
 			Mask = TCtrlMod->DualAppControl.Mask;
 			if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_A || DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+				if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+						_XAie_MaxBitsNeeded(XAIE_ENABLE), MAX_VALID_AIE_REG_BIT_INDEX)) {
+					XAIE_ERROR("Check Precision Exceeds Failed\n");
+					return XAIE_ERR;
+				}
 				FldVal = XAie_SetField(XAIE_ENABLE,
 							TCtrlMod->DualAppControl.Lsb, Mask);
 			} else {
+				if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+						_XAie_MaxBitsNeeded(XAIE_DISABLE), MAX_VALID_AIE_REG_BIT_INDEX)) {
+					XAIE_ERROR("Check Precision Exceeds Failed\n");
+					return XAIE_ERR;
+				}
 				FldVal = XAie_SetField(XAIE_DISABLE,
 							TCtrlMod->DualAppControl.Lsb, Mask);
 			}
@@ -304,25 +342,50 @@ AieRC _XAie4_SetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_BackendTilesAr
 			Mask = TCtrlMod->DualAppControl.Mask;
 			if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_A) {
 				if(Args->Locs[i].Row == ((DevInst->AieTileRowStart + DevInst->AieTileNumRows) - XAIE_MIN_AIE_TILE_REQUEST)) {
+					if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+							_XAie_MaxBitsNeeded(XAIE_CORE_DUAL_APP_A_TOP_VAL), MAX_VALID_AIE_REG_BIT_INDEX)) {
+						XAIE_ERROR("Check Precision Exceeds Failed\n");
+						return XAIE_ERR;
+					}
 					FldVal = XAie_SetField(XAIE_CORE_DUAL_APP_A_TOP_VAL,
 								TCtrlMod->DualAppControl.Lsb, Mask);
 					RC = XAie_Write32(DevInst, RegAddr, FldVal);
 				} else {
+					if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+							_XAie_MaxBitsNeeded(XAIE_CORE_DUAL_APP_A_VAL), MAX_VALID_AIE_REG_BIT_INDEX)) {
+						XAIE_ERROR("Check Precision Exceeds Failed\n");
+						return XAIE_ERR;
+					}
 					FldVal = XAie_SetField(XAIE_CORE_DUAL_APP_A_VAL,
 								TCtrlMod->DualAppControl.Lsb, Mask);
 					RC = XAie_Write32(DevInst, RegAddr, FldVal);
 				}
 			} else if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
 				if(Args->Locs[i].Row == DevInst->AieTileRowStart) {
+					if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+							_XAie_MaxBitsNeeded(XAIE_CORE_DUAL_APP_B_BOTTOM_VAL), MAX_VALID_AIE_REG_BIT_INDEX)) {
+						XAIE_ERROR("Check Precision Exceeds Failed\n");
+						return XAIE_ERR;
+					}
 					FldVal = XAie_SetField(XAIE_CORE_DUAL_APP_B_BOTTOM_VAL,
 								TCtrlMod->DualAppControl.Lsb, Mask);
 					RC = XAie_Write32(DevInst, RegAddr, FldVal);
 				} else {
+					if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+							_XAie_MaxBitsNeeded(XAIE_CORE_DUAL_APP_B_VAL), MAX_VALID_AIE_REG_BIT_INDEX)) {
+						XAIE_ERROR("Check Precision Exceeds Failed\n");
+						return XAIE_ERR;
+					}
 					FldVal = XAie_SetField(XAIE_CORE_DUAL_APP_B_VAL,
 							TCtrlMod->DualAppControl.Lsb, Mask);
 					RC = XAie_Write32(DevInst, RegAddr, FldVal);
 				}
 			} else {
+				if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+						_XAie_MaxBitsNeeded(XAIE_DEVICE_SINGLE_APP_MODE), MAX_VALID_AIE_REG_BIT_INDEX)) {
+					XAIE_ERROR("Check Precision Exceeds Failed\n");
+					return XAIE_ERR;
+				}
 				FldVal = XAie_SetField(XAIE_DEVICE_SINGLE_APP_MODE,
 							TCtrlMod->DualAppControl.Lsb, Mask);
 				RC = XAie_Write32(DevInst, RegAddr, FldVal);
@@ -380,6 +443,11 @@ AieRC _XAie4_PartMemZeroInit(XAie_DevInst *DevInst)
 			for (u8 M = 0; M < NumMods; M++) {
 				RegAddr = MCtrlMod[M].MemZeroisationCtrlRegOff +
 					XAie_GetTileAddr(DevInst, R, C);
+				if (_XAie_CheckPrecisionExceeds(MCtrlMod[M].MemZeroisation.Lsb,
+						_XAie_MaxBitsNeeded(XAIE_ENABLE), MAX_VALID_AIE_REG_BIT_INDEX)) {
+					XAIE_ERROR("Check Precision Exceeds Failed\n");
+					return XAIE_ERR;
+				}
 				FldVal = XAie_SetField(XAIE_ENABLE,
 					MCtrlMod[M].MemZeroisation.Lsb,
 					MCtrlMod[M].MemZeroisation.Mask);
@@ -538,6 +606,11 @@ AieRC _XAie4_SetPartIsolationAfterRst(XAie_DevInst *DevInst)
 				RegAddr = TCtrlMod->TileCtrlAxiRegOff +
 							XAie_GetTileAddr(DevInst, R, C);
 				Mask = TCtrlMod->IsolateAxiEast.Mask | TCtrlMod->IsolateAxiWest.Mask;
+				if (_XAie_CheckPrecisionExceeds(TCtrlMod->IsolateAxiWest.Lsb,
+						_XAie_MaxBitsNeeded(Dir), MAX_VALID_AIE_REG_BIT_INDEX)) {
+					XAIE_ERROR("Check Precision Exceeds Failed\n");
+					return XAIE_ERR;
+				}
 				FldVal = XAie_SetField(Dir,
 							TCtrlMod->IsolateAxiWest.Lsb, Mask);
 				RC = XAie_Write32(DevInst, RegAddr, FldVal);
@@ -593,9 +666,19 @@ AieRC _XAie4_SetPartApplicationReset(XAie_DevInst *DevInst, u8 Enable)
 		RegAddr = ShimTileRst->RegOff +
 				XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
 		if(DevInst->AppMode != XAIE_DEVICE_DUAL_APP_MODE_B) {
+			if (_XAie_CheckPrecisionExceeds(ShimTileRst->RstCntr.Lsb,
+					_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+				XAIE_ERROR("Check Precision Exceeds Failed\n");
+				return XAIE_ERR;
+			}
 			FldVal = XAie_SetField(Enable,
 					ShimTileRst->RstCntr.Lsb, ShimTileRst->RstCntr.Mask);
 		} else {
+			if (_XAie_CheckPrecisionExceeds(ShimTileRst->RstCntr_B.Lsb,
+					_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+				XAIE_ERROR("Check Precision Exceeds Failed\n");
+				return XAIE_ERR;
+			}
 			FldVal = XAie_SetField(Enable,
 					ShimTileRst->RstCntr_B.Lsb, ShimTileRst->RstCntr_B.Mask);
 		}
@@ -634,6 +717,11 @@ AieRC _XAie4_PartInitL2Split(XAie_DevInst *DevInst) {
 			TCtrlMod = DevInst->DevProp.DevMod[XAIEGBL_TILE_TYPE_MEMTILE].TileCtrlMod;
 			RegAddr = TCtrlMod->L2SplitRegOff + XAie_GetTileAddr(DevInst, R, C);
 			Mask = TCtrlMod->L2SplitControl.Mask;
+			if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+					_XAie_MaxBitsNeeded(DevInst->L2Split), MAX_VALID_AIE_REG_BIT_INDEX)) {
+				XAIE_ERROR("Check Precision Exceeds Failed\n");
+				return XAIE_ERR;
+			}
 			FldVal = XAie_SetField(DevInst->L2Split, TCtrlMod->DualAppControl.Lsb, Mask);
 			RC = XAie_Write32(DevInst, RegAddr, FldVal);
 			if(RC != XAIE_OK) {

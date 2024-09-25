@@ -3221,5 +3221,53 @@ u8 _XAie_IsUcModulePresent(XAie_DevInst* DevInst, u8 TileType) {
 	return 0;
 }
 
+/*****************************************************************************/
+/**
+*
+* This routine is used to check if given lsb & value pair exceeds precision.
+*
+* @param	Lsb				: Shift Value
+* @param    ValueBitCount	: Value to be shifted
+* @param    MaxValidBitPos	: Max desired precision post shift
+*
+* @return	0 - if precision intact else precision exceeds
+*
+* @note		Internal API only.
+*
+*******************************************************************************/
+u8 _XAie_CheckPrecisionExceeds(u32 Lsb, u8 ValueBitCount, u8 MaxValidBitPos)
+{
+	if ((Lsb + ValueBitCount) > MaxValidBitPos) {
+		return 1;
+	}
+	return 0;
+}
+
+/*****************************************************************************/
+/**
+*
+* This routine is used calculate the max bits needed for a given integer number.
+*
+* @param    Value		: Value
+*
+* @return	No of bits needed to represent the value.
+*
+* @note		Internal API only.
+*
+*******************************************************************************/
+u8 _XAie_MaxBitsNeeded(int value)
+{
+    // Calculate the number of bits needed to represent the value
+    if (value == 0) {
+        return 1; // Special case for zero
+    }
+
+    u8 bits = 0;
+    while (value) {
+        bits++;
+        value >>= 1; // Right shift by 1 (equivalent to dividing by 2)
+    }
+    return bits;
+}
 
 /** @} */
