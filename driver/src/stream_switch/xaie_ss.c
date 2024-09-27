@@ -436,12 +436,6 @@ static AieRC _StrmConfigMstr(XAie_DevInst *DevInst, const XAie_StrmMod *StrmMod,
 		return XAIE_OK;
 	}
 
-	if ((_XAie_CheckPrecisionExceeds(StrmMod->DrpHdr.Lsb,
-			_XAie_MaxBitsNeeded(Config), MAX_VALID_U8_BIT_INDEX))) {
-		XAIE_ERROR("Check Precision Exceeds Failed\n");
-		return XAIE_ERR;
-	}
-
 	/* Extract the drop header field */
 	DropHdr = (u8)XAie_GetField(Config, StrmMod->DrpHdr.Lsb,
 			StrmMod->DrpHdr.Mask);
