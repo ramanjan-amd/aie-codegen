@@ -888,6 +888,9 @@ XAIE_AIG_EXPORT AieRC XAie_ConfigBackendAttr(XAie_DevInst *InstPtr,
 XAIE_AIG_EXPORT AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 JobSize);
 XAIE_AIG_EXPORT void XAie_CloseControlCodeFile(XAie_DevInst *DevInst);
 XAIE_AIG_EXPORT AieRC XAie_StartNextJob(XAie_DevInst *DevInst);
+XAIE_AIG_EXPORT AieRC XAie_StartNewJob(XAie_DevInst *DevInst);
+XAIE_AIG_EXPORT AieRC XAie_EndPage(XAie_DevInst *DevInst);
+XAIE_AIG_EXPORT AieRC XAie_EndJob(XAie_DevInst *DevInst);
 XAIE_AIG_EXPORT AieRC XAie_PerfUtilization(XAie_DevInst *DevInst, XAie_PerfInst *PerfInst);
 XAIE_AIG_EXPORT AieRC XAie_ConfigMemInterleaving(XAie_DevInst *DevInst,
 		XAie_LocType *Locs, u32 NumTiles, u8 Enable);
