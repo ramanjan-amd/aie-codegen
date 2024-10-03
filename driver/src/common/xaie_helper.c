@@ -34,6 +34,12 @@
 #include "xaie_reset_aie.h"
 #include "xaie_txn.h"
 
+#ifdef __AIESOCKET__
+	#define XAIE4_APP_B_OFFSET  0x08000000U
+#else
+	#define XAIE4_APP_B_OFFSET 0x0U
+#endif
+
 /************************** Constant Definitions *****************************/
 #define XAIE_DEFAULT_NUM_CMDS 1024U
 #define XAIE_DEFAULT_TXN_BUFFER_SIZE (1024 * 4)
@@ -49,6 +55,7 @@ const u8 TransactionHeaderVersion_Major = 0;
 const u8 TransactionHeaderVersion_Minor = 1;
 const u8 TransactionHeaderVersion_Major_opt = 1;
 const u8 TransactionHeaderVersion_Minor_opt = 0;
+
 
 /***************************** Macro Definitions *****************************/
 /************************** Function Definitions *****************************/
@@ -1937,6 +1944,10 @@ AieRC XAie_Write32(XAie_DevInst *DevInst, u64 RegOff, u32 Value)
 
 		return XAIE_OK;
 	}
+
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+			RegOff|= XAIE4_APP_B_OFFSET;
+	}
 	return Backend->Ops.Write32((void*)(DevInst->IOInst), RegOff, Value);
 }
 
@@ -1978,6 +1989,10 @@ AieRC XAie_Read32(XAie_DevInst *DevInst, u64 RegOff, u32 *Data)
 			return XAIE_ERR;
 		}
 	}
+
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+			RegOff|= XAIE4_APP_B_OFFSET;
+	}
 	return Backend->Ops.Read32((void*)(DevInst->IOInst), RegOff, Data);
 }
 
@@ -2013,6 +2028,10 @@ AieRC XAie_MaskWrite32(XAie_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value)
 		TxnInst->NumCmds++;
 
 		return XAIE_OK;
+	}
+
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+			RegOff|= XAIE4_APP_B_OFFSET;
 	}
 	return Backend->Ops.MaskWrite32((void *)(DevInst->IOInst), RegOff, Mask,
 			Value);
@@ -2067,6 +2086,10 @@ AieRC XAie_MaskPoll(XAie_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value,
 
 			return XAIE_OK;
 		}
+	}
+
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+			RegOff|= XAIE4_APP_B_OFFSET;
 	}
 	return Backend->Ops.MaskPoll((void*)(DevInst->IOInst), RegOff, Mask,
 			Value, TimeOutUs);
@@ -2131,6 +2154,10 @@ AieRC XAie_BlockWrite32(XAie_DevInst *DevInst, u64 RegOff, const u32 *Data, u32 
 
 		return XAIE_OK;
 	}
+
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+			RegOff|= XAIE4_APP_B_OFFSET;
+	}
 	return Backend->Ops.BlockWrite32((void *)(DevInst->IOInst), RegOff,
 			Data, Size);
 }
@@ -2185,6 +2212,10 @@ AieRC XAie_BlockSet32(XAie_DevInst *DevInst, u64 RegOff, u32 Data, u32 Size)
 		TxnInst->NumCmds++;
 
 		return XAIE_OK;
+	}
+
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+			RegOff|= XAIE4_APP_B_OFFSET;
 	}
 	return Backend->Ops.BlockSet32((void *)(DevInst->IOInst), RegOff, Data,
 			Size);
