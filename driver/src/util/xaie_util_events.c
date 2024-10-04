@@ -24,9 +24,10 @@
 
 /***************************** Include Files *********************************/
 #include "xaie_feature_config.h"
-#include "xaie_util_events.h"
+
 
 #ifdef XAIE_FEATURE_UTIL_ENABLE
+#include "xaie_util_events.h"
 
 /**************************** Variable Definitions *******************************/
 /* Event string lookup table indexed by event number */

@@ -1085,7 +1085,11 @@ AieRC XAie_PerfUtilization(XAie_DevInst *DevInst, XAie_PerfInst *PerfInst)
 	}
 
 	Size = (u32)sizeof(XAie_Occupancy);
-	NumTiles = (DevInst->NumCols) * DevInst->AieTileNumRows;
+	if((UINT32_MAX/DevInst->NumCols) > DevInst->AieTileNumRows) {
+		XAIE_ERROR("Insufficient NumTiles!\n");
+		return XAIE_INVALID_RANGE;
+	}
+	NumTiles = (u32)DevInst->NumCols * (u32)DevInst->AieTileNumRows;
 	if((PerfInst->UtilSize)	< (NumTiles * Size)) {
 		XAIE_ERROR("Insufficient Buffer Size!\n");
 		return XAIE_INSUFFICIENT_BUFFER_SIZE;

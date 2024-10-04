@@ -349,8 +349,14 @@ void XAie_Log(FILE *Fd, const char *prefix, const char *func, u32 line,
 {
 	va_list ArgPtr;
 	va_start(ArgPtr, Format);
-	fprintf(Fd, "%s %s():%d: ", prefix, func, line);
-	vfprintf(Fd, Format, ArgPtr);
+	if (fprintf(Fd, "%s %s():%u: ", prefix, func, line)) {
+		va_end(ArgPtr);
+		return;
+	}
+	if (vfprintf(Fd, Format, ArgPtr)){
+		va_end(ArgPtr);
+		return;
+	}
 	va_end(ArgPtr);
 }
 
@@ -3072,7 +3078,7 @@ static AieRC _XAie_EventStatusDump(XAie_DevInst *DevInst,
 ******************************************************************************/
 AieRC XAie_StatusDump(XAie_DevInst *DevInst, XAie_ColStatus *Status)
 {
-	u32 RC = (u32)XAIE_ERR;
+	AieRC RC = XAIE_ERR;
 	u8 StartCol = DevInst->StartCol;
 	u8 NumCols  = DevInst->NumCols;
 	u8 NumRows  = DevInst->NumRows;

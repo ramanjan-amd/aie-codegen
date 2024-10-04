@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "xaie_feature_config.h"
 #include "xaie_io.h"
 #include "xaie_helper.h"
 #include "xaie_helper_internal.h"

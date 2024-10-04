@@ -92,10 +92,16 @@ static AieRC _GetMaxNumSsPorts(XAie_DevInst *DevInst, u8 TileType,
 			if ((TileType == XAIEGBL_TILE_TYPE_AIETILE) ||
 				((TileType == XAIEGBL_TILE_TYPE_SHIMNOC) &&
 				 ((PortType == EAST) || (PortType == WEST) ||
-				  (PortType == _32B_EAST) || (PortType == _32B_WEST))))
+				  (PortType == _32B_EAST) || (PortType == _32B_WEST)))){
 				*MaxNumPorts = PortPtr->NumPorts;
-			else
-				*MaxNumPorts = PortPtr->NumPorts * 2;
+			} else {
+				if((PortPtr->NumPorts * 2 ) > UINT8_MAX){
+					XAIE_ERROR("MaxNumPorts Exceeds U8 MAX value \n");
+					return XAIE_ERR;
+				}else {
+					*MaxNumPorts = PortPtr->NumPorts * 2;
+				}
+			}
 		}
 	}
 
@@ -121,6 +127,7 @@ static AieRC _XAie_GetPortIdxLegacy(const XAie_StrmMod *StrmMod,
 {
 	u32 BaseAddr;
 	u32 RegAddr;
+	u32 DiffAdd;
 	const XAie_StrmPort *PortPtr;
 
 	/* Get Base Addr of the slave/master tile from Stream Switch Module */
@@ -133,7 +140,13 @@ static AieRC _XAie_GetPortIdxLegacy(const XAie_StrmMod *StrmMod,
 	}
 
 	RegAddr = PortPtr->PortBaseAddr + StrmMod->PortOffset * PortNum;
-	*PortIdx = (u8)((RegAddr - BaseAddr) / 4U);
+	DiffAdd = ((RegAddr - BaseAddr)/4U);
+	if(DiffAdd > UINT8_MAX){
+		XAIE_ERROR("PortId Exceeds U8 MAX value \n");
+		return XAIE_ERR;
+	}else {
+		*PortIdx = (u8)(DiffAdd);
+	}
 
 	return XAIE_OK;
 }
@@ -147,8 +160,14 @@ static AieRC _XAie_GetPortIdxAie4Plus(XAie_DevInst *DevInst, u8 TileType,
 	u8 *PortIdx, XAie_StrmPortIntf Port)
 {
 	u8 AddPlaceHolderPortPhyIds = 0;
+	u32 TempPortIdx;
 	if (DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE) {
-		*PortIdx = PortPtr->PortLogicalId + PortNum;
+		if((UINT8_MAX - PortPtr->PortLogicalId) > PortNum){
+			*PortIdx = PortPtr->PortLogicalId + PortNum;
+		}else {
+			XAIE_ERROR("PortNum Exceeds U8 MAX value \n");
+			return XAIE_ERR;
+		}
 	} else {
 		/* For North and South ports, there are one/two extra port which
 		 * has been provided as a placeholder for future devices,
@@ -184,7 +203,13 @@ static AieRC _XAie_GetPortIdxAie4Plus(XAie_DevInst *DevInst, u8 TileType,
 			return XAIE_INVALID_TILE;
 		}
 
-		*PortIdx = PortPtr->PortPhysicalId + PortNum + AddPlaceHolderPortPhyIds;
+		TempPortIdx = PortPtr->PortPhysicalId + PortNum + AddPlaceHolderPortPhyIds;
+		if (TempPortIdx > UINT8_MAX){
+			XAIE_ERROR("PortIdx calculation Exceeds U8 MAX value \n");
+			return XAIE_ERR;
+		}else {
+			*PortIdx = (u8)TempPortIdx;
+		}
 	}
 
 	return XAIE_OK;
@@ -393,6 +418,7 @@ static AieRC _StrmConfigMstr(XAie_DevInst *DevInst, const XAie_StrmMod *StrmMod,
 	u8 DropHdr;
 	u8 MaxNumPorts = 0;
 	u8 AddPlaceHolderPort = 0;
+	u32 TempDropHdr;
 	*RegVal = 0U;
 	*RegOff = 0U;
 	const XAie_StrmPort *PortPtr;
@@ -437,8 +463,16 @@ static AieRC _StrmConfigMstr(XAie_DevInst *DevInst, const XAie_StrmMod *StrmMod,
 	}
 
 	/* Extract the drop header field */
-	DropHdr = (u8)XAie_GetField(Config, StrmMod->DrpHdr.Lsb,
+	TempDropHdr = XAie_GetField(Config, StrmMod->DrpHdr.Lsb,
 			StrmMod->DrpHdr.Mask);
+
+	if (TempDropHdr > UINT8_MAX){
+		XAIE_ERROR("DropHdr calculation Exceeds U8 MAX value \n");
+		return XAIE_ERR;
+	} else {
+		DropHdr = (u8)TempDropHdr;
+	}
+
 
 	if ((_XAie_CheckPrecisionExceeds(StrmMod->MstrEn.Lsb,
 			_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) ||
@@ -514,7 +548,7 @@ static AieRC _XAie_StreamSwitchConfigureCct(XAie_DevInst *DevInst,
 	}
 
 	/* Get stream switch module pointer from device instance */
-	StrmMod = _GetStreamMod(DevInst, TileType, Master);
+	StrmMod = _GetStreamMod(DevInst, TileType, (u8)Master);
 	if (StrmMod == NULL) {
 		XAIE_ERROR("Invalid Stream Switch Ports\n");
 		return XAIE_ERR_STREAM_PORT;
@@ -663,7 +697,7 @@ static AieRC _XAie_StrmSlavePortConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	/* Get stream switch module pointer from device instance */
-	StrmMod = _GetStreamMod(DevInst, TileType, Slave);
+	StrmMod = _GetStreamMod(DevInst, TileType, (u8)Slave);
 	if (StrmMod == NULL) {
 		XAIE_ERROR("Invalid Stream Switch Ports\n");
 		return XAIE_ERR_STREAM_PORT;
@@ -792,7 +826,7 @@ static AieRC _XAie_StrmPktSwMstrPortConfig(XAie_DevInst *DevInst,
 	}
 
 	/* Get stream switch module pointer from device instance */
-	StrmMod = _GetStreamMod(DevInst, TileType, Master);
+	StrmMod = _GetStreamMod(DevInst, TileType, (u8)Master);
 	if (StrmMod == NULL) {
 		XAIE_ERROR("Invalid Stream Switch Ports\n");
 		return XAIE_ERR_STREAM_PORT;
@@ -819,6 +853,10 @@ static AieRC _XAie_StrmPktSwMstrPortConfig(XAie_DevInst *DevInst,
 					XAIE_SS_MASTER_PORT_MSELEN_MASK);
 	}
 
+	if (Config > UINT8_MAX){
+		XAIE_ERROR("Config Exceeds U8 MAX value \n");
+		return XAIE_ERR;
+	}
 	/* Compute the register value and register address for the master port*/
 	RC = _StrmConfigMstr(DevInst, StrmMod, TileType, Master, MstrPortNum,
 			Enable, PktEn, (u8)Config, &RegVal, &RegOff);
@@ -944,7 +982,7 @@ static AieRC _XAie_StrmSlaveSlotConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	/* Get stream switch module pointer from device instance */
-	StrmMod = _GetStreamMod(DevInst, TileType, Slave);
+	StrmMod = _GetStreamMod(DevInst, TileType, (u8)Slave);
 	if (!StrmMod) {
 		XAIE_ERROR("Invalid Stream Switch Ports\n");
 		return XAIE_ERR_STREAM_PORT;
@@ -1126,7 +1164,7 @@ AieRC XAie_StrmSwLogicalToPhysicalPort(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	/* Get stream switch module pointer from device instance */
-	StrmMod = _GetStreamMod(DevInst, TileType, PortType);
+	StrmMod = _GetStreamMod(DevInst, TileType, (u8)PortType);
 	if (!StrmMod) {
 		XAIE_ERROR("Invalid Stream Switch Port Type\n");
 		return XAIE_ERR_STREAM_PORT;

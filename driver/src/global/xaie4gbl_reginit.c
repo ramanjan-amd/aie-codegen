@@ -25,7 +25,6 @@
 /***************************** Include Files *********************************/
 #include "xaie_core_aieml.h"
 #include "xaie_device_aieml.h"
-#include "xaie_device_aie.h"
 #include "xaie_device_aie4.h"
 #include "xaie_dma_aieml.h"
 #include "xaie_dma_aie2p.h"
@@ -33,10 +32,8 @@
 #include "xaie_events.h"
 #include "xaie_events_aie4.h"
 #include "xaie_feature_config.h"
-#include "xaie_interrupt_aieml.h"
 #include "xaie_locks_aie4.h"
 #include "xaie_reset_aieml.h"
-#include "xaie_ss_aieml.h"
 #include "xaie_ss_aie4.h"
 #include "xaiegbl_regdef.h"
 #include "xaiemlgbl_params.h"

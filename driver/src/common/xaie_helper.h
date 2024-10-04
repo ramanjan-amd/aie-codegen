@@ -89,7 +89,7 @@
 #define BIT(Index)		(1 << (Index))
 
 /*as AIE address space is 32bit , the max valid bit index will be 31*/
-#define MAX_VALID_AIE_REG_BIT_INDEX 31
+#define MAX_VALID_AIE_REG_BIT_INDEX 32
 #define MAX_VALID_U8_BIT_INDEX 7
 #define MAX_VALID_U16_BIT_INDEX 15
 

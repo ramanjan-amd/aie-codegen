@@ -28,7 +28,6 @@
 #include "xaie_helper.h"
 #include "xaie_helper_internal.h"
 #include "xaie_perfcnt.h"
-#include "xaie_io_privilege.h"
 
 #if defined(XAIE_FEATURE_PRIVILEGED_ENABLE) && \
 	defined(XAIE_FEATURE_PERFCOUNT_ENABLE) && \

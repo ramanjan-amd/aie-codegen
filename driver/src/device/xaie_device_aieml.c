@@ -24,7 +24,6 @@
 #include "xaie_feature_config.h"
 #include "xaie_helper.h"
 #include "xaie_helper_internal.h"
-#include "xaie_clock.h"
 #include "xaie_reset_aie.h"
 #include "xaie_tilectrl.h"
 #include "xaiemlgbl_params.h"
@@ -425,6 +424,11 @@ static AieRC _XAieMl_PmSetShimClk(XAie_DevInst *DevInst,
 
 	RegAddr = ModClkCntr0->RegOff +
 			XAie_GetTileAddr(DevInst, 0U, Loc.Col);
+	if (_XAie_CheckPrecisionExceeds(ModClkCntr0->StrmSwClkEnable.Lsb,
+			_XAie_MaxBitsNeeded(Enable), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	FldVal = XAie_SetField(Enable, ModClkCntr0->StrmSwClkEnable.Lsb,
 			ModClkCntr0->StrmSwClkEnable.Mask);
 	if (_XAie_CheckPrecisionExceeds(ModClkCntr0->PlIntClkEnable.Lsb,

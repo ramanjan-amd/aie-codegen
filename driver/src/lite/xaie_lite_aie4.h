@@ -853,6 +853,11 @@ static inline void  _XAie_LPartMemZeroInit(XAie_DevInst *DevInst)
 		}
 	}
 
+	if(DevInst->NumCols == 0){
+		XAIE_ERROR("NumCols should not be zero\n");
+		return ;
+	}
+
 	/* Poll last mem module and last mem tile mem module */
 	RegAddr = _XAie_LGetTileAddr(XAIE_NUM_ROWS - 1,
 			DevInst->NumCols - 1) +
@@ -894,6 +899,10 @@ static inline void _XAie_LZeroInitUcMemory(XAie_DevInst *DevInst)
 	/* Read last uC to make sure all the writes went though and
 	* Zeroization is complete.
 	*/
+	if(DevInst->NumCols == 0){
+		XAIE_ERROR("NumCols should not be zero \n");
+		return ;
+	}
 	RegAddr = _XAie_LGetTileAddr(0, DevInst->NumCols - 1) + XAIE_PL_MODULE_MEMORY_ZEROIZATION_B;
 	_XAie_LPartPoll32(DevInst, RegAddr, XAIE_PL_MODULE_MEMORY_ZEROIZATION_MASK, 0, 1000);
 }

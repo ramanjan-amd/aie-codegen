@@ -15,10 +15,11 @@
 ******************************************************************************/
 /***************************** Include Files *********************************/
 #include "xaie_feature_config.h"
-#include "xaie_helper.h"
-#include "xaie_interrupt_aie2ipu.h"
+
 
 #ifdef XAIE_FEATURE_INTR_INIT_ENABLE
+#include "xaie_helper.h"
+#include "xaie_interrupt_aie2ipu.h"
 /************************** Constant Definitions *****************************/
 /************************** Function Definitions *****************************/
 /*****************************************************************************/

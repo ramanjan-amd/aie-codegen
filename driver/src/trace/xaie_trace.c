@@ -25,10 +25,10 @@
 /***************************** Include Files *********************************/
 #include "xaie_feature_config.h"
 #include "xaie_helper.h"
-#include "xaie_helper_internal.h"
 #include "xaie_trace.h"
 
 #ifdef XAIE_FEATURE_TRACE_ENABLE
+#include "xaie_helper_internal.h"
 
 /************************** Constant Definitions *****************************/
 /************************** Function Definitions *****************************/

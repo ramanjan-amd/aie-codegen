@@ -23,13 +23,12 @@
 
 /***************************** Include Files *********************************/
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "xaie_util_status.h"
-#include "xaie_util.h"
 
 #ifdef XAIE_FEATURE_UTIL_STATUS_ENABLE
+#include <stdlib.h>
+#include <string.h>
+#include "xaie_util.h"
 
 /**************************** Function Definitions *******************************/
 /*****************************************************************************/

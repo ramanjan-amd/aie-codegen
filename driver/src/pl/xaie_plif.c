@@ -324,6 +324,7 @@ static AieRC _XAie_PlToAieIntfConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u32 RegOff;
 	u64 RegAddr;
 	u64 DwnSzrEnRegAddr;
+	u32 TempPortNum;
 	const XAie_PlIfMod *PlIfMod;
 
 	if((DevInst == XAIE_NULL) ||
@@ -412,7 +413,12 @@ static AieRC _XAie_PlToAieIntfConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	/* If width is 128 bits, enable both ports */
 	if(Width == PLIF_WIDTH_128) {
-		PortNum = ((PortNum % 2U) != 0U) ? (PortNum - 1U) : (PortNum + 1U);
+		TempPortNum = ((PortNum % 2U) != 0U) ? (PortNum - 1U) : (PortNum + 1U);
+		if(TempPortNum > UINT8_MAX){
+			XAIE_ERROR("PortNum exceeds valid range\n");
+			return XAIE_ERR;
+		}
+		PortNum = (u8)TempPortNum;
 
 		DwnSzrEnMask |= PlIfMod->DownSzrEn[PortNum].Mask;
 

@@ -82,4 +82,5 @@ XAIE_AIG_EXPORT u32 XAie_LIntrCtrlL2Status(XAie_LocType Loc);
 XAIE_AIG_EXPORT AieRC XAie_BacktrackErrorInterrupts(XAie_DevInst *DevInst,
 		XAie_ErrorMetaData *MData);
 XAIE_AIG_EXPORT u32 XAie_L2IntrCtrlStatus(XAie_DevInst *DevInst, u8 StartCol);
+AieRC XAie_BacktrackErrorInterruptsIPU(XAie_DevInst *DevInst,XAie_ErrorMetaData *MData);
 #endif		/* end of protection macro */

@@ -26,10 +26,10 @@
 #endif
 
 #include "xaie_core_aie.h"
-#include "xaie_events_aie.h"
 #include "xaie_feature_config.h"
 
 #ifdef XAIE_FEATURE_CORE_ENABLE
+#include "xaie_events_aie.h"
 
 /************************** Constant Definitions *****************************/
 

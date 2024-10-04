@@ -27,7 +27,6 @@
 #include "xaie_elfloader.h"
 #include "xaie_core_aie.h"
 #include "xaie_feature_config.h"
-#include "xaie_ecc.h"
 #include "xaie_mem.h"
 
 #ifdef XAIE_FEATURE_UC_ENABLE

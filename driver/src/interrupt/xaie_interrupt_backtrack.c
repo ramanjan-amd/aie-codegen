@@ -30,6 +30,7 @@
 #include "xaie_lite.h"
 #include "xaie_lite_io.h"
 #include "xaie_lite_internal.h"
+#include "xaie_helper_internal.h"
 
 #if defined(XAIE_FEATURE_INTR_BTRK_ENABLE) && defined(XAIE_FEATURE_LITE)
 
@@ -193,7 +194,7 @@ static inline void _XAie_LIntrCtrlL1Ack(XAie_DevInst *DevInst,
 * switches in AIE Tile are merged into single switch.
 *
 ******************************************************************************/
-static inline u8 _XAie_LEventReadStatus(XAie_DevInst *DevInst,
+static inline u32 _XAie_LEventReadStatus(XAie_DevInst *DevInst,
 		XAie_LocType Loc, XAie_ModuleType Module, u8 Event)
 {
 	u64 RegAddr;
@@ -419,6 +420,25 @@ static inline u8 _XAie_LMapGroupErrorsToEventId(XAie_DevInst *DevInst,
 			XAie_LocType Loc, XAie_ModuleType Module,
 			u8 GroupErrorIndex)
 {
+#if DEV_GEN_AIE4
+	if ((GroupErrorIndex > 255) ||
+		((XAIE_MEM_TILE_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
+		((XAIE_CORE_MOD_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
+		((XAIE_PL_MOD_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255)){
+		XAIE_ERROR("Function Return Type not sufficient \n");
+		return XAIE_ERR;
+	}
+#else
+	if ((GroupErrorIndex > 255) ||
+		((XAIE_MEM_TILE_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
+		((XAIE_CORE_MOD_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
+		((XAIE_MEM_MOD_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
+		((XAIE_PL_MOD_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255)){
+		XAIE_ERROR("Function Return Type not sufficient \n");
+		return XAIE_ERR;
+	}
+#endif
+
 	u8 TType = _XAie_LGetTTypefromLoc(DevInst, Loc);
 	if (TType == XAIEGBL_TILE_TYPE_MEMTILE) {
 		return XAIE_MEM_TILE_EVENT_GROUP_ERROR0 + GroupErrorIndex;
@@ -557,10 +577,17 @@ static AieRC _XAie_LBacktrackTile(XAie_DevInst *DevInst,
 	u32 Size = MData->ArraySize - (*Count);
 	u32 Value, Index, ErrorsMap;
 	u8 GroupEvent, Event;
+	u32 EventTemp;
+	u32 TempCol = 0;
 
 	/* Read event being broadcast on error channel */
-	GroupEvent = _XAie_ReadErrorBroadcastEvent(DevInst, Loc, Module,
+	EventTemp = _XAie_ReadErrorBroadcastEvent(DevInst, Loc, Module,
 			BroadcastId);
+	if (EventTemp > 255){
+		XAIE_ERROR("Event number cannot be held in u8 variable\n");
+		return XAIE_ERR;
+	}
+	GroupEvent = (u8)EventTemp;
 
 	if (!_XAie_LEventReadStatus(DevInst, Loc, Module, GroupEvent))
 		return XAIE_OK;
@@ -569,7 +596,7 @@ static AieRC _XAie_LBacktrackTile(XAie_DevInst *DevInst,
 
 	for_each_set_bit(Index, Value, 32) {
 		Event = _XAie_LMapGroupErrorsToEventId(DevInst, Loc, Module,
-				Index);
+				(u8)Index);
 
 		if (!_XAie_LEventReadStatus(DevInst, Loc, Module, Event))
 			continue;
@@ -579,10 +606,17 @@ static AieRC _XAie_LBacktrackTile(XAie_DevInst *DevInst,
 
 		ErrorsMap &= ~(1U << Index);
 
+		TempCol = Loc.Col + MData->Cols.Start;
+		if(TempCol > UCHAR_MAX){
+			XAIE_ERROR("Block Wr failed. Addr\n");
+			return XAIE_ERR;
+
+		}
+
 		/* Adding Start column to provide absolute value of
 		Column number in buffer to Host */
 		Buffer[(*Count)].Loc.Row = Loc.Row;
-		Buffer[(*Count)].Loc.Col = Loc.Col + MData->Cols.Start;
+		Buffer[(*Count)].Loc.Col = (u8)TempCol;
 		Buffer[(*Count)].Module = Module;
 		Buffer[(*Count)].EventId = Event;
 		(*Count)++;

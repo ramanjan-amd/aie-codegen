@@ -24,7 +24,6 @@
 #include "xaie_feature_config.h"
 #include "xaie_helper.h"
 #include "xaie_helper_internal.h"
-#include "xaie_clock.h"
 #include "xaie_tilectrl.h"
 
 #ifdef XAIE_FEATURE_PRIVILEGED_ENABLE
@@ -382,7 +381,11 @@ AieRC _XAie_PartMemZeroInit(XAie_DevInst *DevInst)
 *******************************************************************************/
 static void _XAie_PmGateTiles(XAie_DevInst *DevInst, XAie_LocType Loc)
 {
-	for (u8 R = DevInst->NumRows - 1U; R > Loc.Row; R--) {
+	if((DevInst->NumRows == 0 ) || ((DevInst->NumRows - 1U) > UINT8_MAX)){
+		XAIE_ERROR("RowValue range Exceeds U8 Range\n");
+		return;
+	}
+	for (u8 R = (u8)(DevInst->NumRows - 1U); R > Loc.Row; R--) {
 		u8 TileType;
 		u64 RegAddr;
 		const XAie_ClockMod *ClockMod;
@@ -491,7 +494,11 @@ AieRC _XAie_RequestTiles(XAie_DevInst *DevInst, XAie_BackendTilesArray *Args)
 		SetTileStatus = _XAie_GetTileBitPosFromLoc(DevInst,
 				Args->Locs[i]);
 
-		for(u8 row = DevInst->NumRows - 1U; row > 0U; row--) {
+		if((DevInst->NumRows == 0 ) || ((DevInst->NumRows - 1U) > UINT8_MAX)){
+			XAIE_ERROR("RowValue range Exceeds U8 Range\n");
+			return XAIE_ERR;
+		}
+		for(u8 row = (u8)(DevInst->NumRows - 1U) ; row > 0U; row--) {
 			u32 CheckTileStatus;
 			/*
 			 * Check for the upper most tile in use in the column

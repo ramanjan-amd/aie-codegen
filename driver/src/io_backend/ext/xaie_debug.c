@@ -30,7 +30,6 @@
 
 #include "xaie_helper.h"
 #include "xaie_io.h"
-#include "xaie_io_common.h"
 #include "xaie_io_privilege.h"
 #include "xaie_npi.h"
 
@@ -378,7 +377,8 @@ static AieRC XAie_DebugIO_RunOp(void *IOInst, XAie_DevInst *DevInst,
 		}
 		case XAIE_BACKEND_OP_SET_PROTREG:
 		{
-			RC = _XAie_NpiSetProtectedRegEnable(DevInst, Arg);
+			XAie_NpiProtRegReq *Req = Arg;
+			RC = _XAie_NpiSetProtectedRegEnable(DevInst, Req);
 			break;
 		}
 		case XAIE_BACKEND_OP_CONFIG_SHIMDMABD:

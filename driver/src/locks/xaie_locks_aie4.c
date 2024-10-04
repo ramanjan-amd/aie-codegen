@@ -26,11 +26,11 @@
 /***************************** Include Files *********************************/
 #include "xaie_feature_config.h"
 #include "xaie_helper.h"
-#include "xaie_helper_internal.h"
 #include "xaie_locks.h"
 #include "xaiegbl_defs.h"
 
 #ifdef XAIE_FEATURE_LOCK_ENABLE
+#include "xaie_helper_internal.h"
 /************************** Constant Definitions *****************************/
 #define XAIE4_LOCK_VALUE_MASK		0x7FU
 #define XAIE4_LOCK_VALUE_SHIFT		0x2U
