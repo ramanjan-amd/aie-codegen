@@ -29,6 +29,9 @@
 
 #ifdef XAIE_FEATURE_LITE
 
+#define XAIE_LITE_AIE4_AIE_TILE_SHIFT_OFFSET 4
+#define XAIE_LITE_AIE4_MEM_TILE_SHIFT_OFFSET 5
+
 /***************************** Include Files *********************************/
 /************************** Constant Definitions *****************************/
 #if XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE

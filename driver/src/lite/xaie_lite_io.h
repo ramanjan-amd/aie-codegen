@@ -28,13 +28,21 @@
 #include "xaiegbl_defs.h"
 #include "xaiegbl.h"
 
+
 /************************** Constant Definitions *****************************/
 /************************** Variable Definitions *****************************/
 /************************** Function Prototypes  *****************************/
-#ifdef XAIE_FEATURE_LITE
+ #ifdef XAIE_FEATURE_LITE
 __FORCE_INLINE__
 static inline u64 _XAie_LGetTileAddr(u32 Row, u32 Col)
 {
+	if(XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE4 || XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE4_MEDUSA) {
+		if(Row >= XAIE_AIE_TILE_ROW_START) {
+			Row += (XAIE_MEM_TILE_NUM_ROWS * XAIE_LITE_AIE4_AIE_TILE_SHIFT_OFFSET);
+		} else if(Row >= XAIE_MEM_TILE_ROW_START && Row < XAIE_AIE_TILE_ROW_START) {
+			Row = (Row * XAIE_LITE_AIE4_MEM_TILE_SHIFT_OFFSET) - XAIE_LITE_AIE4_AIE_TILE_SHIFT_OFFSET;
+		}
+	}
 	return (Row << XAIE_ROW_SHIFT) | (Col << XAIE_COL_SHIFT);
 }
 
