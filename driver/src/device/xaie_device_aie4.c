@@ -38,7 +38,6 @@
 #define XAIE_CORE_DUAL_APP_A_TOP_VAL    0x2U
 #define XAIE_CORE_DUAL_APP_B_BOTTOM_VAL 0x3U
 #define XAIE_CORE_DUAL_APP_B_VAL        0x4U
-#define XAIE_CORE_DUAL_APP_REG_BIT_WIDTH 0x3U
 #define XAIE_MIN_AIE_TILE_REQUEST       1U
 #define XAIE_NUM_SHIM_ROWS		1U
 /************************** Function Definitions *****************************/
@@ -276,32 +275,50 @@ static AieRC _XAie4_SetAppBTiles(XAie_DevInst *DevInst, u8 AtopRow, u8 Col)
         const XAie_TileCtrlMod *TCtrlMod;
         uint32_t FldVal, Mask;
         uint64_t RegAddr;
-        uint8_t AppBTiles = DevInst->AieTileNumRows - AtopRow;
-        uint8_t AppBbottom = AtopRow + 1;
+        uint8_t AppBTiles;
+        u8 AppBbottom = 0;
 
-        TCtrlMod = DevInst->DevProp.DevMod[XAIEGBL_TILE_TYPE_AIETILE].TileCtrlMod;
 
-	if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
-				_XAie_MaxBitsNeeded(XAIE_CORE_DUAL_APP_REG_BIT_WIDTH),
-				MAX_VALID_AIE_REG_BIT_INDEX)) {
-		XAIE_ERROR("Check Precision Exceeds Failed\n");
+	if((AtopRow >= UCHAR_MAX) || (DevInst->AieTileNumRows >= UCHAR_MAX)) {
+		XAIE_ERROR("Invalid AtopRow Value \n");
 		return XAIE_ERR;
 	}
+
+	AppBbottom = AtopRow + 1;
+	AppBTiles = DevInst->AieTileNumRows - AtopRow;
+
+        TCtrlMod = DevInst->DevProp.DevMod[XAIEGBL_TILE_TYPE_AIETILE].TileCtrlMod;
 
 	Mask = TCtrlMod->DualAppControl.Mask;
         RegAddr = TCtrlMod->DualAppModeRegOff +
                 XAie_GetTileAddr(DevInst, AppBbottom, Col);
+
+        if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+                                _XAie_MaxBitsNeeded(XAIE_CORE_DUAL_APP_B_BOTTOM_VAL),
+                                MAX_VALID_AIE_REG_BIT_INDEX)) {
+                XAIE_ERROR("Check Precision Exceeds Failed\n");
+                return XAIE_ERR;
+        }
+
         FldVal = XAie_SetField(XAIE_CORE_DUAL_APP_B_BOTTOM_VAL,
                         TCtrlMod->DualAppControl.Lsb, Mask);
 
         RC = XAie_Write32(DevInst, RegAddr, FldVal);
 
-        for(uint8_t i = 1; i < AppBTiles; i++) {
-                RegAddr = TCtrlMod->DualAppModeRegOff +
-                        XAie_GetTileAddr(DevInst, (uint8_t)(i + AppBbottom), Col);
-                FldVal = XAie_SetField(XAIE_CORE_DUAL_APP_B_VAL,
-                                TCtrlMod->DualAppControl.Lsb, Mask);
-                RC = XAie_Write32(DevInst, RegAddr, FldVal);
+	for(uint8_t i = 1; i < AppBTiles; i++) {
+		RegAddr = TCtrlMod->DualAppModeRegOff +
+			XAie_GetTileAddr(DevInst, (uint8_t)(i + AppBbottom), Col);
+
+		if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+					_XAie_MaxBitsNeeded(XAIE_CORE_DUAL_APP_B_VAL),
+					MAX_VALID_AIE_REG_BIT_INDEX)) {
+			XAIE_ERROR("Check Precision Exceeds Failed\n");
+			return XAIE_ERR;
+		}
+
+		FldVal = XAie_SetField(XAIE_CORE_DUAL_APP_B_VAL,
+				TCtrlMod->DualAppControl.Lsb, Mask);
+		RC = XAie_Write32(DevInst, RegAddr, FldVal);
 
         }
 	return RC;
@@ -372,7 +389,7 @@ AieRC _XAie4_SetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_BackendTilesAr
 		} else if (Args->Locs[i].Row >= DevInst->AieTileRowStart ) {
 
 			/* APP A requested tiles should not be >= to total no of AIE Tiles*/
-			u8 AieTiles = Args->NumTiles - (XAIE_NUM_SHIM_ROWS + DevInst->MemTileNumRows);
+			u32 AieTiles = Args->NumTiles - (XAIE_NUM_SHIM_ROWS + DevInst->MemTileNumRows);
 			u8 AtopRow;
 
 			if(AieTiles >= DevInst->AieTileNumRows) {
@@ -380,11 +397,6 @@ AieRC _XAie4_SetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_BackendTilesAr
 				return XAIE_INVALID_RANGE;
 			}
 			TCtrlMod = DevInst->DevProp.DevMod[XAIEGBL_TILE_TYPE_AIETILE].TileCtrlMod;
-			if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
-						_XAie_MaxBitsNeeded(XAIE_CORE_DUAL_APP_REG_BIT_WIDTH), MAX_VALID_AIE_REG_BIT_INDEX)) {
-				XAIE_ERROR("Check Precision Exceeds Failed\n");
-				return XAIE_ERR;
-			}
 
 			Mask = TCtrlMod->DualAppControl.Mask;
 			RegAddr = TCtrlMod->DualAppModeRegOff +
@@ -392,6 +404,13 @@ AieRC _XAie4_SetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_BackendTilesAr
 
 			/* Configure App A Top compute Tile */
 			if(Args->Locs[i].Row == ((AieTiles  + DevInst->AieTileRowStart) - 1)) {
+				if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+							_XAie_MaxBitsNeeded(XAIE_CORE_DUAL_APP_A_TOP_VAL),
+							MAX_VALID_AIE_REG_BIT_INDEX)) {
+					XAIE_ERROR("Check Precision Exceeds Failed\n");
+					return XAIE_ERR;
+				}
+
 				FldVal = XAie_SetField(XAIE_CORE_DUAL_APP_A_TOP_VAL,
 						TCtrlMod->DualAppControl.Lsb, Mask);
 				AtopRow = Args->Locs[i].Row;
@@ -403,6 +422,13 @@ AieRC _XAie4_SetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_BackendTilesAr
 			}
 			else if(Args->Locs[i].Row < ((AieTiles  + DevInst->AieTileRowStart) - 1) &&
 					Args->Locs[i].Row >= DevInst->AieTileRowStart) {
+
+                                if (_XAie_CheckPrecisionExceeds(TCtrlMod->DualAppControl.Lsb,
+                                                        _XAie_MaxBitsNeeded(XAIE_CORE_DUAL_APP_A_VAL),
+							MAX_VALID_AIE_REG_BIT_INDEX)) {
+                                        XAIE_ERROR("Check Precision Exceeds Failed\n");
+                                        return XAIE_ERR;
+                                }
 				/* Configure App A compute Tiles */
 				FldVal = XAie_SetField(XAIE_CORE_DUAL_APP_A_VAL,
 						TCtrlMod->DualAppControl.Lsb, Mask);

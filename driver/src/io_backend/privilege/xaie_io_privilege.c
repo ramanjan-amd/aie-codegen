@@ -81,6 +81,14 @@ static AieRC _XAie_PrivilegeSetColReset(XAie_DevInst *DevInst,
 	PlIfMod = DevInst->DevProp.DevMod[TileType].PlIfMod;
 	RegAddr = PlIfMod->ColRstOff +
 		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+
+	if (_XAie_CheckPrecisionExceeds(PlIfMod->ColRst.Lsb,
+				_XAie_MaxBitsNeeded(RstEnable),
+				MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
+
 	FldVal = XAie_SetField(RstEnable,
 			PlIfMod->ColRst.Lsb,
 			PlIfMod->ColRst.Mask);
@@ -192,9 +200,25 @@ static AieRC _XAie_PrivilegeSetBlockAxiMmNsuErr(XAie_DevInst *DevInst,
 	ShimNocAxiMM = NocMod->ShimNocAxiMM;
 	RegAddr = ShimNocAxiMM->RegOff +
 		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+
+        if (_XAie_CheckPrecisionExceeds(ShimNocAxiMM->NsuSlvErr.Lsb,
+                                _XAie_MaxBitsNeeded(BlockSlvEnable),
+                                MAX_VALID_AIE_REG_BIT_INDEX)) {
+                XAIE_ERROR("Check Precision Exceeds Failed\n");
+                return XAIE_ERR;
+        }
+
+
 	FldVal = XAie_SetField(BlockSlvEnable,
 			ShimNocAxiMM->NsuSlvErr.Lsb,
 			ShimNocAxiMM->NsuSlvErr.Mask);
+
+        if (_XAie_CheckPrecisionExceeds(ShimNocAxiMM->NsuDecErr.Lsb,
+                                _XAie_MaxBitsNeeded(BlockDecEnable),
+                                MAX_VALID_AIE_REG_BIT_INDEX)) {
+                XAIE_ERROR("Check Precision Exceeds Failed\n");
+                return XAIE_ERR;
+        }
 	FldVal |= XAie_SetField(BlockDecEnable,
 			ShimNocAxiMM->NsuDecErr.Lsb,
 			ShimNocAxiMM->NsuDecErr.Mask);
@@ -361,6 +385,13 @@ static AieRC _XAie_SetInterLeavingMode(XAie_DevInst *DevInst,
 {
 	u32 FldVal;
 	AieRC RC;
+
+        if (_XAie_CheckPrecisionExceeds(MCtrlMod->MemInterleaving.Lsb,
+                                _XAie_MaxBitsNeeded(Enable),
+                                MAX_VALID_AIE_REG_BIT_INDEX)) {
+                XAIE_ERROR("Check Precision Exceeds Failed\n");
+                return XAIE_ERR;
+        }
 
 	FldVal = XAie_SetField(Enable,
 		MCtrlMod->MemInterleaving.Lsb,
@@ -627,7 +658,7 @@ AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 	if (((OptFlags & XAIE_PART_INIT_OPT_CONFIG_MEMINTERLEAVING)) !=
 			XAIE_MEM_INTERLEAVING_MODE_ENABLE) {
 		RC = _XAie_PrivilegeConfigMemInterleaving(DevInst,
-				((OptFlags & XAIE_PART_INIT_OPT_CONFIG_MEMINTERLEAVING) >>
+				((u8)(OptFlags & XAIE_PART_INIT_OPT_CONFIG_MEMINTERLEAVING) >>
 				 XAIE_MEMINTERLEAVE_MODE_SHIFT));
 		if(RC != XAIE_OK) {
 			_XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
