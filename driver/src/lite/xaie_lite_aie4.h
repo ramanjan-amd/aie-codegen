@@ -769,8 +769,8 @@ static inline void _XAie_LSetPartColShimReset(XAie_DevInst *DevInst,
 		FldVal = XAie_SetField(Reset, XAIE_PL_MOD_COL_RST_APP_B_LSB, XAIE_PL_MOD_COL_RST_APP_B_MASK);
 	} else if(DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE){
 		/* Reset both Application A and B */
-		FldVal = XAie_SetField(Reset, (XAIE_PL_MOD_COL_RST_APP_A_LSB | XAIE_PL_MOD_COL_RST_APP_B_LSB),
-			(XAIE_PL_MOD_COL_RST_APP_A_MASK | XAIE_PL_MOD_COL_RST_APP_B_MASK));
+		FldVal = XAie_SetField(Reset, XAIE_PL_MOD_COL_RST_APP_A_LSB, XAIE_PL_MOD_COL_RST_APP_A_MASK);
+		FldVal |= XAie_SetField(Reset, XAIE_PL_MOD_COL_RST_APP_B_LSB, XAIE_PL_MOD_COL_RST_APP_B_MASK);
 	}
 	_XAie_LPartWrite32(DevInst, RegAddr, FldVal);
 }
@@ -1273,7 +1273,7 @@ static inline void _XAie_LSetPartL2Split(XAie_DevInst *DevInst)
  * NPI registers, un-gates column clock and disable isolation in entire array.
  *
  * @param	DevInst: Device Instance
- * @param	PorOptions: contains options for ME_TOP_ROW and ROW_OFFSET
+ * @param	PorOptions: contains options for MeTopRow and RowOffset
  *
  * @return	None.
  *
@@ -1291,9 +1291,9 @@ static inline AieRC _XAie_LAiePorConfiguration(XAie_DevInst *DevInst, XAie_PartP
 	/* Release ME_IPOR & Release Array Reset*/
 	_XAie_LNpiSetMeIporReset(XAIE_ENABLE);
 
-	/* Program NPI TOP_ROW and ROW_OFFSET */
-	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_TOP_ROW, PorOptions->ME_TOP_ROW);
-	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_TOP_ROW, PorOptions->ROW_OFFSET);
+	/* Program NPI MeTopRow and RowOffset */
+	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_TOP_ROW, PorOptions->MeTopRow);
+	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_TOP_ROW, PorOptions->RowOffset);
 
 	/* Configure other NPI registers */
 	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_SECURE_REG,XAIE_DISABLE);

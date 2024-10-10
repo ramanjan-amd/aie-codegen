@@ -881,7 +881,7 @@ static inline void _XAie_LSetPartL2Split(XAie_DevInst *DevInst)
  * disable isolation in entire array.
  *
  * @param	DevInst: Device Instance
- * @param	PorOptions: contains options for ME_TOP_ROW and ROW_OFFSET
+ * @param	PorOptions: contains options for MeTopRow and RowOffset
  *
  * @return	None.
  *
