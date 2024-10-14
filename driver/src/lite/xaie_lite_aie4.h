@@ -46,6 +46,8 @@
 #define XAIE_PL_MOD_AXIMM_APP_A_PENDING_TRANSACTIONS_MASK	0x00000007
 #define XAIE_PL_MOD_AXIMM_APP_B_PENDING_TRANSACTIONS_MASK	0x00000038
 
+#define XAIE_NPI_PROT_REG_ROWOFFSET_LSB		5U
+
 /* Set the timeout to maximum zeroization cycles required for Memtile DM zeroization for Sim backend.
    If polling timeout is less driver will return an error before zeroization is complete */
 #ifdef __AIESIM__
@@ -54,7 +56,8 @@
 	#define XAIE4_MEMZERO_POLL_TIMEOUT		1000
 #endif
 
-#define XAIE4_PENDING_AXIMM_TRANSACTION_POLL_TIMEOUT	1000
+/* Keep AXI-MM Pending Transaction Poll time to maximum since it is a Fatal conditition and will need Full IPU Reset */
+#define XAIE4_PENDING_AXIMM_TRANSACTION_POLL_TIMEOUT	100000
 /************************** Function Prototypes  *****************************/
 #if defined(XAIE_FEATURE_LITE_UTIL)
 /*****************************************************************************/
@@ -666,7 +669,7 @@ static inline u8 _XAie_LPmIsArrayTileRequested(XAie_DevInst *DevInst,
 ******************************************************************************/
 
 static inline void _XAie_LSetPartDmaPause(XAie_DevInst *DevInst,
-		XAie_LocType Loc)
+		XAie_LocType Loc, u8 Enable)
 {
 	u64 RegAddr, RegAddr_uC_A, RegAddr_uC_B;
 	u32 FldVal = 0;
@@ -675,32 +678,52 @@ static inline void _XAie_LSetPartDmaPause(XAie_DevInst *DevInst,
 	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_PL_MOD_DMA_PAUSE_REGOFF;
 	RegAddr_uC_A = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_PL_MOD_UC_DMA_A_PAUSE_REGOFF;
 	RegAddr_uC_B = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_PL_MOD_UC_DMA_B_PAUSE_REGOFF;
-	FldVal_uC_A = XAie_SetField(XAIE_PL_MOD_UC_DMA_A_PAUSE_MASK, XAIE_PL_MOD_UC_DMA_A_PAUSE_LSB, XAIE_PL_MOD_UC_DMA_A_PAUSE_MASK);
-	FldVal_uC_B = XAie_SetField(XAIE_PL_MOD_UC_DMA_B_PAUSE_MASK, XAIE_PL_MOD_UC_DMA_B_PAUSE_LSB, XAIE_PL_MOD_UC_DMA_B_PAUSE_MASK);
 
 	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_A) {
-		/* Application A DMA Pause */
-		FldVal = XAie_SetField(XAIE_PL_MOD_DMA_PAUSE_APP_A_MASK, XAIE_PL_MOD_DMA_PAUSE_LSB, XAIE_PL_MOD_DMA_PAUSE_APP_A_MASK);
-		/* Pause uC A DMA */
-		_XAie_LPartWrite32(DevInst, RegAddr_uC_A, FldVal_uC_A);
+		if(Enable){
+			/* Application A DMA Pause */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr, XAIE_PL_MOD_DMA_PAUSE_APP_A_MASK, XAIE_PL_MOD_DMA_PAUSE_APP_A_MASK);
+			/* Pause uC A DMA */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr_uC_A, XAIE_PL_MOD_UC_DMA_A_PAUSE_MASK, XAIE_PL_MOD_UC_DMA_A_PAUSE_MASK);
+		} else {
+			/* Application A DMA UnPause */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr, XAIE_PL_MOD_DMA_PAUSE_APP_A_MASK, Enable);
+			/* UnPause uC A DMA */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr_uC_A, XAIE_PL_MOD_UC_DMA_A_PAUSE_MASK,Enable);
+		}
 	} else if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B){
-		/* Application B DMA Pause */
-		FldVal = XAie_SetField(XAIE_PL_MOD_DMA_PAUSE_APP_B_MASK, XAIE_PL_MOD_DMA_PAUSE_LSB, XAIE_PL_MOD_DMA_PAUSE_APP_B_MASK);
-		/* Pause uC B DMA */
-		_XAie_LPartWrite32(DevInst, RegAddr_uC_B, FldVal_uC_B);
+		if(Enable){
+			/* Application B DMA Pause */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr, XAIE_PL_MOD_DMA_PAUSE_APP_B_MASK, XAIE_PL_MOD_DMA_PAUSE_APP_B_MASK);
+			/* Pause uC B DMA */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr_uC_B, XAIE_PL_MOD_UC_DMA_B_PAUSE_MASK, XAIE_PL_MOD_UC_DMA_B_PAUSE_MASK);
+		} else {
+			/* Application B DMA UnPause */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr, XAIE_PL_MOD_DMA_PAUSE_APP_B_MASK, Enable);
+			/* UnPause uC B DMA */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr_uC_B, XAIE_PL_MOD_UC_DMA_B_PAUSE_MASK, Enable);
+		}
 	} else if(DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE){
-		/* Single Application mode DMA Pause */
-		FldVal = XAie_SetField(XAIE_PL_MOD_DMA_PAUSE_MASK, XAIE_PL_MOD_DMA_PAUSE_LSB, XAIE_PL_MOD_DMA_PAUSE_MASK);
+		if(Enable){
+			/* Single Application mode DMA Pause */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr, XAIE_PL_MOD_DMA_PAUSE_MASK, XAIE_PL_MOD_DMA_PAUSE_MASK);
 
-		/* Pause uC A DMA */
-		FldVal_uC_A = XAie_SetField(XAIE_PL_MOD_UC_DMA_A_PAUSE_MASK, XAIE_PL_MOD_UC_DMA_A_PAUSE_LSB, XAIE_PL_MOD_UC_DMA_A_PAUSE_MASK);
-		_XAie_LPartWrite32(DevInst, RegAddr_uC_A, FldVal_uC_A);
+			/* Pause uC A DMA */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr_uC_A, XAIE_PL_MOD_UC_DMA_A_PAUSE_MASK, XAIE_PL_MOD_UC_DMA_A_PAUSE_MASK);
 
-		/* Pause uC B DMA */
-		FldVal_uC_B = XAie_SetField(XAIE_PL_MOD_UC_DMA_B_PAUSE_MASK, XAIE_PL_MOD_UC_DMA_B_PAUSE_LSB, XAIE_PL_MOD_UC_DMA_B_PAUSE_MASK);
-		_XAie_LPartWrite32(DevInst, RegAddr_uC_B, FldVal_uC_B);
+			/* Pause uC B DMA */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr_uC_B, XAIE_PL_MOD_UC_DMA_B_PAUSE_MASK, XAIE_PL_MOD_UC_DMA_B_PAUSE_MASK);
+		} else {
+			/* Single Application mode DMA UnPause */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr, XAIE_PL_MOD_DMA_PAUSE_MASK, Enable);
+
+			/* UnPause uC A DMA */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr_uC_A, XAIE_PL_MOD_UC_DMA_A_PAUSE_MASK, Enable);
+
+			/* UnPause uC B DMA */
+			_XAie_LPartMaskWrite32(DevInst, RegAddr_uC_B, XAIE_PL_MOD_UC_DMA_B_PAUSE_MASK, Enable);
+		}
 	}
-	_XAie_LPartWrite32(DevInst, RegAddr, FldVal);
 }
 
 /*****************************************************************************/
@@ -715,24 +738,39 @@ static inline void _XAie_LSetPartDmaPause(XAie_DevInst *DevInst,
 *
 *
 ******************************************************************************/
-static inline void _XAie_LPollAximmTransactions(XAie_DevInst *DevInst, XAie_LocType Loc)
+static inline AieRC _XAie_LPollAximmTransactions(XAie_DevInst *DevInst, XAie_LocType Loc)
 {
 	u64 RegAddr;
+	int Ret;
 
 	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_NOC_MOD_AXI_MM_OUTSTANDING_TRANSACTIONS_REGOFF;
 	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_A) {
 		/* Application A Pending AXI-MM Transaction polling */
-		_XAie_LPartPoll32(DevInst, RegAddr,
+		Ret = _XAie_LPartPoll32(DevInst, RegAddr,
 				XAIE_PL_MOD_AXIMM_APP_A_PENDING_TRANSACTIONS_MASK, 0, XAIE4_PENDING_AXIMM_TRANSACTION_POLL_TIMEOUT);
+		if (Ret < 0) {
+			XAIE_ERROR("Application A Pending AXI-MM Transaction polling failed\n");
+			return XAIE_AXIMM_PENDING_TRANSACTION_TIMEOUT;
+		}
+
 	} else if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B){
 		/* Application B Pending AXI-MM Transaction polling */
-		_XAie_LPartPoll32(DevInst, RegAddr,
+		Ret = _XAie_LPartPoll32(DevInst, RegAddr,
 				XAIE_PL_MOD_AXIMM_APP_B_PENDING_TRANSACTIONS_MASK, 0, XAIE4_PENDING_AXIMM_TRANSACTION_POLL_TIMEOUT);
+		if (Ret < 0) {
+			XAIE_ERROR("Application B Pending AXI-MM Transaction polling failed\n");
+			return XAIE_AXIMM_PENDING_TRANSACTION_TIMEOUT;
+		}
 	} else if(DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE){
 		/* Single Application Pending AXI-MM Transaction polling */
-		_XAie_LPartPoll32(DevInst, RegAddr,
+		Ret = _XAie_LPartPoll32(DevInst, RegAddr,
 				XAIE_NOC_MOD_AXI_MM_OUTSTANDING_TRANSACTIONS_MASK, 0, XAIE4_PENDING_AXIMM_TRANSACTION_POLL_TIMEOUT);
+		if (Ret < 0) {
+			XAIE_ERROR("Single Application Pending AXI-MM Transaction polling failed\n");
+			return XAIE_AXIMM_PENDING_TRANSACTION_TIMEOUT;
+		}
 	}
+	return XAIE_OK;
 }
 
 /*****************************************************************************/
@@ -754,11 +792,14 @@ static inline void _XAie_LSetPartColShimReset(XAie_DevInst *DevInst,
 {
 	u64 RegAddr;
 	u32 FldVal = 0;
+	AieRC RC;
 
 	/* Pause DMA */
-	_XAie_LSetPartDmaPause(DevInst, Loc);
+	_XAie_LSetPartDmaPause(DevInst, Loc, Reset);
 	/* Poll pending AXI-MM transactions before Application reset */
-	_XAie_LPollAximmTransactions(DevInst, Loc);
+	/* Todo - Return RC value in case of a faiure to FW once FW handlign of AXIMM Polling
+			 Fail is implemented */
+	RC = _XAie_LPollAximmTransactions(DevInst, Loc);
 
 	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + XAIE_PL_MOD_COL_RST_REGOFF;
 	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_A) {
@@ -877,6 +918,15 @@ static inline void  _XAie_LPartMemZeroInit(XAie_DevInst *DevInst)
 			_XAie_LPartMaskWrite32(DevInst, RegAddr,
 				XAIE_MEM_MOD_MEM_CNTR_ZEROISATION_MASK,
 				XAIE_MEM_MOD_MEM_CNTR_ZEROISATION_MASK);
+		}
+
+		/* Zeroize uC Private DM and Shared Memory */
+		for(u8 U = 0; U < XAIE_PL_MOD_UC_MEMORY_COUNT; U++) {
+			RegAddr = _XAie_LGetTileAddr(0, C) + ((U * XAIE_PL_MOD_UC_MEMORY_IDX)
+						+ XAIE_PL_MODULE_MEMORY_ZEROIZATION);
+			_XAie_LPartMaskWrite32(DevInst, RegAddr,
+					XAIE_PL_MODULE_MEMORY_A_ALL_DM_ZEROIZATION_MASK,
+					XAIE_PL_MODULE_MEMORY_A_ALL_DM_ZEROIZATION_MASK);
 		}
 	}
 
@@ -1139,24 +1189,24 @@ static inline AieRC _XAie_LPartDataMemZeroInit(XAie_DevInst *DevInst)
 			}
 		}
 
-		/* Zeroize uC Shared Memory */
+		/* Zeroize uC Private DM and Shared Memory */
 		if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_A) {
 			RegAddr = _XAie_LGetTileAddr(0, C) + XAIE_PL_MODULE_MEMORY_ZEROIZATION;
 			_XAie_LPartMaskWrite32(DevInst, RegAddr,
-					XAIE_PL_MODULE_MEMORY_A_DM_ZEROIZATION_MASK,
-					XAIE_PL_MODULE_MEMORY_A_DM_ZEROIZATION_LSB);
+					XAIE_PL_MODULE_MEMORY_A_ALL_DM_ZEROIZATION_MASK,
+					XAIE_PL_MODULE_MEMORY_A_ALL_DM_ZEROIZATION_MASK);
 		} else if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B){
 			RegAddr = _XAie_LGetTileAddr(0, C) + XAIE_PL_MODULE_MEMORY_ZEROIZATION_B;
 			_XAie_LPartMaskWrite32(DevInst, RegAddr,
-					XAIE_PL_MODULE_MEMORY_B_DM_ZEROIZATION_MASK,
-					XAIE_PL_MODULE_MEMORY_B_DM_ZEROIZATION_LSB);
+					XAIE_PL_MODULE_MEMORY_B_ALL_DM_ZEROIZATION_MASK,
+					XAIE_PL_MODULE_MEMORY_B_ALL_DM_ZEROIZATION_MASK);
 		} else if(DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE) {
 			for(u8 U = 0; U < XAIE_PL_MOD_UC_MEMORY_COUNT; U++) {
 				RegAddr = _XAie_LGetTileAddr(0, C) + ((U * XAIE_PL_MOD_UC_MEMORY_IDX)
 							+ XAIE_PL_MODULE_MEMORY_ZEROIZATION);
 				_XAie_LPartMaskWrite32(DevInst, RegAddr,
-						XAIE_PL_MODULE_MEMORY_A_DM_ZEROIZATION_MASK,
-						XAIE_PL_MODULE_MEMORY_A_DM_ZEROIZATION_LSB);
+						XAIE_PL_MODULE_MEMORY_A_ALL_DM_ZEROIZATION_MASK,
+						XAIE_PL_MODULE_MEMORY_A_ALL_DM_ZEROIZATION_MASK);
 			}
 		} else {
 			XAIE_ERROR("Invalid App Mode\n");
@@ -1283,7 +1333,8 @@ static inline void _XAie_LSetPartL2Split(XAie_DevInst *DevInst)
 static inline AieRC _XAie_LAiePorConfiguration(XAie_DevInst *DevInst, XAie_PartPorOpts *PorOptions) {
 
 	u64 RegAddr;
-	u32 StartCol,EndCol,RegVal, FldVal;;
+	u32 StartCol,EndCol,RegVal, FldVal;
+	uint16_t NpiPorValues;
 
 	/* Unlock ME PCSR */
 	_XAie_LNpiSetLock(XAIE_DISABLE);
@@ -1292,8 +1343,8 @@ static inline AieRC _XAie_LAiePorConfiguration(XAie_DevInst *DevInst, XAie_PartP
 	_XAie_LNpiSetMeIporReset(XAIE_ENABLE);
 
 	/* Program NPI MeTopRow and RowOffset */
-	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_TOP_ROW, PorOptions->MeTopRow);
-	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_TOP_ROW, PorOptions->RowOffset);
+	NpiPorValues = PorOptions->MeTopRow | (PorOptions->RowOffset << XAIE_NPI_PROT_REG_ROWOFFSET_LSB);
+	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_TOP_ROW, NpiPorValues);
 
 	/* Configure other NPI registers */
 	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_SECURE_REG,XAIE_DISABLE);
@@ -1347,7 +1398,14 @@ static inline AieRC _XAie_LAiePorConfiguration(XAie_DevInst *DevInst, XAie_PartP
 	}
 
 	/* Zeroize All uC modules */
+	/* FW team loads CERT before calling POR API. This results in clearing on uC PM and Simnow crash
+	   during Clear Context. Below Fix is a workaround to enable FW team to continue development
+	   till Cert loading is finalized.
+	   Note - Remove Check once CERT sideloading is fixed
+	*/
+	#ifndef __AIESIM__
 	_XAie_LZeroInitUcMemory(DevInst);
+	#endif
 	/* Enable NPI accept only Secure data */
 	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_SECURE_REG,XAIE_ENABLE);
 	/* Lock NPI PCSR */
