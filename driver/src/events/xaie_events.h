@@ -39,6 +39,9 @@
 /***************************** Macro Definitions *****************************/
 #define XAIE_EVENT_INVALID		0xFFFF
 
+#define XAIE_COMBO_PER_MOD	4U	//for below AIE4 Devices
+#define XAIE4_COMBO_PER_MOD	8U	//for AIE4 Device
+
 /**************************** Type Definitions *******************************/
 /*
  * This enum contains all the Events for all modules: Core, Memory of AIE tile

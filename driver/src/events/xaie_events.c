@@ -87,8 +87,8 @@ AieRC XAie_EventGenerate(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -168,8 +168,8 @@ static AieRC _XAie_EventComboControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -314,8 +314,8 @@ AieRC XAie_EventGetComboEventBase(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -353,7 +353,6 @@ AieRC XAie_EventComboReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 {
 	u8 TileType;
 	XAie_Events Event;
-	AieRC RC;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -371,8 +370,8 @@ AieRC XAie_EventComboReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -837,8 +836,8 @@ static AieRC _XAie_EventBroadcastConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -934,7 +933,6 @@ AieRC XAie_EventBroadcastReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 {
 	u8 TileType;
 	XAie_Events Event;
-	AieRC RC;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -952,8 +950,8 @@ AieRC XAie_EventBroadcastReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -1028,8 +1026,8 @@ AieRC XAie_EventBroadcastBlockDir(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -1123,8 +1121,8 @@ AieRC XAie_EventBroadcastBlockMapDir(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -1218,8 +1216,8 @@ AieRC XAie_EventBroadcastUnblockDir(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -1298,8 +1296,8 @@ static AieRC _XAie_EventGroupConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -1563,8 +1561,8 @@ AieRC XAie_EventEdgeControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -1818,8 +1816,8 @@ AieRC XAie_EventLogicalToPhysicalConv(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -1882,8 +1880,8 @@ AieRC XAie_EventPhysicalToLogicalConv(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -1949,8 +1947,8 @@ AieRC XAie_EventReadStatus(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -2019,8 +2017,8 @@ AieRC XAie_EventGetUserEventBase(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 
@@ -2079,8 +2077,8 @@ AieRC XAie_EventRegStatus(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-	RC = _XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module);
-	if (RC != XAIE_OK) {
+	if (!XAie_IsTileTypeAndModuleSupportForEvents(DevInst, Loc, Module)) {
+		XAIE_ERROR("Invalid Module configuration for AIE4\n");
 		return XAIE_INVALID_ARGS;
 	}
 

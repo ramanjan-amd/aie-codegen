@@ -10,11 +10,10 @@
 #include <vector>
 #include <xaiengine.h>
 
-
 #define BACKEND	XAieRscMgrGeneric
 #include <xaiefal/rsc/xaiefal-rscmgr-generic.hpp>
 
-#define XAIE_FAL_ERROR_BCAST_ID	0U
+#define XAIE_ERROR_BCAST_ID	0U
 #define XAIE_ECC_BCAST_ID	6U
 #define XAIE_ECC_PERFCNT_ID 	0U
 
@@ -85,7 +84,18 @@ namespace xaiefal {
 
 				BcastAll = false;
 				if (vRequests.size() == 0) {
-					vRequests.resize(1);
+					uint8_t NumAieRows;
+					uint32_t NumRscs;
+
+					/*
+					 * AIE tiles have to sets of bcast channels
+					 * for memory and core module
+					 */
+					NumAieRows = dev()->NumRows - dev()->AieTileRowStart;
+					NumRscs = (dev()->NumCols * dev()->NumRows) +
+						(dev()->NumCols * NumAieRows);
+
+					vRequests.resize(NumRscs);
 					BcastAll = true;
 				}
 
@@ -356,7 +366,7 @@ namespace xaiefal {
 		 */
 		AieRC reserveErrorHandling() {
 			std::vector<XAieUserRsc> vRscs, vShimRscs;
-			const XAie_L1IntrMod *L1IntrMod;
+			uint8_t MaxErrorBcIdsRvd;
 			uint32_t NumRscs;
 			AieRC RC = XAIE_OK;
 
@@ -365,7 +375,7 @@ namespace xaiefal {
 				* dev()->NumCols;
 			vRscs.resize(NumRscs);
 
-			vRscs[0].RscId = XAIE_FAL_ERROR_BCAST_ID;
+			vRscs[0].RscId = XAIE_ERROR_BCAST_ID;
 			RC = Backend->requestBc(vRscs, true);
 			if (RC != XAIE_OK) {
 				Logger::log(LogLevel::FAL_WARN) << "Unable to reserve " <<
@@ -373,9 +383,18 @@ namespace xaiefal {
 					<< std::endl;
 				return RC;
 			}
-
-			L1IntrMod = dev()->DevProp.DevMod[XAIEGBL_TILE_TYPE_SHIMPL].L1IntrMod;
-			for (uint32_t i = 1; i < L1IntrMod->MaxErrorBcIdsRvd; i++) {
+			
+            if(!XAie_IsDeviceSupportsL1Interrupt(dev()->DevProp.DevGen)) {
+				const XAie_L2IntrMod *L2IntrMod;
+				L2IntrMod = dev()->DevProp.DevMod[XAIEGBL_TILE_TYPE_SHIMNOC].L2IntrMod;
+				MaxErrorBcIdsRvd = L2IntrMod->MaxErrorBcIdsRvd;
+            }
+			else {
+				const XAie_L1IntrMod *L1IntrMod;
+				L1IntrMod = dev()->DevProp.DevMod[XAIEGBL_TILE_TYPE_SHIMPL].L1IntrMod;
+				MaxErrorBcIdsRvd = L1IntrMod->MaxErrorBcIdsRvd;
+			}
+			for (uint32_t i = 1; i < MaxErrorBcIdsRvd; i++) {
 				for (uint8_t j = 0; j < dev()->NumCols; j++) {
 					XAieUserRsc rsc;
 					rsc.Loc = XAie_TileLoc(j, dev()->ShimRow);

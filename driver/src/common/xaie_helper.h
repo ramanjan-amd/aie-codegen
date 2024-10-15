@@ -183,6 +183,13 @@ XAIE_AIG_EXPORT u32 XAie_GetNumRows(XAie_DevInst *DevInst, u8 TileType);
 XAIE_AIG_EXPORT u32 XAie_GetStartRow(XAie_DevInst *DevInst, u8 TileType);
 XAIE_AIG_EXPORT u64 XAie_GetTileAddr(XAie_DevInst *DevInst, u8 R, u8 C);
 
+/* AIE4 Specific global APIs*/
+XAIE_AIG_EXPORT u8 XAie_IsTileTypeAndModuleSupportForEvents(XAie_DevInst* DevInst,
+							XAie_LocType Loc, XAie_ModuleType Module);
+XAIE_AIG_EXPORT	u8 XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode, u8 elementValue);
+XAIE_AIG_EXPORT u8 XAie_IsDeviceSupportsL1Interrupt(u8 DevGen);
+XAIE_AIG_EXPORT u8 XAie_GetComboEventsNumber(XAie_DevInst* DevInst, u8 TileType, XAie_ModuleType Module);
+
 /* this below  Functions will be removed , once other teams migrate to above listed functions  */
 XAIE_AIG_EXPORT u8 _XAie_GetTileTypefromLoc(XAie_DevInst *DevInst, XAie_LocType Loc);
 XAIE_AIG_EXPORT AieRC _XAie_CheckModule(XAie_DevInst *DevInst, XAie_LocType Loc,

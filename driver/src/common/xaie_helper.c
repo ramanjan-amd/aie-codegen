@@ -3335,6 +3335,28 @@ u8 _XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode, u8 elementValue)
 /*****************************************************************************/
 /**
 *
+* This API provides the maximum number of elements a particular device supports
+* for given tile type and module type
+*
+* @param	DevGen: device generation value.
+* @param	TileType: Type of tile aiecore tile, memtile or shimnoc tile
+* @param	elementValue: resource value for corresponding tile
+* @param	AppMode: device appmode value.
+
+* @return	None.
+*
+* @note		This api doesn't check any input parameter for the invalid values.
+* 			It is asssumed that all parameters are valid for this function
+*
+*******************************************************************************/
+u8 XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode, u8 elementValue)
+{
+	return _XAie_GetMaxElementValue(DevGen, TileType, AppMode, elementValue);
+}
+
+/*****************************************************************************/
+/**
+*
 * This API provides the mask value of the register space for App B space for
 * AIE4+ architecture
 * This api returns zero, if the device generation doesn't support
@@ -3396,19 +3418,54 @@ u32 _XAie_ChangeRegisterSpace(u8 devGen, u32 regOffset)
 * @note         Internal API only.
 *
 *******************************************************************************/
-AieRC _XAie_IsTileTypeAndModuleSupportForEvents(XAie_DevInst* DevInst,
+u8 XAie_IsTileTypeAndModuleSupportForEvents(XAie_DevInst* DevInst,
 	XAie_LocType Loc, XAie_ModuleType Module)
 {
 	u8 TileType;
 
 	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
 	if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen) &&
-		 ((TileType == XAIEGBL_TILE_TYPE_AIETILE) && (Module == XAIE_MEM_MOD))) {
-			XAIE_ERROR("Invalid Module configuration for AIE4\n");
-			return XAIE_INVALID_ARGS;
-	}
+		 ((TileType == XAIEGBL_TILE_TYPE_AIETILE) && (Module == XAIE_MEM_MOD)))
+		 return false;
 
-	return XAIE_OK;
+	return true;
+}
+
+/*****************************************************************************/
+/**
+* This function is used to check whether device supports L1 interrupt or not .
+*
+* @param    DevGen: Device generation
+* @return   true:  device supports L1 interrupt
+*	 		false: device doesnt supports L1 interrupt 
+*
+*******************************************************************************/
+u8 XAie_IsDeviceSupportsL1Interrupt(u8 DevGen) {
+	if (_XAie_IsDeviceGenAIE4(DevGen))
+		return false;
+	else
+		return true;
+}
+
+/*****************************************************************************/
+/**
+* This function is used to get the number of combo events.
+*
+* @param    DevInst: Device Instance
+* @param    TileType:  AIE tile type
+* @param	Module:	module type
+* @return   u8 value: number of combo events supported
+*
+*******************************************************************************/
+u8 XAie_GetComboEventsNumber(XAie_DevInst* DevInst, u8 TileType, XAie_ModuleType Module) {
+	if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) {
+		if((TileType == XAIEGBL_TILE_TYPE_AIETILE) && (Module == XAIE_MEM_MOD))
+			return 0;
+		else		
+			return XAIE4_COMBO_PER_MOD;
+	}
+	else
+		return XAIE_COMBO_PER_MOD;
 }
 
 /*****************************************************************************/
