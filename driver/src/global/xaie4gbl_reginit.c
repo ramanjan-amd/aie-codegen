@@ -1642,7 +1642,7 @@ static const  XAie_StrmPort Aie4MemTileStrmSlv[SS_PORT_TYPE_MAX] =
 	{   /* 32b Switch */
 		.NumPorts = 1,
 		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_32B_SWITCH_0,
-		.PortPhysicalId = 31,
+		.PortPhysicalId = 30,
 		.PortLogicalId = 14,
 	}
 };
