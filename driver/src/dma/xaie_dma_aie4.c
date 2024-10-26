@@ -23,6 +23,7 @@
 /***************************** Include Files *********************************/
 #include "xaie_feature_config.h"
 #include "xaie_helper.h"
+#include "xaie_helper_internal.h"
 #include "xaie_io.h"
 #include "xaiegbl_regdef.h"
 #include "xaie_dma_aie4.h"
@@ -42,6 +43,7 @@
 #define XAIE4_DMA_STATUS_IDLE				0x0U
 #define XAIE4_DMA_STATUS_CHANNEL_NOT_RUNNING		0x0U
 #define XAIE4_DMA_STATUS_CHNUM_OFFSET			0x4U
+#define XAIE4_DMA_STATUS_TASK_Q_SIZE_MSB	24
 
 XAie4_MemTileDmaBdChMap XAie4_MemTileDmaBdChLut[320] = {
 	/* 0  -  15 */
@@ -143,7 +145,7 @@ static AieRC _XAie4_DmaMemTileCheckPaddingConfig(XAie_DmaDesc *DmaDesc)
 }
 
 static u64 _GetChannelStatusAddr(XAie_DevInst *DevInst, const XAie_DmaMod *DmaMod,
-		XAie_LocType Loc, u8 ChNum, u8 Dir)
+		XAie_LocType Loc, u8 ChNum, XAie_DmaDirection Dir)
 {
 	u8 TileType;
 	u8 NumChannels;
@@ -458,6 +460,57 @@ AieRC _XAie4_DmaWaitForDone(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	return XAIE_OK;
+}
+
+/*****************************************************************************/
+/**
+*
+* This API is used to wait on DMA channel taskqueue till its free with at least
+* one task or till the timeout.
+*
+* @param	DevInst: Device Instance
+* @param	Loc: Location of AIE Tile
+* @param	DmaMod: Dma module pointer
+* @param	ChNum: Channel number of the DMA.
+* @param	Dir: Direction of the DMA Channel. (MM2S or S2MM)
+* @param    TimeOutUs: Minimum timeout value in micro seconds.
+*
+* @return	XAIE_OK on success, Error code on failure.
+*
+* @note		Internal only. For AIEML Tiles only.
+*
+******************************************************************************/
+AieRC _XAie4_DmaWaitForBdTaskQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
+		const XAie_DmaMod *DmaMod, u8 ChNum, XAie_DmaDirection Dir,
+		u32 TimeOutUs, u8 BusyPoll)
+{
+	u64 Addr;
+	AieRC Status = XAIE_OK;
+
+	Addr = _GetChannelStatusAddr(DevInst, DmaMod, Loc, ChNum, Dir);
+
+	if ((_XAie_CheckPrecisionExceeds(XAIE4_DMA_STATUS_TASK_Q_SIZE_MSB,
+			_XAie_MaxBitsNeeded(1U), MAX_VALID_AIE_REG_BIT_INDEX))) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
+
+	/* Poll for the MSB bit of Task_queue_size bits to ensure
+	 * queue is not full*/
+	if (BusyPoll != XAIE_ENABLE){
+		Status = XAie_MaskPoll(DevInst, Addr, (1U << XAIE4_DMA_STATUS_TASK_Q_SIZE_MSB),
+		 0, TimeOutUs);
+	} else {
+		Status = XAie_MaskPollBusy(DevInst, Addr, (1U << XAIE4_DMA_STATUS_TASK_Q_SIZE_MSB),
+		 0, TimeOutUs);
+	}
+
+	if (Status != XAIE_OK) {
+		XAIE_DBG("Wait for task queue timed out\n");
+		return XAIE_ERR;
+	}
+
+	return Status;
 }
 
 /*****************************************************************************/
