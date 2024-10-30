@@ -52,8 +52,10 @@
    If polling timeout is less driver will return an error before zeroization is complete */
 #ifdef __AIESIM__
 	#define XAIE4_MEMZERO_POLL_TIMEOUT		100000
+	#define XAIE4_AIETILE_MEMZERO_POLL_TIMEOUT	8000
 #else
 	#define XAIE4_MEMZERO_POLL_TIMEOUT		1000
+	#define XAIE4_AIETILE_MEMZERO_POLL_TIMEOUT	800
 #endif
 
 /* Keep AXI-MM Pending Transaction Poll time to maximum since it is a Fatal conditition and will need Full IPU Reset */
@@ -940,7 +942,7 @@ static inline void  _XAie_LPartMemZeroInit(XAie_DevInst *DevInst)
 			DevInst->NumCols - 1) +
 			XAIE_MEM_MOD_MEM_CNTR_REGOFF;
 	_XAie_LPartPoll32(DevInst, RegAddr,
-			XAIE_MEM_MOD_MEM_CNTR_ZEROISATION_MASK, 0, 800);
+			XAIE_MEM_MOD_MEM_CNTR_ZEROISATION_MASK, 0, XAIE4_AIETILE_MEMZERO_POLL_TIMEOUT);
 
 	RegAddr = _XAie_LGetTileAddr(XAIE_AIE_TILE_ROW_START - 1,
 			DevInst->NumCols - 1) +
@@ -1224,7 +1226,7 @@ static inline AieRC _XAie_LPartDataMemZeroInit(XAie_DevInst *DevInst)
 		RegAddr = _XAie_LGetTileAddr(XAIE_NUM_ROWS - 1, C) +
 				XAIE_MEM_MOD_MEM_CNTR_REGOFF;
 		Ret = _XAie_LPartPoll32(DevInst, RegAddr,
-				XAIE_MEM_MOD_MEM_CNTR_ZEROISATION_MASK, 0, 800);
+				XAIE_MEM_MOD_MEM_CNTR_ZEROISATION_MASK, 0, XAIE4_AIETILE_MEMZERO_POLL_TIMEOUT);
 		if (Ret < 0)
 			return XAIE_ERR;
 
