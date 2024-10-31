@@ -503,7 +503,6 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 			for (IterationSize = TempItrSize; IterationSize < Size; IterationSize++) {
 				 if( (ControlCodeInst->UcPageSize + UC_DMA_WORD_LEN + DataAligner) > ControlCodeInst->PageSizeMax )
 				 {
-					TempItrSize = IterationSize;
 					break;
 				 }
 				fprintf(ControlCodeInst->ControlCodedata3fp, "\t.long 0x%08x\n", *(Data+IterationSize));
@@ -514,7 +513,8 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 			{
 				fprintf(ControlCodeInst->ControlCodedatafp,
 						"\t UC_DMA_BD\t 0, 0x%lx, @DMAWRITE_data_%d, 0x%x, 0, 0\n",
-						(RegOff + AdjustedOff),  ControlCodeInst->UcDmaDataNum, TempItrSize );
+						(RegOff + AdjustedOff),  ControlCodeInst->UcDmaDataNum, IterationSize - TempItrSize );
+						TempItrSize = IterationSize;
 			}
 			else
 			{
