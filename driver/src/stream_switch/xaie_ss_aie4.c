@@ -375,7 +375,7 @@ AieRC _XAie4_AieTile_StrmSwCheckPortValidity(XAie_DevInst *DevInst,
 		MngrPortIdx = DualAppMode ? AIETILE_DUALAPP_MNGR_TC : AIETILE_MNGR_TC;
 		break;
 	case SWITCH_32b:
-		MngrPortIdx = DualAppMode ? AIETILE_DUALAPP_SUBRDNT_32b : AIETILE_SUBRDNT_32b;
+		MngrPortIdx = DualAppMode ? AIETILE_DUALAPP_MNGR_32b : AIETILE_MNGR_32b;
 		break;
 	default:
 		/* Any port that is not shown in connectivity matrix is fully connected */
