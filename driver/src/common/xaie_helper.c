@@ -1494,7 +1494,15 @@ u8* _XAie_TxnExportSerialized(XAie_DevInst *DevInst, u8 NumConsumers,
 				{
 					NumOps--;
 				}
+			} else {
+				/**
+				 *  When BW Buffer is empty which is represented by first_blockwrite_processed == 0
+				 *  BW_Buff_Size should be initialized to size of XAie_BlockWrite32Hdr struct in bytes.
+				 *  Since the Cmd->Size field of Cmd from TmpInst->CmdBuf only considers payload size.
+				 */
+				BW_Buff_Size = sizeof(XAie_BlockWrite32Hdr);
 			}
+
 			while( (Cmd->Size * 4) + BW_Buff_Size > BW_Buff_AllocatedSize)
 			{
 				blockwrite_buffer = (u32*) (uintptr_t) ( _XAie_ReallocTxnBuf_MemInit((u8 *)blockwrite_buffer,
