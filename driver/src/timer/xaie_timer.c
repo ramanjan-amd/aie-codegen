@@ -197,6 +197,12 @@ AieRC XAie_ResetTimer(XAie_DevInst *DevInst, XAie_LocType Loc,
 	RegAddr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 		TimerMod->CtrlOff;
 	Mask = TimerMod->CtrlReset.Mask;
+
+	if ((_XAie_CheckPrecisionExceeds(TimerMod->CtrlReset.Lsb,
+			_XAie_MaxBitsNeeded(XAIE_RESETENABLE),MAX_VALID_AIE_REG_BIT_INDEX))) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	RegVal = XAie_SetField(XAIE_RESETENABLE, TimerMod->CtrlReset.Lsb, Mask);
 
 	return XAie_MaskWrite32(DevInst, RegAddr, Mask, RegVal);
@@ -301,17 +307,16 @@ AieRC XAie_SetTimerResetEvent(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_ARGS;
 	}
 
-        if((_XAie_CheckPrecisionExceeds(TimerMod->CtrlResetEvent.Lsb,
-                _XAie_MaxBitsNeeded((int)IntEvent), MAX_VALID_AIE_REG_BIT_INDEX))) {
-                XAIE_ERROR("Check Precision Exceeds Failed\n");
-                return XAIE_ERR;
-        }
-
+	if ((_XAie_CheckPrecisionExceeds( TimerMod->CtrlResetEvent.Lsb,
+			_XAie_MaxBitsNeeded(IntEvent),MAX_VALID_AIE_REG_BIT_INDEX))) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	RegVal = XAie_SetField(IntEvent, TimerMod->CtrlResetEvent.Lsb,
 			TimerMod->CtrlResetEvent.Mask);
 
-	if((_XAie_CheckPrecisionExceeds(TimerMod->CtrlReset.Lsb,
-		_XAie_MaxBitsNeeded((int)Reset), MAX_VALID_AIE_REG_BIT_INDEX))) {
+	if ((_XAie_CheckPrecisionExceeds(TimerMod->CtrlReset.Lsb,
+			_XAie_MaxBitsNeeded((u32)Reset),MAX_VALID_AIE_REG_BIT_INDEX))) {
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}

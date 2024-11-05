@@ -135,7 +135,7 @@ AieRC XAie_PerfCounterGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 	if (Counter == MaxCounterVal) {			
 		for (u8 C = 0; C < PerfMod->MaxCounterVal; C++) {
 			/* Add offset address based on Counter and read */
-			CounterRegOffset = C * PerfMod->PerfCounterOffsetAdd;
+			CounterRegOffset = C * (u32)PerfMod->PerfCounterOffsetAdd;
 			RC |= XAie_Read32(DevInst, CounterBaseAddr + CounterRegOffset, CounterVal + C);
 		}
 		
@@ -146,7 +146,7 @@ AieRC XAie_PerfCounterGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 			CounterVal += PerfMod->MaxCounterVal;
 			for (u8 C = 0; C < PerfMod->MaxCounterVal; C++) {
 				/* Add offset address based on Counter and read */
-				CounterRegOffset = C * PerfMod->PerfCounterOffsetAdd;
+				CounterRegOffset = C * (u32)PerfMod->PerfCounterOffsetAdd;
 				RC |= XAie_Read32(DevInst, CounterBaseAddr + CounterRegOffset, CounterVal + C);
 			}
 		}
@@ -158,7 +158,7 @@ AieRC XAie_PerfCounterGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 			}
 		}
 		
-		CounterRegOffset = Counter * PerfMod->PerfCounterOffsetAdd;
+		CounterRegOffset = Counter * (u32)PerfMod->PerfCounterOffsetAdd;
 		
 		RC |= XAie_Read32(DevInst, CounterBaseAddr + CounterRegOffset, CounterVal);
 	}
@@ -242,7 +242,7 @@ AieRC XAie_PerfCounterGetOffset(XAie_DevInst *DevInst, XAie_LocType Loc,
 		}		
 	}
 	
-	*Offset = CounterBaseAddr + (Counter * PerfMod->PerfCounterOffsetAdd);
+	*Offset = CounterBaseAddr + (Counter * (u32)PerfMod->PerfCounterOffsetAdd);
 		
 	return RC;
 }
@@ -356,10 +356,29 @@ AieRC XAie_PerfCounterControlSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 	CtrlRegOffset = (Counter / 2U * PerfMod->PerfCtrlOffsetAdd);
 
 	/* Compute mask for performance control register */
+	if (_XAie_CheckPrecisionExceeds((PerfMod->StartStopShift * (Counter % 2U)),
+			_XAie_MaxBitsNeeded(PerfMod->Start.Mask | PerfMod->Stop.Mask),
+			MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	FldMask = (PerfMod->Start.Mask | PerfMod->Stop.Mask) <<
 				(PerfMod->StartStopShift * (Counter % 2U));
 
 	/* Compute value to be written to the performance control register */
+	if ((_XAie_CheckPrecisionExceeds(
+			PerfMod->Start.Lsb + (PerfMod->StartStopShift * (Counter % 2U)),
+			_XAie_MaxBitsNeeded(IntStartEvent), MAX_VALID_AIE_REG_BIT_INDEX))  ||
+		(_XAie_CheckPrecisionExceeds((PerfMod->StartStopShift * (Counter % 2U)),
+			_XAie_MaxBitsNeeded(PerfMod->Start.Mask), MAX_VALID_AIE_REG_BIT_INDEX)) ||
+		(_XAie_CheckPrecisionExceeds(
+			PerfMod->Stop.Lsb + (PerfMod->StartStopShift * (Counter % 2U)),
+			_XAie_MaxBitsNeeded(IntStopEvent), MAX_VALID_AIE_REG_BIT_INDEX)) ||
+		(_XAie_CheckPrecisionExceeds(PerfMod->StartStopShift * (Counter % 2U),
+			_XAie_MaxBitsNeeded(PerfMod->Stop.Mask), MAX_VALID_AIE_REG_BIT_INDEX))){
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	FldVal = XAie_SetField(IntStartEvent,
 		PerfMod->Start.Lsb + (PerfMod->StartStopShift * (Counter % 2U)),
 		PerfMod->Start.Mask << (PerfMod->StartStopShift * (Counter % 2U)))|
@@ -474,9 +493,22 @@ AieRC XAie_PerfCounterResetControlSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 	ResetRegOffset = (Counter / 4U * PerfMod->PerfResetOffsetAdd);
 
 	/* Compute mask for performance control register */
+	if (_XAie_CheckPrecisionExceeds(PerfMod->ResetShift * (Counter % 4U),
+			_XAie_MaxBitsNeeded(PerfMod->Reset.Mask),MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	ResetFldMask = PerfMod->Reset.Mask <<
 					(PerfMod->ResetShift * (Counter % 4U));
 	/* Compute value to be written to the performance control register */
+	if ((_XAie_CheckPrecisionExceeds(
+			PerfMod->Reset.Lsb + (PerfMod->ResetShift * (Counter % 4U)),
+			_XAie_MaxBitsNeeded(IntResetEvent), MAX_VALID_AIE_REG_BIT_INDEX))  ||
+		(_XAie_CheckPrecisionExceeds((PerfMod->ResetShift * (Counter % 4U)),
+			_XAie_MaxBitsNeeded(PerfMod->Reset.Mask), MAX_VALID_AIE_REG_BIT_INDEX))){
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	ResetFldVal = XAie_SetField(IntResetEvent,
 		PerfMod->Reset.Lsb + (PerfMod->ResetShift * (Counter % 4U)),
 		PerfMod->Reset.Mask << (PerfMod->ResetShift * (Counter % 4U)));
@@ -565,7 +597,7 @@ AieRC XAie_PerfCounterSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 		}
 	}
 	
-	CounterRegOffset = Counter * PerfMod->PerfCounterOffsetAdd;
+	CounterRegOffset = Counter * (u32)PerfMod->PerfCounterOffsetAdd;
 
 	return XAie_Write32(DevInst, CounterBaseAddr + CounterRegOffset, CounterVal);
 }
@@ -646,7 +678,7 @@ AieRC XAie_PerfCounterEventValueSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 		}		
 	}
 	
-	CounterEvtValRegOffset = Counter * PerfMod->PerfCounterOffsetAdd;
+	CounterEvtValRegOffset = Counter * (u32)PerfMod->PerfCounterOffsetAdd;
 
 	return XAie_Write32(DevInst, CounterEvtValBaseAddr + CounterEvtValRegOffset, EventVal);
 }
@@ -922,6 +954,11 @@ AieRC XAie_PerfCounterGetControlConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return RC;
 	}
 
+	if (_XAie_CheckPrecisionExceeds(PerfMod->StartStopShift / 2U,
+			_XAie_MaxBitsNeeded(StartStopEvent & PerfMod->Stop.Mask), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	RegEvent = (StartStopEvent & PerfMod->Stop.Mask) >>
 			PerfMod->StartStopShift / 2U;
 	RC = XAie_EventPhysicalToLogicalConv(DevInst, Loc, Module, (u8)RegEvent,
@@ -1095,7 +1132,7 @@ AieRC XAie_PerfCounterSnapshotGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 		/* Read all counters from app A space */
 		for (u8 C = 0; C < PerfMod->MaxCounterVal; C++) {
 			/* Add offset address based on Counter and read */
-			CounterSsRegOffset = C * PerfMod->PerfCounterOffsetAdd;
+			CounterSsRegOffset = C * (u32)PerfMod->PerfCounterOffsetAdd;
 			RC |= XAie_Read32(DevInst, CounterSsBaseAddr + CounterSsRegOffset, CounterVal + C);
 		}
 
@@ -1106,7 +1143,7 @@ AieRC XAie_PerfCounterSnapshotGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 			CounterVal += PerfMod->MaxCounterVal;
 			for (u8 C = 0; C < PerfMod->MaxCounterVal; C++) {
 				/* Add offset address based on Counter and read */
-				CounterSsRegOffset = C * PerfMod->PerfCounterOffsetAdd;
+				CounterSsRegOffset = C * (u32)PerfMod->PerfCounterOffsetAdd;
 				RC |= XAie_Read32(DevInst, CounterSsBaseAddr + CounterSsRegOffset, CounterVal + C);
 			}
 		}
@@ -1118,7 +1155,7 @@ AieRC XAie_PerfCounterSnapshotGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 			}				
 		} 
 			
-		CounterSsRegOffset = Counter * PerfMod->PerfCounterOffsetAdd;
+		CounterSsRegOffset = Counter * (u32)PerfMod->PerfCounterOffsetAdd;
 
 		RC |= XAie_Read32(DevInst, CounterSsBaseAddr + CounterSsRegOffset, CounterVal);
 	}
@@ -1210,7 +1247,7 @@ AieRC XAie_PerfCounterSnapshotSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 		}
 	}
 	
-	CounterSsRegOffset = Counter * PerfMod->PerfCounterOffsetAdd;
+	CounterSsRegOffset = Counter * (u32)PerfMod->PerfCounterOffsetAdd;
 	
 	return XAie_Write32(DevInst, CounterSsBaseAddr + CounterSsRegOffset, CounterVal);
 }

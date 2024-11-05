@@ -40,7 +40,9 @@ AieRC _XAie_TxnFree(XAie_TxnInst *Inst);
 void _XAie_TxnResourceCleanup(XAie_DevInst *DevInst);
 void _XAie_FreeTxnPtr(void *Ptr);
 u8 _XAie_CheckPrecisionExceeds(u32 Lsb, u8 ValueBitCount, u8 MaxValidBitPos);
-u8 _XAie_MaxBitsNeeded(int value);
+u8 _XAie_CheckPrecisionExceedsForRightShift(u32 Lsb, u32 Mask);
+u8 _XAie_MaxBitsNeeded(u32 value);
+u8 _XAie_CountTrailingZeros(u32 value);
 
 /* Below are aie4 specific internal APIs*/
 u8 _XAie_IsDeviceGenAIE4(u8 DevGen);

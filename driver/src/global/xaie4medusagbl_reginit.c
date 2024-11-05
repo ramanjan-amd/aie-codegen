@@ -3792,7 +3792,7 @@ static const  XAie_MemMod Aie4TileMemMod =
 /* Data Memory Module for Mem Tile data memory*/
 static const  XAie_MemMod Aie4MemTileMemMod =
 {
-	.Size =  4096 * 1024,				/* 0x400000, */
+	.Size =  3 * 1024 * 1024,				/* 0x300000, */
 	.MemAddr = XAIE4GBL_MEM_TILE_MODULE_DATAMEMORY,
 	.EccEvntRegOff = XAIE_FEATURE_UNAVAILABLE,
 	.EccScubPeriodRegOff = XAIE4GBL_MEM_TILE_MODULE_ECC_SCRUBBING_PERIOD_PRIVILEGED,

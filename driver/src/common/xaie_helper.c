@@ -3622,7 +3622,7 @@ u8 _XAie_CheckPrecisionExceeds(u32 Lsb, u8 ValueBitCount, u8 MaxValidBitPos)
 * @note		Internal API only.
 *
 *******************************************************************************/
-u8 _XAie_MaxBitsNeeded(int value)
+u8 _XAie_MaxBitsNeeded(u32 value)
 {
     // Calculate the number of bits needed to represent the value
     if (value == 0) {
@@ -3636,5 +3636,51 @@ u8 _XAie_MaxBitsNeeded(int value)
     }
     return bits;
 }
+
+/*****************************************************************************/
+/**
+*
+* This routine is used to check if given lsb & Mask pair exceeds precision
+* when a masked value is right shift by lsb
+*
+* @param	Lsb				: Shift Value
+* @param    Mask			: Value to be shifted
+*
+* @return	0 - if precision intact else precision exceeds
+*
+* @note		Internal API only.
+*
+*******************************************************************************/
+u8 _XAie_CheckPrecisionExceedsForRightShift(u32 Lsb, u32 Mask)
+{
+	if (Lsb  > _XAie_CountTrailingZeros(Mask)) {
+		return 1;
+	}
+	return 0;
+}
+
+/*****************************************************************************/
+/**
+*
+* This routine is used calculate the trailing zeros needed for a given 
+* integer number in  binary form
+*
+* @param    Value		: Value
+*
+* @return	No of trailing zeros in the given number.
+*
+* @note		Internal API only.
+*
+*******************************************************************************/
+u8 _XAie_CountTrailingZeros(u32 value)
+{
+	u8 count = 0;
+    while ((value & 1) == 0 && value > 0)  {
+		value >>= 1;
+        count++; // Right shift by 1 (equivalent to dividing by 2)
+    }
+    return count;
+}
+
 
 /** @} */

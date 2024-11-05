@@ -23,6 +23,7 @@
 /***************************** Include Files *********************************/
 #include "xaie_core_aieml.h"
 #include "xaie_feature_config.h"
+#include "xaie_helper_internal.h"
 
 #ifdef XAIE_FEATURE_CORE_ENABLE
 
@@ -72,6 +73,12 @@ AieRC _XAieMl_CoreEnable(XAie_DevInst *DevInst, XAie_LocType Loc,
 {
 	u32 Mask, Value;
 	u64 RegAddr;
+
+	if ((_XAie_CheckPrecisionExceeds(CoreMod->CoreCtrl->CtrlEn.Lsb,
+			_XAie_MaxBitsNeeded(1U),MAX_VALID_AIE_REG_BIT_INDEX))) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 
 	Mask = CoreMod->CoreCtrl->CtrlEn.Mask;
 	Value = (u32)(1U << CoreMod->CoreCtrl->CtrlEn.Lsb);

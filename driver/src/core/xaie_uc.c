@@ -28,6 +28,7 @@
 #include "xaie_core_aie.h"
 #include "xaie_feature_config.h"
 #include "xaie_mem.h"
+#include "xaie_helper_internal.h"
 
 #ifdef XAIE_FEATURE_UC_ENABLE
 /************************** Function Definitions *****************************/
@@ -435,6 +436,13 @@ AieRC _XAie_UcCoreWakeup(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u64 RegAddr;
 
 	Mask = UcMod->CoreCtrl->CtrlWakeup.Mask;
+
+	if (_XAie_CheckPrecisionExceeds(UcMod->CoreCtrl->CtrlWakeup.Lsb,
+			_XAie_MaxBitsNeeded(1U),MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
+
 	Value = (u32)(1U << UcMod->CoreCtrl->CtrlWakeup.Lsb);
 	RegAddr = UcMod->CoreCtrl->RegOff +
 		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
@@ -462,6 +470,12 @@ AieRC _XAie_UcCoreSleep(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u64 RegAddr;
 
 	Mask = UcMod->CoreCtrl->CtrlSleep.Mask;
+
+	if ((_XAie_CheckPrecisionExceeds(UcMod->CoreCtrl->CtrlSleep.Lsb,
+			_XAie_MaxBitsNeeded(1U),MAX_VALID_AIE_REG_BIT_INDEX))) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	Value = (u32)(1U << UcMod->CoreCtrl->CtrlSleep.Lsb);
 	RegAddr = UcMod->CoreCtrl->RegOff +
 		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
