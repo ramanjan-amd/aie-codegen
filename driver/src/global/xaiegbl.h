@@ -165,6 +165,7 @@ typedef struct {
 	u8 AppMode;		/* 0 - Single Application,1 - Application A, 2 - Application B */
 	u8 L2Split;     /* Set L2 Split in Dual App Mode */
 	u8 L2PreserveMem;    /*Set or Clear to preserve L2 Memory Data */
+	u8 PmLoadingActive; /*To keep track of of PM Loading is active or not*/
 	const XAie_Backend *Backend; /* Backend IO properties */
 	void *IOInst;	       /* IO Instance for the backend */
 	XAie_DevProp DevProp; /* Pointer to the device property. To be
@@ -697,6 +698,12 @@ typedef struct {
 	uint32_t PdiSize;
 	uint64_t PdiAddress;
 } XAie_LoadPdiHdr;
+
+typedef struct {
+	uint8_t Op;
+	uint8_t LoadSequenceCount[3];
+	uint32_t PmLoadId;
+}XAie_PmLoadHdr;
 
 /* Migrated from Aie-controller */
 

@@ -1115,6 +1115,18 @@ static inline void _XAie_AppendLoadPdi(XAie_TxnCmd *Cmd, u8 *TxnPtr)
 	Hdr->PdiAddress = 0;
 }
 
+static inline u8* _XAie_AppendPmLoad(XAie_TxnCmd *Cmd, u8 *TxnPtr)
+{
+	XAie_PmLoadHdr *Hdr = ( XAie_PmLoadHdr*)((void*)TxnPtr);
+	Hdr->Op = (u8)Cmd->Opcode;
+	Hdr->PmLoadId = Cmd->PmId;
+	for(u8 i=0;i<3;i++)
+	{
+		Hdr->LoadSequenceCount[i] = 0;
+	}
+	return (&(Hdr->LoadSequenceCount[0]));
+}
+
 static inline void _XAie_CreateTxnHeader_opt(XAie_DevInst *DevInst,
 		XAie_TxnHeader *Header)
 {
@@ -1334,9 +1346,11 @@ u8* _XAie_TxnExportSerialized(XAie_DevInst *DevInst, u8 NumConsumers,
 	XAie_TxnInst *TmpInst = NULL;
 	u8 *TxnPtr = NULL;
 	u32 BuffSize = 0U, NumOps = 0, patch_cmd_count = 0,BW_Buff_Size = 0;
+	u32 LoadSeqCount = 0;
 	u64 RegOff_last_blockwrite = 0;
 	u8 first_blockwrite_processed = 0;
 	u32* blockwrite_buffer = NULL;
+	u8* LoadSeqCountPtr = NULL;
 
 	u32 AllocatedBuffSize = XAIE_DEFAULT_TXN_BUFFER_SIZE;
 	u32 BW_Buff_AllocatedSize = XAIE_DEFAULT_TXN_BUFFER_SIZE;
@@ -1371,6 +1385,11 @@ u8* _XAie_TxnExportSerialized(XAie_DevInst *DevInst, u8 NumConsumers,
 	for(u32 i = 0U; i < TmpInst->NumCmds; i++) {
 		NumOps++;
 		XAie_TxnCmd *Cmd = &TmpInst->CmdBuf[i];
+
+		if( (DevInst->PmLoadingActive == 1) && (Cmd->Opcode != XAIE_IO_LOAD_PM_START) && (Cmd->Opcode != XAIE_IO_LOAD_PM_END_INTERNAL))
+		{
+			LoadSeqCount++;
+		}
 
 		if( (Cmd->Opcode != XAIE_IO_BLOCKWRITE) &&
 		    (Cmd->Opcode != XAIE_IO_CUSTOM_OP_BEGIN + 1) &&
@@ -1604,6 +1623,43 @@ u8* _XAie_TxnExportSerialized(XAie_DevInst *DevInst, u8 NumConsumers,
 			BuffSize += (u32)sizeof(XAie_LoadPdiHdr);
 			continue;
 		}
+		else if(Cmd->Opcode == XAIE_IO_LOAD_PM_START)
+		{
+			if( (BuffSize + sizeof(XAie_PmLoadHdr)) >
+					AllocatedBuffSize ) {
+				TxnPtr = _XAie_ReallocTxnBuf_MemInit(TxnPtr - BuffSize,
+						AllocatedBuffSize * 2U, BuffSize);
+				if(TxnPtr == NULL) {
+					free(blockwrite_buffer);
+					return NULL;
+				}
+				AllocatedBuffSize *= 2U;
+				TxnPtr += BuffSize;
+
+			}
+			LoadSeqCountPtr = _XAie_AppendPmLoad(Cmd, TxnPtr);
+			TxnPtr += sizeof(XAie_PmLoadHdr);
+			BuffSize += (u32)sizeof(XAie_PmLoadHdr);
+			DevInst->PmLoadingActive = 1;
+			continue;
+		}
+		else if( (Cmd->Opcode == XAIE_IO_LOAD_PM_END_INTERNAL) && (LoadSeqCount != 0) )
+		{
+			if(LoadSeqCountPtr != NULL)
+			{
+				*LoadSeqCountPtr = LoadSeqCount & 0xFF;
+				*(LoadSeqCountPtr + 1) = (LoadSeqCount & 0xFF00) >> 8;
+				*(LoadSeqCountPtr + 2) = (LoadSeqCount & 0xFF0000) >> 16;
+			}
+			else
+			{
+				XAIE_ERROR("LoadSeqCountPtr is equal to NULL\n");
+			}
+			LoadSeqCount = 0;
+			NumOps--;
+			DevInst->PmLoadingActive = 0;
+			continue;
+		}
 		else if (Cmd->Opcode >= XAIE_IO_CUSTOM_OP_BEGIN) {
 
 			if(Cmd->Opcode == XAIE_IO_CUSTOM_OP_BEGIN + 1)
@@ -1680,8 +1736,10 @@ u8* _XAie_TxnExportSerialized_opt(XAie_DevInst *DevInst, u8 NumConsumers,
 		u32 Flags)
 {
 	const XAie_Backend *Backend = DevInst->Backend;
-	XAie_TxnInst *TmpInst;
-	u8 *TxnPtr;
+	XAie_TxnInst *TmpInst = NULL;
+	u8 *TxnPtr = NULL;
+	u8* LoadSeqCountPtr = NULL;
+	u32 LoadSeqCount = 0;
 	u32 BuffSize = 0U, NumOps = 0;
 	u32 AllocatedBuffSize = XAIE_DEFAULT_TXN_BUFFER_SIZE;
 	(void)NumConsumers;
@@ -1711,6 +1769,12 @@ u8* _XAie_TxnExportSerialized_opt(XAie_DevInst *DevInst, u8 NumConsumers,
 	for(u32 i = 0U; i < TmpInst->NumCmds; i++) {
 		NumOps++;
 		XAie_TxnCmd *Cmd = &TmpInst->CmdBuf[i];
+
+		if( (DevInst->PmLoadingActive == 1) && (Cmd->Opcode != XAIE_IO_LOAD_PM_START) && (Cmd->Opcode != XAIE_IO_LOAD_PM_END_INTERNAL))
+		{
+			LoadSeqCount++;
+		}
+	
 		if ((Cmd->Opcode == XAIE_IO_WRITE) && (Cmd->Mask == 0U)) {
 			if((BuffSize + sizeof(XAie_Write32Hdr_opt)) >
 					AllocatedBuffSize) {
@@ -1872,6 +1936,41 @@ u8* _XAie_TxnExportSerialized_opt(XAie_DevInst *DevInst, u8 NumConsumers,
 			TxnPtr += sizeof(XAie_LoadPdiHdr);
 			BuffSize += (u32)sizeof(XAie_LoadPdiHdr);
 			continue;
+		}
+		else if(Cmd->Opcode == XAIE_IO_LOAD_PM_START)
+		{
+			if( (BuffSize + sizeof(XAie_PmLoadHdr)) >
+					AllocatedBuffSize ) {
+				TxnPtr = _XAie_ReallocTxnBuf_MemInit(TxnPtr - BuffSize,
+						AllocatedBuffSize * 2U, BuffSize);
+				if(TxnPtr == NULL) {
+					return NULL;
+				}
+				AllocatedBuffSize *= 2U;
+				TxnPtr += BuffSize;
+
+			}
+			LoadSeqCountPtr = _XAie_AppendPmLoad(Cmd, TxnPtr);
+			TxnPtr += sizeof(XAie_PmLoadHdr);
+			BuffSize += (u32)sizeof(XAie_PmLoadHdr);
+			DevInst->PmLoadingActive = 1;
+			continue;
+		}
+		else if( (Cmd->Opcode == XAIE_IO_LOAD_PM_END_INTERNAL) && (LoadSeqCount != 0) )
+		{
+			if(LoadSeqCountPtr != NULL)
+			{
+				*LoadSeqCountPtr = LoadSeqCount & 0xFF;
+				*(LoadSeqCountPtr + 1) = (LoadSeqCount & 0xFF00) >> 8;
+				*(LoadSeqCountPtr + 2) = (LoadSeqCount & 0xFF0000) >> 16;
+			}
+			else
+			{
+				XAIE_ERROR("LoadSeqCountPtr is equal to NULL\n");
+			}
+			LoadSeqCount = 0;
+			NumOps--;
+			DevInst->PmLoadingActive = 0;
 		}
 		else if (Cmd->Opcode >= XAIE_IO_CUSTOM_OP_BEGIN) {
 			if (TX_DUMP_ENABLE) {
@@ -2877,6 +2976,122 @@ AieRC XAie_Txn_DdrAddressPatch(XAie_DevInst *DevInst, u64 regaddr, u64 argidx,
 	}
 
 	return XAIE_ERR;
+}
+
+/*****************************************************************************/
+/**
+*
+* This API register XAIE_IO_LOAD_PM_START that can be added to the
+* transaction buffer.
+* @param    DevInst - Global AIE device instance pointer.
+* @param    PmLoadId - Unique Id of PM.
+*
+* @return   XAIE_OK for success and error code otherwise.
+*
+* @note     This function must be called after XAie_StartTransaction();
+*
+******************************************************************************/
+AieRC XAie_Txn_PmLoadStart(XAie_DevInst *DevInst, u32 PmLoadId)
+{
+	AieRC RC;
+	u64 Tid;
+	XAie_TxnInst *TxnInst;
+	const XAie_Backend *Backend = DevInst->Backend;
+
+	if(DevInst->TxnList.Next != NULL)
+	{
+		if(DevInst->PmLoadingActive == 1)
+		{
+			XAIE_ERROR("Back to back XAie_Txn_PmLoadStart API calls, without calling XAie_Txn_PmLoadEnd for the fist start\n");
+			return XAIE_ERR;
+		}
+		Tid = Backend->Ops.GetTid();
+		TxnInst = _XAie_GetTxnInst(DevInst, Tid);
+		if(TxnInst == NULL) {
+			XAIE_ERROR("Could not find transaction instance "
+					"associated with thread. Polling "
+					"from register\n");
+			return XAIE_ERR;
+		}
+		if(TxnInst->NumCmds + 1U == TxnInst->MaxCmds) {
+				RC = _XAie_ReallocCmdBuf(TxnInst);
+				if (RC != XAIE_OK) {
+					return RC;
+				}
+		}
+		TxnInst->CmdBuf[TxnInst->NumCmds].Opcode = XAIE_IO_LOAD_PM_START;
+		TxnInst->CmdBuf[TxnInst->NumCmds].PmId = PmLoadId;
+
+		if (TX_DUMP_ENABLE) {
+			TxnCmdDump(&TxnInst->CmdBuf[TxnInst->NumCmds]);
+		}
+
+		TxnInst->NumCmds++;
+
+		XAIE_DBG("PM Loading using Txn flow Started\n");
+		DevInst->PmLoadingActive = 1;
+
+		return XAIE_OK;
+	}
+
+	return XAIE_ERR;
+}
+
+/*****************************************************************************/
+/**
+*
+* This API marks end of sequence of PM loading operations corresponding to its PmLoadStart.
+  This API should always be paired with XAie_Txn_PmLoadStart
+*@param    DevInst - Global AIE device instance pointer.
+*
+* @return   XAIE_OK for success and error code otherwise.
+*
+* @note     This function must be called after XAie_StartTransaction();
+*
+******************************************************************************/
+AieRC XAie_Txn_PmLoadEnd(XAie_DevInst *DevInst)
+{
+	AieRC RC;
+	u64 Tid;
+	XAie_TxnInst *TxnInst;
+	const XAie_Backend *Backend = DevInst->Backend;
+	if(DevInst->TxnList.Next != NULL)
+	{
+		if(DevInst->PmLoadingActive == 0)
+		{
+			XAIE_ERROR("XAie_Txn_PmLoadEnd called without its corresponding XAie_Txn_PmLoadStart\n");
+			return XAIE_ERR;
+		}
+		Tid = Backend->Ops.GetTid();
+		TxnInst = _XAie_GetTxnInst(DevInst, Tid);
+		if(TxnInst == NULL) {
+			XAIE_ERROR("Could not find transaction instance "
+					"associated with thread. Polling "
+					"from register\n");
+			return XAIE_ERR;
+		}
+		if(TxnInst->NumCmds + 1U == TxnInst->MaxCmds) {
+				RC = _XAie_ReallocCmdBuf(TxnInst);
+				if (RC != XAIE_OK) {
+					return RC;
+				}
+		};
+		TxnInst->CmdBuf[TxnInst->NumCmds].Opcode = XAIE_IO_LOAD_PM_END_INTERNAL;
+
+		if (TX_DUMP_ENABLE) {
+			TxnCmdDump(&TxnInst->CmdBuf[TxnInst->NumCmds]);
+		}
+
+		TxnInst->NumCmds++;
+
+		XAIE_DBG("PM Loading using Txn flow Completed\n");
+		DevInst->PmLoadingActive = 0;
+		
+		return XAIE_OK;
+	}
+
+	return XAIE_ERR;
+
 }
 
 /*****************************************************************************/

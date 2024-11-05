@@ -231,5 +231,7 @@ XAIE_AIG_EXPORT AieRC XAie_WaitTct(XAie_DevInst *DevInst, uint16_t Column, uint1
 XAIE_AIG_EXPORT AieRC XAie_Txn_NoOp(XAie_DevInst *DevInst, uint32_t Count);
 XAIE_AIG_EXPORT AieRC XAie_Txn_Preempt(XAie_DevInst *DevInst, XAie_PreemptHdr* Preempt);
 XAIE_AIG_EXPORT AieRC XAie_Txn_LoadPdi(XAie_DevInst *DevInst, u16 PdiId);
+XAIE_AIG_EXPORT AieRC XAie_Txn_PmLoadStart(XAie_DevInst *DevInst, u32 PmLoadId);
+XAIE_AIG_EXPORT AieRC XAie_Txn_PmLoadEnd(XAie_DevInst *DevInst);
 #endif		/* end of protection macro */
 /** @} */
