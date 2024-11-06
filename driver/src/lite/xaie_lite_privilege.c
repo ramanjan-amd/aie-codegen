@@ -1013,5 +1013,33 @@ AieRC XAie_ConfigureShimDmaRegisters(XAie_DevInst *DevInst, XAie_ShimOpts *ShimO
 	}
 }
 
+
+/*****************************************************************************/
+/**
+* This API Clears the Broadcast Interrupt
+*
+* @param    DevInst: AI engine partition device instance pointer
+* @param    BcChan: Broadcast Channel number to be written
+* @param    Col: Column number
+*
+* @return   XAIE_OK on success, error code on failure
+*
+*******************************************************************************/
+AieRC XAie_ClearBCPort(XAie_DevInst *DevInst, u8 BcChan, u8 Col) {
+	AieRC RC;
+
+	if (!_XAie_LIsDeviceGenAIE4()) {
+		return XAIE_NOT_SUPPORTED;
+	}
+
+	RC = _XAie_LClearBCPort(DevInst, BcChan, Col);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("AIE array Clear Broadcast Interrupt Failed\n");
+		return RC;
+	} else {
+		return XAIE_OK;
+	}
+}
+
 #endif /* XAIE_FEATURE_PRIVILEGED_ENABLE && XAIE_FEATURE_LITE */
 /** @} */

@@ -48,6 +48,10 @@
 
 #define XAIE_NPI_PROT_REG_ROWOFFSET_LSB		5U
 
+#define XAIE_PL_BROADCAST_CHAN13		13U
+#define XAIE_PL_BROADCAST_CHAN15		15U
+#define XAIE_PL_BROADCAST_CHAN_OFFSET		4U
+
 /* Set the timeout to maximum zeroization cycles required for Memtile DM zeroization for Sim backend.
    If polling timeout is less driver will return an error before zeroization is complete */
 #ifdef __AIESIM__
@@ -1569,5 +1573,45 @@ static inline AieRC _XAie_LConfigureShimDmaRegisters(XAie_DevInst *DevInst, XAie
 	}
 	return XAIE_OK;
 }
+
+/*****************************************************************************/
+/**
+* This API Clears the Broadcast Interrupt
+*
+* @param    DevInst: AI engine partition device instance pointer
+* @param    BcChan: Broadcast Channel number to be written
+* @param    Col: Column number
+*
+* @return   XAIE_OK on success, error code on failure
+*
+*******************************************************************************/
+static inline AieRC _XAie_LClearBCPort(XAie_DevInst *DevInst, u8 BcChan, u8 Col) {
+
+	u32 RegOff;
+	u64 RegAddr;
+
+	if(BcChan < XAIE_PL_BROADCAST_CHAN13 || BcChan > XAIE_PL_BROADCAST_CHAN15) {
+		XAIE_ERROR("Invalid BroadCast Channel Number\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	/* This API will be called from NPMPU firmware in secure mode. So for APP B
+	   register address needs to be physical. Below condition checks for Application
+	   mode and based on that assigning proper register address. */
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_A)
+		RegOff = XAIE_PL_MOD_EVENT_BROADCAST_A_0;
+	else if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+		RegOff = XAIE_PL_MOD_EVENT_BROADCAST_B_0;
+	else
+		return XAIE_DEVICE_INVALID_MODE;
+
+	/* The caller of this API Will shift the base address to the actual column number in
+           partition. So need to add Row, Column value into register base address. */
+	RegAddr = (RegOff + (u32)(BcChan * XAIE_PL_BROADCAST_CHAN_OFFSET));
+	_XAie_LPartWrite32(DevInst, RegAddr, 0);
+
+	return XAIE_OK;
+}
+
 
 #endif /* XAIE_LITE_AIE4_H_ */

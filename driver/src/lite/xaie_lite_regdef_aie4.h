@@ -56,6 +56,8 @@
                                                          XAIE4GBL_PL_MODULE_INTERRUPT_CONTROLLER_HW_ERROR_MASK_A_HW_CORRECTABLE_ERRORS_MASK_PRIVILEGED   || \
                                                          XAIE4GBL_PL_MODULE_INTERRUPT_CONTROLLER_HW_ERROR_MASK_A_AXI_ERRORS_MASK_PRIVILEGED)
 
+#define XAIE_PL_MOD_EVENT_BROADCAST_A_0		XAIE4GBL_PL_MODULE_EVENT_BROADCAST_A_0
+#define XAIE_PL_MOD_EVENT_BROADCAST_B_0		XAIE4GBL_PL_MODULE_EVENT_BROADCAST_B_0
 /**
  * Single Mode app or Dual mode app A specific definitions
  */
