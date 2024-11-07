@@ -1345,8 +1345,8 @@ AieRC _XAieMl_ShimDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 
 	/* Setup BdWord with the right values from DmaDesc */
 
-	if (_XAie_CheckPrecisionExceeds(DmaDesc->AddrDesc.Length,
-			_XAie_MaxBitsNeeded(BdProp->BufferLen.Lsb),MAX_VALID_AIE_REG_BIT_INDEX)) {
+	if (_XAie_CheckPrecisionExceeds(BdProp->BufferLen.Lsb,
+			_XAie_MaxBitsNeeded(DmaDesc->AddrDesc.Length),MAX_VALID_AIE_REG_BIT_INDEX)) {
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}
