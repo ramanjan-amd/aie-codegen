@@ -3667,7 +3667,7 @@ static inline u32 XAie_Mask_Value(u8 devGen)
 * @note
 *
 *******************************************************************************/
-u32 _XAie_ChangeRegisterSpace(u8 devGen, u32 regOffset)
+u64 _XAie_ChangeRegisterSpace(u8 devGen, u64 regOffset)
 {
 	return (regOffset | XAie_Mask_Value(devGen));
 }

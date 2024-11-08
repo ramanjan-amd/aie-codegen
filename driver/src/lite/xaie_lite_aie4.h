@@ -555,7 +555,14 @@ static inline void _XAie_ClearCoreReg(XAie_DevInst *DevInst)
 static inline void _XAie4_SetAppBTiles(XAie_DevInst *DevInst, u8 AtopRow, u8 Col)
 {
 	u64 RegAddr;
-	u8 AppBTiles = XAIE_AIE_TILE_NUM_ROWS - AtopRow;
+
+	int AppBTilesTemp = XAIE_AIE_TILE_NUM_ROWS - AtopRow;
+	if((AppBTilesTemp < 0) || (AppBTilesTemp > UINT8_MAX) ||
+		(AtopRow >= UINT8_MAX)){
+		XAIE_ERROR("Invalid AppBTiles\n");
+		return;
+	}
+	u8 AppBTiles = (u8)AppBTilesTemp;
 	u8 AppBbottom = AtopRow + 1;
 
         RegAddr = _XAie_LGetTileAddr(AppBbottom, Col) + XAIE_CORE_MOD_DUAL_APP_MODE;

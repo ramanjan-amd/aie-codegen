@@ -469,6 +469,12 @@ static AieRC _StrmConfigMstr(XAie_DevInst *DevInst, const XAie_StrmMod *StrmMod,
 		return XAIE_OK;
 	}
 
+	if (_XAie_CheckPrecisionExceedsForRightShift(StrmMod->DrpHdr.Lsb,
+			StrmMod->DrpHdr.Mask)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
+
 	/* Extract the drop header field */
 	TempDropHdr = XAie_GetField(Config, StrmMod->DrpHdr.Lsb,
 			StrmMod->DrpHdr.Mask);

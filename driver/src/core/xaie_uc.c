@@ -74,7 +74,7 @@ static AieRC _XAie_LoadProgMemSection(XAie_DevInst *DevInst, XAie_LocType Loc,
 	 * memory out of Progsec will not result in a segmentation
 	 * fault.
 	 */
-	return XAie_BlockWrite32(DevInst, Addr, (u32 *)SectionPtr,
+	return XAie_BlockWrite32(DevInst, Addr, (u32 *)(uintptr_t)SectionPtr,
 			(Phdr->p_memsz + 4U - 1U) / 4U);
 }
 
@@ -262,11 +262,11 @@ static AieRC _XAie_LoadElfFromMem(XAie_DevInst *DevInst, XAie_LocType Loc,
 	const Elf32_Phdr *Phdr;
 	const unsigned char *SectionPtr;
 
-	Ehdr = (const Elf32_Ehdr *) ElfMem;
+	Ehdr = (const Elf32_Ehdr *) (uintptr_t)ElfMem;
 	_XAie_PrintElfHdr(Ehdr);
 
 	for(u32 phnum = 0U; phnum < Ehdr->e_phnum; phnum++) {
-		Phdr = (Elf32_Phdr*) (ElfMem + sizeof(*Ehdr) +
+		Phdr = (Elf32_Phdr*) (uintptr_t)(ElfMem + sizeof(*Ehdr) +
 				phnum * sizeof(*Phdr));
 		_XAie_PrintProgSectHdr(Phdr);
 		if(Phdr->p_type == (u32)PT_LOAD) {

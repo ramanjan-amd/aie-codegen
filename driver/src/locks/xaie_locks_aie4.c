@@ -68,7 +68,7 @@ AieRC _XAie4_LockRelease(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 		XAie_LocType Loc, XAie_Lock Lock, u32 TimeOut, u8 BusyPoll)
 {
 	u64 RegAddr;
-	u32 RegOff = 0;
+	u64 RegOff = 0;
 	AieRC Status = XAIE_OK;
 
 	if((DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE) && (Lock.LockId >= LockMod->NumLocks)) {
@@ -129,7 +129,7 @@ AieRC _XAie4_LockAcquire(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 		XAie_LocType Loc, XAie_Lock Lock, u32 TimeOut, u8 BusyPoll)
 {
 	u64 RegAddr;
-	u32 RegOff = 0;
+	u64 RegOff = 0;
 	AieRC Status = XAIE_OK;
 
 	if((DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE) && (Lock.LockId >= LockMod->NumLocks)) {
@@ -182,7 +182,7 @@ AieRC _XAie4_LockSetValue(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 {
 	u64 RegAddr;
 	u32 RegVal;
-	u32 RegOff;
+	u64 RegOff;
 
 	RegOff = LockMod->LockSetValBase;
 
@@ -221,7 +221,7 @@ AieRC _XAie4_LockGetValue(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 		XAie_LocType Loc, XAie_Lock Lock, u32 *LockVal)
 {
 	u64 RegAddr;
-	u32 RegOff;
+	u64 RegOff;
 	AieRC RC;
 
 	RegOff = LockMod->LockSetValBase;

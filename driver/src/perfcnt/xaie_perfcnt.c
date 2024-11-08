@@ -779,6 +779,11 @@ AieRC XAie_PerfCounterResetControlReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 		EvntMod = &DevInst->DevProp.DevMod[TileType].EvntMod[Module];
 	}
 
+	if(EvntMod->EventMin > XAIE_EVENT_USER_EVENT_7_MEM_TILE){
+		XAIE_ERROR("Invalid Event type\n");
+		return XAIE_ERR;
+	}
+
 	/* Since first event of all modules is NONE event, using it to reset */
 	ResetEvent = EvntMod->EventMin;
 	/*
@@ -837,6 +842,12 @@ AieRC XAie_PerfCounterControlReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 		EvntMod = &DevInst->DevProp.DevMod[TileType].EvntMod[0U];
 	} else {
 		EvntMod = &DevInst->DevProp.DevMod[TileType].EvntMod[Module];
+	}
+
+
+	if(EvntMod->EventMin > XAIE_EVENT_USER_EVENT_7_MEM_TILE){
+		XAIE_ERROR("Invalid Event type\n");
+		return XAIE_ERR;
 	}
 
 	/* Since first event of all modules is NONE event, using it to reset */
@@ -948,6 +959,10 @@ AieRC XAie_PerfCounterGetControlConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	/* Get start and stop event individually and store in event pointer */
 	RegEvent = StartStopEvent & PerfMod->Start.Mask;
+	if(RegEvent > UINT8_MAX){
+		XAIE_ERROR("Invalid RegEvent\n");
+		return XAIE_ERR;
+	}
 	RC = XAie_EventPhysicalToLogicalConv(DevInst, Loc, Module, (u8)RegEvent,
 			StartEvent);
 	if (RC != XAIE_OK) {
@@ -961,6 +976,10 @@ AieRC XAie_PerfCounterGetControlConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 	RegEvent = (StartStopEvent & PerfMod->Stop.Mask) >>
 			PerfMod->StartStopShift / 2U;
+	if(RegEvent > UINT8_MAX){
+		XAIE_ERROR("Invalid RegEvent\n");
+		return XAIE_ERR;
+	}
 	RC = XAie_EventPhysicalToLogicalConv(DevInst, Loc, Module, (u8)RegEvent,
 			StopEvent);
 	if (RC != XAIE_OK) {
@@ -990,6 +1009,10 @@ AieRC XAie_PerfCounterGetControlConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 	/* Get reset event for given counter and store in the event pointer */
 	RegEvent >>= PerfMod->ResetShift * (Counter % 4U);
 	RegEvent &= PerfMod->Reset.Mask;
+	if(RegEvent > UINT8_MAX){
+		XAIE_ERROR("Invalid RegEvent\n");
+		return XAIE_ERR;
+	}
 	RC = XAie_EventPhysicalToLogicalConv(DevInst, Loc, Module, (u8)RegEvent,
 			ResetEvent);
 	if (RC != XAIE_OK) {
@@ -1045,6 +1068,10 @@ AieRC XAie_PerfCounterGetEventBase(XAie_DevInst *DevInst, XAie_LocType Loc,
 		EventMod = &DevInst->DevProp.DevMod[TileType].EvntMod[0U];
 	}
 
+	if(EventMod->PerfCntEventBase > XAIE_EVENT_USER_EVENT_7_MEM_TILE){
+		XAIE_ERROR("Invalid Event type\n");
+		return XAIE_ERR;
+	}
 	*Event = (XAie_Events)EventMod->PerfCntEventBase;
 
 	return RC;
