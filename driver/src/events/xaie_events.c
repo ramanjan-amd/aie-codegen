@@ -224,8 +224,8 @@ static AieRC _XAie_EventComboControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	RegOffset = EvntMod->ComboInputRegOff + (u32)((ComboId / 4) * 4);
-	Event1Lsb = ((u8)(ComboId % 4) * 2U) * EvntMod->ComboEventOff;
-	Event2Lsb = ((u8)(ComboId % 4) * 2U + 1U) * EvntMod->ComboEventOff;
+	Event1Lsb = (((u8)(ComboId % 4) * 2U) * EvntMod->ComboEventOff) & 0xFFU;
+	Event2Lsb = (((u8)(ComboId % 4) * 2U + 1U) * EvntMod->ComboEventOff) & 0xFFU;
 	Event1Mask = EvntMod->ComboEventMask << Event1Lsb;
 	Event2Mask = EvntMod->ComboEventMask << Event2Lsb;
 	if (_XAie_CheckPrecisionExceeds(Event1Lsb,
@@ -344,6 +344,11 @@ AieRC XAie_EventGetComboEventBase(XAie_DevInst *DevInst, XAie_LocType Loc,
 		EventMod = &DevInst->DevProp.DevMod[TileType].EvntMod[0];
 	}
 
+	if(EventMod->ComboEventBase > XAIE_EVENT_USER_EVENT_7_MEM_TILE){
+		XAIE_ERROR("Invalid Event type\n");
+		return XAIE_ERR;
+	}
+
 	*Event = (XAie_Events)EventMod->ComboEventBase;
 	return RC;
 }
@@ -440,7 +445,8 @@ static AieRC _XAie_EventSelectStrmPortConfig(XAie_DevInst *DevInst,
 	AieRC RC;
 	u64 RegAddr;
 	u32 RegOffset, FldVal, PortIdMask, PortMstrSlvMask, Port_32b_512b_Mask;
-	u8 TileType, SelectRegOffId, PortIdx, Select_32b_512b, PortIdLsb, PortMstrSlvLsb, Port_32b_512b_Lsb;
+	u8 TileType,  PortIdx, Select_32b_512b,Port_32b_512b_Lsb;
+	int SelectRegOffId, PortIdLsb, PortMstrSlvLsb;
 	const XAie_StrmMod *StrmMod;
 	const XAie_EvntMod *EvntMod;
 
@@ -484,12 +490,28 @@ static AieRC _XAie_EventSelectStrmPortConfig(XAie_DevInst *DevInst,
 	}
 
 	SelectRegOffId = SelectId / EvntMod->StrmPortSelectIdsPerReg;
-	RegOffset = (EvntMod->BaseStrmPortSelectRegOff + (u32)(SelectRegOffId * 4U));
+
+	if(SelectRegOffId > UINT8_MAX){
+		XAIE_ERROR("Value Exceeds UINT8_MAX\n");
+		return XAIE_ERR;
+	}
+	RegOffset = (EvntMod->BaseStrmPortSelectRegOff + (u32)((u8)SelectRegOffId * 4U));
 	PortIdLsb = EvntMod->PortIdOff *
 			(SelectId % EvntMod->StrmPortSelectIdsPerReg);
-	PortIdMask = EvntMod->PortIdMask << PortIdLsb;
+
+	if(PortIdLsb > MAX_VALID_AIE_REG_BIT_INDEX - 1  ||  PortIdLsb < 0){
+		XAIE_ERROR("Value Exceeds UINT8_MAX\n");
+		return XAIE_ERR;
+	}
+
+	PortIdMask = EvntMod->PortIdMask << (u8)PortIdLsb;
 	PortMstrSlvLsb = EvntMod->PortMstrSlvOff + 8U *
 				(SelectId % EvntMod->StrmPortSelectIdsPerReg);
+
+	if(PortMstrSlvLsb > MAX_VALID_AIE_REG_BIT_INDEX - 1  ||  PortMstrSlvLsb < 0){
+		XAIE_ERROR("Value Exceeds UINT8_MAX\n");
+		return XAIE_ERR;
+	}
 	PortMstrSlvMask = EvntMod->PortMstrSlvMask << (8U *
 				(SelectId % EvntMod->StrmPortSelectIdsPerReg));
 	Port_32b_512b_Lsb = EvntMod->Port32b512bOff + 8U *
@@ -497,9 +519,9 @@ static AieRC _XAie_EventSelectStrmPortConfig(XAie_DevInst *DevInst,
 	Port_32b_512b_Mask = EvntMod->Port32b512bMask << (8U *
 				(SelectId % EvntMod->StrmPortSelectIdsPerReg));
 
-	if (_XAie_CheckPrecisionExceeds(PortIdLsb,
+	if (_XAie_CheckPrecisionExceeds((u8)PortIdLsb,
 			_XAie_MaxBitsNeeded(PortIdx), MAX_VALID_AIE_REG_BIT_INDEX)  ||
-		_XAie_CheckPrecisionExceeds(PortMstrSlvLsb,
+		_XAie_CheckPrecisionExceeds((u8)PortMstrSlvLsb,
 			_XAie_MaxBitsNeeded((u32)PortIntf), MAX_VALID_AIE_REG_BIT_INDEX) ||
 			_XAie_CheckPrecisionExceeds(Port_32b_512b_Lsb,
 				_XAie_MaxBitsNeeded(Select_32b_512b), MAX_VALID_AIE_REG_BIT_INDEX)){
@@ -656,6 +678,11 @@ AieRC XAie_EventGetIdlePortEventBase(XAie_DevInst *DevInst, XAie_LocType Loc,
 		EventMod = &DevInst->DevProp.DevMod[TileType].EvntMod[Module];
 	} else {
 		EventMod = &DevInst->DevProp.DevMod[TileType].EvntMod[0U];
+	}
+
+	if(EventMod->PortIdleEventBase > XAIE_EVENT_USER_EVENT_7_MEM_TILE){
+		XAIE_ERROR("Invalid Event type\n");
+		return XAIE_ERR;
 	}
 
 	*Event = (XAie_Events)EventMod->PortIdleEventBase;
@@ -2026,7 +2053,7 @@ AieRC XAie_EventReadStatus(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return RC;
 	}
 
-	*Status =  (u8)(RegVal >> (PhyEvent % 32U)) & 1U;
+	*Status =  (u8)((RegVal >> (PhyEvent % 32U)) & 1U);
 
 	return XAIE_OK;
 }
@@ -2080,6 +2107,11 @@ AieRC XAie_EventGetUserEventBase(XAie_DevInst *DevInst, XAie_LocType Loc,
 		EventMod = &DevInst->DevProp.DevMod[TileType].EvntMod[Module];
 	} else {
 		EventMod = &DevInst->DevProp.DevMod[TileType].EvntMod[0U];
+	}
+
+	if(EventMod->UserEventBase > XAIE_EVENT_USER_EVENT_7_MEM_TILE){
+		XAIE_ERROR("Invalid Event type\n");
+		return XAIE_ERR;
 	}
 
 	*Event = (XAie_Events)EventMod->UserEventBase;

@@ -50,7 +50,7 @@ u8 _XAie_IsDeviceGenSupportDualApp(u8 DevGen);
 u8 _XAie_IsTileResourceInSharedAddrSpace(u8 DevGen, u8 TileType);
 u8 _XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode,
 		u8 elementValue);
-u32 _XAie_ChangeRegisterSpace(u8 devGen, u32 regOffset);
+u64 _XAie_ChangeRegisterSpace(u8 devGen, u64 regOffset);
 u8 _XAie_IsUcModulePresent(XAie_DevInst* DevInst, u8 TileType);
 u8 _XAie_DmaGetMaxNumChannels(XAie_DevInst *DevInst, const XAie_DmaMod *DmaMod,
 				    u8 TileType, u8 Dir);

@@ -88,7 +88,7 @@ static inline u64 _XAie4_GetChannelCtrlAddr(XAie_DevInst *DevInst, const XAie_Dm
 {
 	u8 TileType;
 	u8 NumChannels;
-	u32 ChCtrlBase;
+	u64 ChCtrlBase;
 	u64 Addr;
 
 	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
@@ -175,7 +175,7 @@ static AieRC _XAie4_ValidateBd(XAie_DevInst* DevInst, u8 TileType,
 
 		MaxNumChannels = _XAie_DmaGetMaxNumChannels(DevInst, DmaMod,
 			TileType, Dir);
-		if (_XAie_ValidateChannelNumber(DevInst, TileType, Dir, ChNum, MaxNumChannels)) {
+		if (_XAie_ValidateChannelNumber(DevInst, TileType, (XAie_DmaDirection)Dir, ChNum, MaxNumChannels)) {
 			XAIE_ERROR("Invalid Channel number\n");
 			return XAIE_INVALID_CHANNEL_NUM;
 		}
@@ -848,7 +848,6 @@ AieRC XAie_DmaSetNextBd(XAie_DmaDesc *DmaDesc, u16 NextBd, u8 EnableNextBd)
 
 	DmaMod = DmaDesc->DmaMod;
 	NumBds = DmaMod->NumBds;
-
 	if (_XAie_IsDeviceGenAIE4(DmaDesc->DevGen)) {
 		if (DmaDesc->TileType == XAIEGBL_TILE_TYPE_MEMTILE) {
 			/* Get Private pool BD num, and channel info */

@@ -68,16 +68,21 @@ AieRC _XAie4_LockRelease(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 		XAie_LocType Loc, XAie_Lock Lock, u32 TimeOut, u8 BusyPoll)
 {
 	u64 RegAddr;
-	u32 RegOff = 0;
+	u64 RegOff = 0;
 	AieRC Status = XAIE_OK;
+	u8 LockVal;
 
 	if((DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE) && (Lock.LockId >= LockMod->NumLocks)) {
 		RegOff = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, RegOff);
 		Lock.LockId -= LockMod->NumLocks;
 	}
+	if(Lock.LockVal < 0)
+		LockVal = (u8)(Lock.LockVal);
+	else
+		LockVal = Lock.LockVal;
 
 	RegOff |= LockMod->BaseAddr + (Lock.LockId * LockMod->LockIdOff) +
-		(((u8)Lock.LockVal & XAIE4_LOCK_VALUE_MASK) <<
+		((LockVal & XAIE4_LOCK_VALUE_MASK) <<
 		 XAIE4_LOCK_VALUE_SHIFT);
 
 
@@ -129,16 +134,20 @@ AieRC _XAie4_LockAcquire(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 		XAie_LocType Loc, XAie_Lock Lock, u32 TimeOut, u8 BusyPoll)
 {
 	u64 RegAddr;
-	u32 RegOff = 0;
+	u64 RegOff = 0;
 	AieRC Status = XAIE_OK;
+	u8 LockVal;
 
 	if((DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE) && (Lock.LockId >= LockMod->NumLocks)) {
 		RegOff = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, RegOff);
 		Lock.LockId -= LockMod->NumLocks;
 	}
-
+	if(Lock.LockVal < 0)
+		LockVal = (u8)(Lock.LockVal);
+	else
+		LockVal = Lock.LockVal;
 	RegOff |= LockMod->BaseAddr + (Lock.LockId * LockMod->LockIdOff) +
-		(LockMod->RelAcqOff) + (((u8)Lock.LockVal &
+		(LockMod->RelAcqOff) + ((LockVal &
 					XAIE4_LOCK_VALUE_MASK) <<
 				XAIE4_LOCK_VALUE_SHIFT);
 
@@ -182,7 +191,12 @@ AieRC _XAie4_LockSetValue(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 {
 	u64 RegAddr;
 	u32 RegVal;
-	u32 RegOff;
+	u64 RegOff;
+
+        if(Lock.LockVal < 0) {
+                XAIE_ERROR("Lock Value needs to be positive\n");
+                return XAIE_ERR;
+        }
 
 	RegOff = LockMod->LockSetValBase;
 
@@ -194,6 +208,12 @@ AieRC _XAie4_LockSetValue(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 	RegAddr = (u64)(RegOff +
 		LockMod->LockSetValOff * (u64)Lock.LockId) +
 		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+
+        if ((_XAie_CheckPrecisionExceeds(LockMod->LockInit->Lsb,
+                        _XAie_MaxBitsNeeded(Lock.LockVal),MAX_VALID_AIE_REG_BIT_INDEX))) {
+                XAIE_ERROR("Check Precision Exceeds Failed\n");
+                return XAIE_ERR;
+        }
 
 	RegVal = XAie_SetField(Lock.LockVal, LockMod->LockInit->Lsb,
 			LockMod->LockInit->Mask);
@@ -221,7 +241,7 @@ AieRC _XAie4_LockGetValue(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 		XAie_LocType Loc, XAie_Lock Lock, u32 *LockVal)
 {
 	u64 RegAddr;
-	u32 RegOff;
+	u64 RegOff;
 	AieRC RC;
 
 	RegOff = LockMod->LockSetValBase;

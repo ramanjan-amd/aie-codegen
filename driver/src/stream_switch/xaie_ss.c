@@ -102,6 +102,13 @@ static AieRC _GetMaxNumSsPorts(XAie_DevInst *DevInst, u8 TileType,
 					*MaxNumPorts = PortPtr->NumPorts * 2;
 				}
 			}
+			/* The trace S2MM port is supported only in APP A as oppurtunistic feature.*/
+			if ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) &&
+					(TileType == XAIEGBL_TILE_TYPE_SHIMNOC) &&
+					(PortType == DMA_Trace)) {
+				XAIE_ERROR(" Trace S2MM port is supported only in APP A \n");
+				return XAIE_ERR;
+			}
 		}
 	}
 
@@ -460,6 +467,12 @@ static AieRC _StrmConfigMstr(XAie_DevInst *DevInst, const XAie_StrmMod *StrmMod,
 
 	if (Enable != XAIE_ENABLE) {
 		return XAIE_OK;
+	}
+
+	if (_XAie_CheckPrecisionExceedsForRightShift(StrmMod->DrpHdr.Lsb,
+			StrmMod->DrpHdr.Mask)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
 	}
 
 	/* Extract the drop header field */

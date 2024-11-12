@@ -23,14 +23,13 @@
 /***************************** Include Files *********************************/
 #include "xaie_feature_config.h"
 #include "xaie_helper.h"
-#include "xaie_helper_internal.h"
 #include "xaie_io.h"
 #include "xaiegbl_regdef.h"
 #include "xaie_dma_aie4.h"
-#include "xaie_helper_internal.h"
 
 #ifdef XAIE_FEATURE_DMA_ENABLE
 
+#include "xaie_helper_internal.h"
 /************************** Constant Definitions *****************************/
 #define XAIE_DMA_32BIT_TXFER_LEN			2U
 
@@ -701,7 +700,7 @@ AieRC _XAie4_ShimTileDmaUpdateBdLen(XAie_DevInst *DevInst,
 {
 	u64 RegAddr = 0;
 	u32 RegVal, Mask;
-	u8 MaxNumBds;
+	u16 MaxNumBds;
 
 	/* This is needed to check if BdNum is for control_mm2s channels */
 	MaxNumBds = DmaMod->NumBds * 2;
@@ -1004,7 +1003,7 @@ AieRC _XAie4_ShimTileDmaUpdateBdAddr(XAie_DevInst *DevInst,
 	AieRC RC;
 	u64 RegAddr, BaseAddr = 0;
 	u32 RegVal, Mask;
-	u8 MaxNumBds;
+	u16 MaxNumBds;
 
 	/* get the maximum BDs that the shim tile can support in
 	 * single app mode*/
@@ -1514,7 +1513,7 @@ AieRC _XAie4_ShimDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 	u64 Addr;
 	u64 BdBaseAddr = 0;
 	u32 BdWord[XAIE4_SHIMDMA_NUM_BD_WORDS];
-	u8 MaxNumBds;
+	u16 MaxNumBds;
 	XAie_ShimDmaBdArgs Args;
 	const XAie_DmaMod *DmaMod;
 	const XAie_DmaBdProp *BdProp;
@@ -2316,7 +2315,7 @@ AieRC _XAie4_ShimDmaReadBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 	u64 Addr;
 	u64 BdBaseAddr = 0;
 	u32 BdWord[XAIE4_SHIMDMA_NUM_BD_WORDS];
-	u8 MaxNumBds;
+	u16 MaxNumBds;
 	const XAie_DmaBdProp *BdProp;
 
 	BdProp = DmaDesc->DmaMod->BdProp;

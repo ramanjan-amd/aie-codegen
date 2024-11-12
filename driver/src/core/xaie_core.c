@@ -34,10 +34,10 @@
 #include "xaie_core.h"
 #include "xaie_events.h"
 #include "xaie_feature_config.h"
-#include "xaie_helper_internal.h"
 
 #ifdef XAIE_FEATURE_CORE_ENABLE
 
+#include "xaie_helper_internal.h"
 /************************** Constant Definitions *****************************/
 #define XAIETILE_CORE_STATUS_DEF_WAIT_USECS 500U
 

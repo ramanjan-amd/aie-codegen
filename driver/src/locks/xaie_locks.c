@@ -37,33 +37,6 @@
 /*****************************************************************************/
 /**
 *
-* This API provides the maximum number of Lock Value Upper and Lower Bound values
-*
-* @param        DevGen: device generation value.
-* @param        TileType: Type of tile aiecore tile, memtile or shimnoc tile
-* @param        elementValue: resource value for corresponding tile
-* @param        AppMode: device appmode value.
-
-* @return       None.
-*
-* @note         This api doesn't check any input parameter for the invalid values.
-*                       It is asssumed that all parameters are valid for this function
-*
-*******************************************************************************/
-s8 _XAie_GetMaxLockValue(u8 DevGen, u8 TileType, u8 AppMode, s8 elementValue)
-{
-        if(_XAie_IsDeviceGenAIE4(DevGen) &&
-                        (AppMode == XAIE_DEVICE_SINGLE_APP_MODE) &&
-                        _XAie_IsTileResourceInSharedAddrSpace(DevGen, TileType)) {
-                return elementValue * 2;
-        } else {
-                return elementValue;
-        }
-}
-
-/*****************************************************************************/
-/**
-*
 * This API is used to acquire the specified lock with or without value. Lock
 * acquired without value if LockVal is (XAIE_LOCK_WITH_NO_VALUE). Lock without
 * value can be acquired for AIE only. This API can be blocking or non-blocking
@@ -147,7 +120,6 @@ AieRC XAie_LockAcquireBusy(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lo
 	u8  TileType;
 	const XAie_LockMod *LockMod;
 	u8 MaxLockId;
-	s8 LockValUpperBound, LockValLowerBound;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -164,15 +136,13 @@ AieRC XAie_LockAcquireBusy(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lo
 	LockMod = DevInst->DevProp.DevMod[TileType].LockMod;
 
 	MaxLockId = _XAie_GetMaxElementValue(DevInst->DevProp.DevGen, TileType, DevInst->AppMode, LockMod->NumLocks);
-	LockValUpperBound = _XAie_GetMaxLockValue(DevInst->DevProp.DevGen, TileType, DevInst->AppMode, LockMod->LockValUpperBound);
-	LockValLowerBound = _XAie_GetMaxLockValue(DevInst->DevProp.DevGen, TileType, DevInst->AppMode, LockMod->LockValLowerBound);
    
 	if(Lock.LockId > MaxLockId) {
 		XAIE_ERROR("Invalid Lock Id\n");
 		return XAIE_INVALID_LOCK_ID;
 	}
-	if((Lock.LockVal > LockValUpperBound) ||
-			(Lock.LockVal < LockValLowerBound)) {
+	if((Lock.LockVal > LockMod->LockValUpperBound) ||
+			(Lock.LockVal < LockMod->LockValLowerBound)) {
 		XAIE_ERROR("Lock value out of range\n");
 		return XAIE_INVALID_LOCK_VALUE;
 	}
@@ -209,7 +179,6 @@ AieRC XAie_LockRelease(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lock,
 	u8  TileType;
 	const XAie_LockMod *LockMod;
 	u8 MaxLockId;
-	s8 LockValUpperBound, LockValLowerBound;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -226,16 +195,14 @@ AieRC XAie_LockRelease(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lock,
 	LockMod = DevInst->DevProp.DevMod[TileType].LockMod;
 
 	MaxLockId = _XAie_GetMaxElementValue(DevInst->DevProp.DevGen, TileType, DevInst->AppMode, LockMod->NumLocks);
-	LockValUpperBound = _XAie_GetMaxLockValue(DevInst->DevProp.DevGen, TileType, DevInst->AppMode, LockMod->LockValUpperBound);
-	LockValLowerBound = _XAie_GetMaxLockValue(DevInst->DevProp.DevGen, TileType, DevInst->AppMode, LockMod->LockValLowerBound);
       
 	if(Lock.LockId > MaxLockId) {
 		XAIE_ERROR("Invalid Lock Id\n");
 		return XAIE_INVALID_LOCK_ID;
 	}
 
-	if((Lock.LockVal > LockValUpperBound) ||
-			(Lock.LockVal < LockValLowerBound)) {
+	if((Lock.LockVal > LockMod->LockValUpperBound) ||
+			(Lock.LockVal < LockMod->LockValLowerBound)) {
 		XAIE_ERROR("Lock value out of range\n");
 		return XAIE_INVALID_LOCK_VALUE;
 	}
