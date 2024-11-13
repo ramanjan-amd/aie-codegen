@@ -41,6 +41,8 @@
 
 /* AIE core registers step size */
 #define AIE_CORE_REGS_STEP              0x10
+#define MAX_DMA_CHAN			2
+#define MAX_DMA_DIR			2
 
 /************************** Constant Definitions *****************************/
 /************************** Function Prototypes  *****************************/
@@ -1152,6 +1154,62 @@ static inline void _XAie_ClearCoreReg(XAie_DevInst *DevInst)
 
 		}
 	}
+}
+
+/*****************************************************************************/
+/**
+* This API Clears the Broadcast Interrupt
+*
+* @param    DevInst: AI engine partition device instance pointer
+* @param    BcChan: Broadcast Channel number to be written
+* @param    Col: Column number
+*
+* @return   XAIE_OK on success, error code on failure
+*
+*******************************************************************************/
+static inline AieRC _XAie_LClearBCPort(XAie_DevInst *DevInst, u8 BcChan, u8 Col)
+{
+	(void *)DevInst;
+	(void)BcChan;
+	(void)Col;
+
+	return XAIE_NOT_SUPPORTED;
+}
+
+/*****************************************************************************/
+/**
+ *
+ * This API Stops issueing new AXI-MM commands before context switch
+ * Before context switching Needs to stop new AXI-MM transactions. So
+ * that context switch can be done and no data corruption can happen.
+ *
+ * @param       DevInst: Device Instance
+ *
+ * @return      None.
+ *
+ * @note        None.
+ *
+ *****************************************************************************/
+static inline void _XAie_PauseMem(XAie_DevInst *DevInst)
+{
+	u64 RegAddr;
+	u32 RegVal;
+	u8 Col, Dir, ChNum;
+
+	for(Col = DevInst->StartCol; Col < DevInst->NumCols; Col++) {
+		for(Dir = 0; Dir < MAX_DMA_DIR; Dir++) {
+			for(ChNum = 0; ChNum < MAX_DMA_CHAN; ChNum++) {
+				RegAddr = _XAie_LGetTileAddr(XAIE_SHIM_ROW, Col) +
+					XAIE_SHIM_DMA_MM2S_CHANNEL_CTRL_REGOFF +
+					ChNum * XAIE_SHIM_DMA_CHANNEL_CTRL_IDX +
+					(u32)Dir * XAIE_SHIM_DMA_CHANNEL_CTRL_IDX_OFFSET;
+				RegVal = _XAie_LPartRead32(DevInst, RegAddr);
+				RegVal = (RegVal | XAIE_SHIM_DMA_CHANNEL_CTRL_PAUSE_MEM_MASK);
+				_XAie_LPartWrite32(DevInst, RegAddr, RegVal);
+			}
+		}
+	}
+	usleep(10000);
 }
 
 #endif		/* end of protection macro */

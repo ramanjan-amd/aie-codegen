@@ -27,6 +27,7 @@
 #if defined(XAIE_FEATURE_PRIVILEGED_ENABLE) && defined(XAIE_FEATURE_LITE)
 
 #include "xaie_lite.h"
+#include "xaie_lite_internal.h"
 #include "xaiegbl_defs.h"
 #include "xaiegbl.h"
 
@@ -62,8 +63,20 @@ AieRC XAie_ClearCoreReg(XAie_DevInst *DevInst)
 {
 	/* Based on the Architecture corresponding API will be
 	   called*/
+        if (_XAie_LIsDeviceGenAIE4()) {
+                return XAIE_NOT_SUPPORTED;
+        }
 	_XAie_ClearCoreReg(DevInst);
 	return XAIE_OK;
+}
+
+AieRC XAie_PauseMem(XAie_DevInst *DevInst)
+{
+        if (_XAie_LIsDeviceGenAIE4()) {
+                return XAIE_NOT_SUPPORTED;
+        }
+        _XAie_PauseMem(DevInst);
+        return XAIE_OK;
 }
 
 #endif /* XAIE_FEATURE_PRIVILEGED_ENABLE && XAIE_FEATURE_LITE */

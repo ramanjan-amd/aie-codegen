@@ -547,6 +547,25 @@ static inline void _XAie_ClearCoreReg(XAie_DevInst *DevInst)
 
 /*****************************************************************************/
 /**
+ *
+ * This API Stops issueing new AXI-MM commands before context switch
+ * Before context switching Needs to stop new AXI-MM transactions. So
+ * that context switch can be done and no data corruption can happen.
+ *
+ * @param       DevInst: Device Instance
+ *
+ * @return      None.
+ *
+ * @note        None.
+ *
+ *****************************************************************************/
+static inline void _XAie_PauseMem(XAie_DevInst *DevInst)
+{
+	(void)DevInst;
+}
+
+/*****************************************************************************/
+/**
  * This API Calculates All the App B tiles and set App B Bottom and App B Tiles
  * accordingly.
  *
@@ -1598,7 +1617,8 @@ static inline AieRC _XAie_LClearBCPort(XAie_DevInst *DevInst, u8 BcChan, u8 Col)
 	/* This API will be called from NPMPU firmware in secure mode. So for APP B
 	   register address needs to be physical. Below condition checks for Application
 	   mode and based on that assigning proper register address. */
-	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_A)
+	if((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_A) ||
+		(DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE))
 		RegOff = XAIE_PL_MOD_EVENT_BROADCAST_A_0;
 	else if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
 		RegOff = XAIE_PL_MOD_EVENT_BROADCAST_B_0;

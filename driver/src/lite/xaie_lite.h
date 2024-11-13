@@ -99,7 +99,7 @@ XAIE_AIG_EXPORT AieRC XAie_PowerOnReset(XAie_DevInst *DevInst, XAie_PartPorOpts 
 XAIE_AIG_EXPORT AieRC XAie_TileClockControl(XAie_DevInst *DevInst, XAie_LocType *Locs,u8 NumTiles, u8 Enable);
 XAIE_AIG_EXPORT AieRC XAie_ConfigureShimDmaRegisters(XAie_DevInst *DevInst, XAie_ShimOpts *ShimOptions);
 XAIE_AIG_EXPORT AieRC XAie_ClearBCPort(XAie_DevInst *DevInst, u8 BcChan, u8 Col);
-
+XAIE_AIG_EXPORT AieRC XAie_PauseMem(XAie_DevInst *DevInst);
 
 /************************** Function Definitions *****************************/
 /*****************************************************************************/

@@ -445,5 +445,45 @@ static inline AieRC _XAie_LConfigureShimDmaRegisters(XAie_DevInst *DevInst, XAie
 
 	return XAIE_NOT_SUPPORTED;
 }
+
+/*****************************************************************************/
+/**
+* This API Clears the Broadcast Interrupt
+*
+* @param    DevInst: AI engine partition device instance pointer
+* @param    BcChan: Broadcast Channel number to be written
+* @param    Col: Column number
+*
+* @return   XAIE_OK on success, error code on failure
+*
+*******************************************************************************/
+static inline AieRC _XAie_LClearBCPort(XAie_DevInst *DevInst, u8 BcChan, u8 Col)
+{
+        (void *)DevInst;
+        (void)BcChan;
+        (void)Col;
+
+        return XAIE_NOT_SUPPORTED;
+}
+
+/*****************************************************************************/
+/**
+ *
+ * This API Stops issueing new AXI-MM commands before context switch
+ * Before context switching Needs to stop new AXI-MM transactions. So
+ * that context switch can be done and no data corruption can happen.
+ *
+ * @param       DevInst: Device Instance
+ *
+ * @return      None.
+ *
+ * @note        None.
+ *
+ *****************************************************************************/
+static inline void _XAie_PauseMem(XAie_DevInst *DevInst)
+{
+        (void)DevInst;
+}
+
 #endif		/* end of protection macro */
 /** @} */
