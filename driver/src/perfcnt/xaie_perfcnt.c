@@ -959,11 +959,11 @@ AieRC XAie_PerfCounterGetControlConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	/* Get start and stop event individually and store in event pointer */
 	RegEvent = StartStopEvent & PerfMod->Start.Mask;
-	if(RegEvent > UINT8_MAX){
+	if(RegEvent > UINT16_MAX){
 		XAIE_ERROR("Invalid RegEvent\n");
 		return XAIE_ERR;
 	}
-	RC = XAie_EventPhysicalToLogicalConv(DevInst, Loc, Module, (u8)RegEvent,
+	RC = XAie_EventPhysicalToLogicalConv(DevInst, Loc, Module, (u16)RegEvent,
 			StartEvent);
 	if (RC != XAIE_OK) {
 		return RC;
@@ -976,11 +976,11 @@ AieRC XAie_PerfCounterGetControlConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 	RegEvent = (StartStopEvent & PerfMod->Stop.Mask) >>
 			PerfMod->StartStopShift / 2U;
-	if(RegEvent > UINT8_MAX){
+	if(RegEvent > UINT16_MAX){
 		XAIE_ERROR("Invalid RegEvent\n");
 		return XAIE_ERR;
 	}
-	RC = XAie_EventPhysicalToLogicalConv(DevInst, Loc, Module, (u8)RegEvent,
+	RC = XAie_EventPhysicalToLogicalConv(DevInst, Loc, Module, (u16)RegEvent,
 			StopEvent);
 	if (RC != XAIE_OK) {
 		return RC;
@@ -1009,11 +1009,11 @@ AieRC XAie_PerfCounterGetControlConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 	/* Get reset event for given counter and store in the event pointer */
 	RegEvent >>= PerfMod->ResetShift * (Counter % 4U);
 	RegEvent &= PerfMod->Reset.Mask;
-	if(RegEvent > UINT8_MAX){
+	if(RegEvent > UINT16_MAX){
 		XAIE_ERROR("Invalid RegEvent\n");
 		return XAIE_ERR;
 	}
-	RC = XAie_EventPhysicalToLogicalConv(DevInst, Loc, Module, (u8)RegEvent,
+	RC = XAie_EventPhysicalToLogicalConv(DevInst, Loc, Module, (u16)RegEvent,
 			ResetEvent);
 	if (RC != XAIE_OK) {
 		return RC;

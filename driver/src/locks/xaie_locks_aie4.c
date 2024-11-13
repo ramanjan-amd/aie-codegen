@@ -81,7 +81,7 @@ AieRC _XAie4_LockRelease(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 	else
 		LockVal = Lock.LockVal;
 
-	RegOff |= LockMod->BaseAddr + (Lock.LockId * LockMod->LockIdOff) +
+	RegOff |= LockMod->BaseAddr + (Lock.LockId * (u64)LockMod->LockIdOff) +
 		((LockVal & XAIE4_LOCK_VALUE_MASK) <<
 		 XAIE4_LOCK_VALUE_SHIFT);
 
@@ -146,7 +146,7 @@ AieRC _XAie4_LockAcquire(XAie_DevInst *DevInst, const XAie_LockMod *LockMod,
 		LockVal = (u8)(Lock.LockVal);
 	else
 		LockVal = Lock.LockVal;
-	RegOff |= LockMod->BaseAddr + (Lock.LockId * LockMod->LockIdOff) +
+	RegOff |= LockMod->BaseAddr + (Lock.LockId * (u64)LockMod->LockIdOff) +
 		(LockMod->RelAcqOff) + ((LockVal &
 					XAIE4_LOCK_VALUE_MASK) <<
 				XAIE4_LOCK_VALUE_SHIFT);

@@ -157,6 +157,12 @@ AieRC _XAie_CoreWaitForDone(XAie_DevInst *DevInst, XAie_LocType Loc,
 	AieRC Status = XAIE_OK;
 
 	Mask = CoreMod->CoreEvent->DisableEventOccurred.Mask;
+
+	if ((_XAie_CheckPrecisionExceeds(CoreMod->CoreEvent->DisableEventOccurred.Lsb,
+				_XAie_MaxBitsNeeded(1U),MAX_VALID_AIE_REG_BIT_INDEX))) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	Value = (u32)(1U << CoreMod->CoreEvent->DisableEventOccurred.Lsb);
 	EventRegAddr = CoreMod->CoreEvent->EnableEventOff +
 		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);

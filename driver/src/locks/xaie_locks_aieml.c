@@ -28,9 +28,10 @@
 #include "xaie_helper.h"
 #include "xaie_locks.h"
 #include "xaiegbl_defs.h"
-#include "xaie_helper_internal.h"
 
 #ifdef XAIE_FEATURE_LOCK_ENABLE
+
+#include "xaie_helper_internal.h"
 /************************** Constant Definitions *****************************/
 #define XAIEML_LOCK_VALUE_MASK		0x7FU
 #define XAIEML_LOCK_VALUE_SHIFT		0x2U

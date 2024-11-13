@@ -137,7 +137,7 @@ static AieRC _XAie_GetTargetTileLoc(XAie_DevInst *DevInst, XAie_LocType Loc,
 	 * CardDir can have values of 4, 5, 6 or 7 for valid data memory
 	 * addresses..
 	 */
-	CardDir = (u8)(Addr / CoreMod->DataMemSize);
+	CardDir = (u8)((Addr / CoreMod->DataMemSize) & 0xFFU);
 
 	RowParity = Loc.Row % 2U;
 	/*

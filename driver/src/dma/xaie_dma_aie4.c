@@ -197,10 +197,15 @@ static u64 _GetMemTileBdBaseAddr(const XAie_DmaMod *DmaMod, u8 BdNum, u8 ChNum, 
 }
 
 static u64 _GetShimTileCtrlMm2sChanBdBaseAddr(const XAie_DmaMod *DmaMod,
-		u8 BdNum, u16 MaxNumBds)
+		u16 BdNum, u16 MaxNumBds)
 {
 	u8 ChNum;
 	u64 BdBaseAddr = 0;
+
+	if (((BdNum - MaxNumBds) > UINT16_MAX )||((BdNum - MaxNumBds) < 0)) {
+		XAIE_ERROR("Wrong BdNum passed\n");
+		return XAIE_ERR;
+	}
 
 	/* Get control_mm2s channel number and private pool BdNum from given BdNum */
 	BdNum = BdNum - MaxNumBds;

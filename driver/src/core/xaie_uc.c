@@ -28,9 +28,10 @@
 #include "xaie_core_aie.h"
 #include "xaie_feature_config.h"
 #include "xaie_mem.h"
-#include "xaie_helper_internal.h"
 
 #ifdef XAIE_FEATURE_UC_ENABLE
+
+#include "xaie_helper_internal.h"
 /************************** Function Definitions *****************************/
 /*****************************************************************************/
 /**

@@ -23,9 +23,10 @@
 /***************************** Include Files *********************************/
 #include "xaie_core_aieml.h"
 #include "xaie_feature_config.h"
-#include "xaie_helper_internal.h"
 
 #ifdef XAIE_FEATURE_CORE_ENABLE
+
+#include "xaie_helper_internal.h"
 
 /************************** Constant Definitions *****************************/
 
@@ -114,6 +115,12 @@ AieRC _XAieMl_CoreWaitForDone(XAie_DevInst *DevInst, XAie_LocType Loc,
 	AieRC Status = XAIE_OK;
 
 	Mask = CoreMod->CoreSts->Done.Mask;
+
+	if ((_XAie_CheckPrecisionExceeds(CoreMod->CoreSts->Done.Lsb,
+				_XAie_MaxBitsNeeded(1U),MAX_VALID_AIE_REG_BIT_INDEX))) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	Value = (u32)(1U << CoreMod->CoreSts->Done.Lsb);
 
 	RegAddr = CoreMod->CoreSts->RegOff +
