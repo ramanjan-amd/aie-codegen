@@ -1438,6 +1438,17 @@ static inline AieRC _XAie_LAiePorConfiguration(XAie_DevInst *DevInst, XAie_PartP
 	#ifndef __AIESIM__
 	_XAie_LZeroInitUcMemory(DevInst);
 	#endif
+
+	/* Clock Gate all Columns */
+	for(u32 C = 0; C < DevInst->NumCols; C++) {
+		RegAddr = _XAie_LGetTileAddr(0,C) + XAIE_PL_MOD_COL_CLKCNTR_REGOFF;
+		FldVal = XAie_SetField(XAIE_DISABLE,
+					XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_LSB,
+					XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK);
+		_XAie_LPartMaskWrite32(DevInst, RegAddr,
+				XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK, FldVal);
+	}
+
 	/* Enable NPI accept only Secure data */
 	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_SECURE_REG,XAIE_ENABLE);
 	/* Lock NPI PCSR */
@@ -1479,13 +1490,13 @@ static inline AieRC _XAie_LTileClockControl(XAie_DevInst *DevInst, XAie_LocType 
 		_XAie_LPartMaskWrite32(DevInst, RegAddr,
 					XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK, FldVal);
 
-		/* Disable/Enable column CERT Clock */
-		RegAddr = _XAie_LGetTileAddr(Loc[i].Row, Loc[i].Col) + XAIE_PL_MOD_CTE_CLKCNTR_0_REGOFF;
+		/* Disable/Enable Cert UCONTROLLER_CLOCK */
+		RegAddr = _XAie_LGetTileAddr(Loc[i].Row, Loc[i].Col) + XAIE4GBL_PL_MODULE_MODULE_CLOCK_CONTROL;
 		FldVal = XAie_SetField(Enable,
-					XAIE_PL_MOD_CTE_CLKCNTR_0_CLKBUF_ENABLE_LSB,
-						XAIE_PL_MOD_CTE_CLKCNTR_0_CLKBUF_ENABLE_MASK);
+					XAIE_PL_MOD_UCONTROLLER_CLOCK_ENABLE_LSB,
+						XAIE_PL_MOD_UCONTROLLER_CLOCK_ENABLE_MASK);
 		_XAie_LPartMaskWrite32(DevInst, RegAddr,
-					XAIE_PL_MOD_CTE_CLKCNTR_0_CLKBUF_ENABLE_MASK, FldVal);
+					XAIE_PL_MOD_UCONTROLLER_CLOCK_ENABLE_MASK, FldVal);
 		} else if (Loc[i].Row >= XAIE_AIE_TILE_ROW_START) {
 			/* Disable/Enable Compute Tile Module Clock */
 			RegAddr = _XAie_LGetTileAddr(Loc[i].Row, Loc[i].Col) + XAIE_AIE_TILE_MODULE_CLOCKCTR_REGOFF;

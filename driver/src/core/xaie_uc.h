@@ -32,8 +32,8 @@
 
 /************************** Function Prototypes  *****************************/
 
-AieRC XAie_LoadUc(XAie_DevInst *DevInst, XAie_LocType Loc, const char *ElfPtr);
-AieRC XAie_LoadUcMem(XAie_DevInst *DevInst, XAie_LocType Loc,
+XAIE_AIG_EXPORT AieRC XAie_LoadUc(XAie_DevInst *DevInst, XAie_LocType Loc, const char *ElfPtr);
+XAIE_AIG_EXPORT AieRC XAie_LoadUcMem(XAie_DevInst *DevInst, XAie_LocType Loc,
 		const unsigned char* ElfMem);
 AieRC _XAie_UcCoreWakeup(XAie_DevInst *DevInst, XAie_LocType Loc,
 		const struct XAie_UcMod *UcMod);
@@ -41,7 +41,7 @@ AieRC _XAie_UcCoreSleep(XAie_DevInst *DevInst, XAie_LocType Loc,
 		const struct XAie_UcMod *UcMod);
 AieRC _XAie_UcCoreGetStatus(XAie_DevInst *DevInst, XAie_LocType Loc,
 		u32 *CoreStatus, const struct XAie_UcMod *UcMod);
-AieRC XAie_UcModuleEventSelect(XAie_DevInst *DevInst, XAie_LocType Loc,
+XAIE_AIG_EXPORT AieRC XAie_UcModuleEventSelect(XAie_DevInst *DevInst, XAie_LocType Loc,
 		u8 SelectId);
 
 #endif /* XAIE_FEATURE_UC_ENABLE */

@@ -201,20 +201,20 @@ XAIE_AIG_EXPORT u32 _XAie_GetStartRow(XAie_DevInst *DevInst, u8 TileType);
 XAIE_AIG_EXPORT u64 _XAie_GetTileAddr(XAie_DevInst *DevInst, u8 R, u8 C);
 
 /*Public functions. Need to by discussed why it should be public */
-AieRC XAie_Read32(XAie_DevInst *DevInst, u64 RegOff, u32 *Data);
-AieRC XAie_MaskWrite32(XAie_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value);
-AieRC XAie_MaskPoll(XAie_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value,
+XAIE_AIG_EXPORT AieRC XAie_Read32(XAie_DevInst *DevInst, u64 RegOff, u32 *Data);
+XAIE_AIG_EXPORT AieRC XAie_MaskWrite32(XAie_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value);
+XAIE_AIG_EXPORT AieRC XAie_MaskPoll(XAie_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value,
 		u32 TimeOutUs);
-AieRC XAie_MaskPollBusy(XAie_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value,
+XAIE_AIG_EXPORT AieRC XAie_MaskPollBusy(XAie_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value,
 		u32 TimeOutUs);
-AieRC XAie_BlockWrite32(XAie_DevInst *DevInst, u64 RegOff, const u32 *Data,
+XAIE_AIG_EXPORT AieRC XAie_BlockWrite32(XAie_DevInst *DevInst, u64 RegOff, const u32 *Data,
 			u32 Size);
-AieRC XAie_BlockSet32(XAie_DevInst *DevInst, u64 RegOff, u32 Data, u32 Size);
-void XAie_Log(FILE *Fd, const char *prefix, const char *func, u32 line,
+XAIE_AIG_EXPORT AieRC XAie_BlockSet32(XAie_DevInst *DevInst, u64 RegOff, u32 Data, u32 Size);
+XAIE_AIG_EXPORT void XAie_Log(FILE *Fd, const char *prefix, const char *func, u32 line,
 		const char *Format, ...);
-AieRC XAie_StatusDump(XAie_DevInst *DevInst, XAie_ColStatus *Status);
-AieRC XAie_RunOp(XAie_DevInst *DevInst, XAie_BackendOpCode Op, void *Arg);
-AieRC XAie_CmdWrite(XAie_DevInst *DevInst, u8 Col, u8 Row, u8 Command,
+XAIE_AIG_EXPORT AieRC XAie_StatusDump(XAie_DevInst *DevInst, XAie_ColStatus *Status);
+XAIE_AIG_EXPORT AieRC XAie_RunOp(XAie_DevInst *DevInst, XAie_BackendOpCode Op, void *Arg);
+XAIE_AIG_EXPORT AieRC XAie_CmdWrite(XAie_DevInst *DevInst, u8 Col, u8 Row, u8 Command,
 		u32 CmdWd0, u32 CmdWd1, const char *CmdStr);
 
 /* Public Functions. Later this should be moved to xaiegbl.h. Also functions should be moved to xaiegbl.c */
