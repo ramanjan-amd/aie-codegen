@@ -30,7 +30,6 @@
 #include "xaie_lite.h"
 #include "xaie_lite_io.h"
 #include "xaie_lite_internal.h"
-#include "xaie_helper_internal.h"
 
 #if defined(XAIE_FEATURE_INTR_BTRK_ENABLE) && defined(XAIE_FEATURE_LITE)
 
@@ -1043,15 +1042,11 @@ AieRC XAie_BacktrackErrorInterrupts(XAie_DevInst *DevInst,
 {
 #ifdef __AIEIPU__
 #if !DEV_GEN_AIE4
-	if(!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))) {
 		return XAie_BacktrackErrorInterruptsIPU(DevInst, MData);
-	} else {
-#endif
+#else
 		return XAie_BacktrackErrorInterruptsIPU_Aie4(DevInst, MData);
-#if !DEV_GEN_AIE4
-	}
 #endif
-#endif
+#else
 #if !DEV_GEN_AIE4
 	XAIE_ERROR_RETURN((DevInst == NULL || DevInst->NumCols > XAIE_NUM_COLS),
 			XAIE_INVALID_ARGS,
@@ -1120,6 +1115,7 @@ AieRC XAie_BacktrackErrorInterrupts(XAie_DevInst *DevInst,
 (void)DevInst;
 (void)MData;
 return XAIE_OK;
+#endif
 #endif
 }
 
