@@ -62,6 +62,8 @@ typedef uint64_t		u64;
 #define XAIE_NULL			(void *)0U
 #define XAIE_ENABLE			1U
 #define XAIE_DISABLE			0U
+#define XAIE_MASK           		1U
+#define XAIE_UNMASK         		0U
 
 #define XAIEGBL_TILE_TYPE_AIETILE	0U
 #define XAIEGBL_TILE_TYPE_SHIMNOC	1U

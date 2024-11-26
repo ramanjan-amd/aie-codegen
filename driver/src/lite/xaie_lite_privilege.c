@@ -386,7 +386,7 @@ static void _XAie_PrivilegeSetHwErrIrq(XAie_DevInst *DevInst,
 		_XAie_PrivilegeConfigureHwErrIrq(DevInst, Rloc, HwErrCfg);
 
 		// Configure NPI IRQ Number only if request for enable
-		if (HwErrCfg.cfg_val != XAIE_DISABLE) {
+		if (HwErrCfg.cfg_val != XAIE_MASK) {
 			_XAie_PrivilegeSetHwErrIrqId(DevInst, Rloc,
 					_XAie_MapColToHWErrIrqId(DevInst, Rloc));
 		}
@@ -662,19 +662,6 @@ AieRC XAie_PartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 	}
 
 	/**
-         * Enable Hardware error interrupt generation
-         */
-#if DEV_GEN_AIE4
-
-	XAie_HwErrCfg HwErrCfg;
-	HwErrCfg.cfg_bits.axi_errors = XAIE_ENABLE;
-	HwErrCfg.cfg_bits.hw_ce_errors = XAIE_ENABLE;
-	HwErrCfg.cfg_bits.hw_uc_errors = XAIE_ENABLE;
-	_XAie_PrivilegeSetHwErrIrq(DevInst, HwErrCfg);
-
-#endif
-
-	/**
 	 * Enable L2 interrupt generation
 	 */
 	_XAie_PrivilegeSetL2ErrIrq(DevInst, XAIE_ENABLE);
@@ -869,23 +856,10 @@ AieRC XAie_ClearPartitionContext(XAie_DevInst *DevInst)
 		return RC;
 
 	/**
-         * Disable Hardware error interrupt generation
-         */
-#if DEV_GEN_AIE4
-
-	XAie_HwErrCfg HwErrCfg;
-	HwErrCfg.cfg_bits.axi_errors = XAIE_DISABLE;
-	HwErrCfg.cfg_bits.hw_ce_errors = XAIE_DISABLE;
-	HwErrCfg.cfg_bits.hw_uc_errors = XAIE_DISABLE;
-	_XAie_PrivilegeSetHwErrIrq(DevInst, HwErrCfg);
-
-#endif
-
-	/**
-         * Disable Hardware L2 interrupt generation
-         * Kotesh(TODO): Check why in previous generation code 
-         *               This is enable and not disbale.
-         */
+	 * Disable Hardware L2 interrupt generation
+	 * Kotesh(TODO): Check why in previous generation code
+	 *               This is enable and not disbale.
+	 */
 	_XAie_PrivilegeSetL2ErrIrq(DevInst, XAIE_DISABLE);
 
 	/* The NPI open/close aperture is defeatured in AIE4*/
@@ -1013,7 +987,6 @@ AieRC XAie_ConfigureShimDmaRegisters(XAie_DevInst *DevInst, XAie_ShimOpts *ShimO
 	}
 }
 
-
 /*****************************************************************************/
 /**
 * This API Clears the Broadcast Interrupt
@@ -1039,6 +1012,36 @@ AieRC XAie_ClearBCPort(XAie_DevInst *DevInst, u8 BcChan, u8 Col) {
 	} else {
 		return XAIE_OK;
 	}
+}
+
+/*****************************************************************************/
+/**
+ *
+ * This API enables the HW Err interrupt handler and sets NoC interrupt ID to
+ * which the error interrupts from HW Err interrupt controller shall be driven
+ * to.
+ *
+ * This API configures all the HW Err interrupt controllers within a given
+ * partition in one go.
+ *
+ * @param	DevInst: Device Instance
+ *
+ * @note	None.
+ *
+ ******************************************************************************/
+AieRC XAie_CfgPrivilegeHwErrIrq(XAie_DevInst *DevInst, XAie_HwErrCfg HwErrCfg)
+{
+	AieRC RC = XAIE_OK;
+
+	if((DevInst == XAIE_NULL) ||
+	   (DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
+		XAIE_ERROR("Invalid Device Instance\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	_XAie_PrivilegeSetHwErrIrq(DevInst, HwErrCfg);
+
+	return XAIE_OK;
 }
 
 #endif /* XAIE_FEATURE_PRIVILEGED_ENABLE && XAIE_FEATURE_LITE */

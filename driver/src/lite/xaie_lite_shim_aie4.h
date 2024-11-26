@@ -134,9 +134,10 @@ static inline u8 _XAie_MapColToHWErrIrqId(XAie_DevInst *DevInst,
 	(void)Loc;
 
 	/**
-         * As per spec recomendation.
-         * The HW error should be triggering NPI IRQ 1.
-         */
+	 * As per spec recomendation. The HW error should be triggering NPI IRQ 1.
+	 * If AIE4 derived devices have any specific requiremnet then that needs
+	 * to be handled here.
+	 */
 	return 1;
 }
 
