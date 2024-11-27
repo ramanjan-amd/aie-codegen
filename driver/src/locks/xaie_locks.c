@@ -62,6 +62,7 @@ AieRC XAie_LockAcquire(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lock,
 {
 	u8  TileType;
 	const XAie_LockMod *LockMod;
+	u8 MaxLockId;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -77,11 +78,12 @@ AieRC XAie_LockAcquire(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lock,
 
 	LockMod = DevInst->DevProp.DevMod[TileType].LockMod;
 
-	if(Lock.LockId > LockMod->NumLocks) {
+	MaxLockId = _XAie_GetMaxElementValue(DevInst->DevProp.DevGen, TileType, DevInst->AppMode, LockMod->NumLocks);
+   
+	if(Lock.LockId > MaxLockId) {
 		XAIE_ERROR("Invalid Lock Id\n");
 		return XAIE_INVALID_LOCK_ID;
 	}
-
 	if((Lock.LockVal > LockMod->LockValUpperBound) ||
 			(Lock.LockVal < LockMod->LockValLowerBound)) {
 		XAIE_ERROR("Lock value out of range\n");
@@ -238,6 +240,7 @@ AieRC XAie_LockReleaseBusy(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lo
 {
 	u8  TileType;
 	const XAie_LockMod *LockMod;
+	u8 MaxLockId;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -253,7 +256,9 @@ AieRC XAie_LockReleaseBusy(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lo
 
 	LockMod = DevInst->DevProp.DevMod[TileType].LockMod;
 
-	if(Lock.LockId > LockMod->NumLocks) {
+	MaxLockId = _XAie_GetMaxElementValue(DevInst->DevProp.DevGen, TileType, DevInst->AppMode, LockMod->NumLocks);
+      
+	if(Lock.LockId > MaxLockId) {
 		XAIE_ERROR("Invalid Lock Id\n");
 		return XAIE_INVALID_LOCK_ID;
 	}
