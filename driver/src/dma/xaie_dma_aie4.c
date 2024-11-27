@@ -325,7 +325,7 @@ AieRC _XAie4_DmaSetMultiDim(XAie_DmaDesc *DmaDesc, XAie_DmaTensor *Tensor)
 	 * means, app dont need to set the D0_StepSize at all for AIE4, For now printing a
 	 * warning message
 	 */
-	if (Tensor->Dim[0].AieMlDimDesc.StepSize != 1U) {
+	if ( (Tensor->NumDim > 0) && (Tensor->Dim[0].AieMlDimDesc.StepSize != 1U) ) {
 		XAIE_WARN("AIE4 : D0_Stepsize is removed (assumed to be always 1, i.e. linear accesses)\n");
 		return XAIE_ERR;
 	}
