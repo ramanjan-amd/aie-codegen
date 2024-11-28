@@ -61,13 +61,14 @@ AieRC XAie_MapIrqIdToCols(u8 IrqId, XAie_Range *Range)
 
 AieRC XAie_ClearCoreReg(XAie_DevInst *DevInst)
 {
+	AieRC RC = XAIE_OK;
 	/* Based on the Architecture corresponding API will be
 	   called*/
         if (_XAie_LIsDeviceGenAIE4()) {
                 return XAIE_NOT_SUPPORTED;
         }
-	_XAie_ClearCoreReg(DevInst);
-	return XAIE_OK;
+	RC = _XAie_ClearCoreReg(DevInst);
+	return RC;
 }
 
 AieRC XAie_PauseMem(XAie_DevInst *DevInst)

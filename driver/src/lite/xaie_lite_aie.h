@@ -323,14 +323,15 @@ static inline void _XAie_DisableTlast(XAie_DevInst *DevInst)
  *
  * @param       DevInst: Device Instance
  *
- * @return      None.
+ * @return      XAIE_OK
  *
  * @note        None.
  *
  *****************************************************************************/
-static inline void _XAie_ClearCoreReg(XAie_DevInst *DevInst)
+static inline AieRC _XAie_ClearCoreReg(XAie_DevInst *DevInst)
 {
 	(void)DevInst;
+	return XAIE_OK;
 }
 
 /*****************************************************************************/

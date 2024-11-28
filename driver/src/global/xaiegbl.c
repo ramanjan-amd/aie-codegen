@@ -1055,8 +1055,8 @@ AieRC XAie_PerfUtilization(XAie_DevInst *DevInst, XAie_PerfInst *PerfInst)
 {
 
 	AieRC RC = XAIE_OK;
-	XAie_Range PartRange;
 	u32 Size, NumTiles;
+	XAie_Range *PartRange = NULL;
 
 	if((DevInst == XAIE_NULL) ||
 		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -1070,11 +1070,16 @@ AieRC XAie_PerfUtilization(XAie_DevInst *DevInst, XAie_PerfInst *PerfInst)
 	}
 
 	if(PerfInst->Range == XAIE_NULL) {
-		PartRange.Start = DevInst->StartCol;
-		PartRange.Num = DevInst->NumCols;
+		PartRange = (XAie_Range *)malloc(sizeof(XAie_Range));
+		if (PartRange == NULL) {
+			XAIE_ERROR("Memory allocation failed\n");
+			return XAIE_ERR;
+		}
+		PartRange->Start = DevInst->StartCol;
+		PartRange->Num = DevInst->NumCols;
 		XAIE_DBG("Start Col: %d\tnum: %d\n",
-				PartRange.Start, PartRange.Num);
-		PerfInst->Range = &PartRange;
+				PartRange->Start, PartRange->Num);
+		PerfInst->Range = PartRange;
 	} else if (PerfInst->Range->Num <= 0U ||
 			PerfInst->Range->Num > DevInst->NumCols) {
 		XAIE_ERROR("Invalid range!\n");

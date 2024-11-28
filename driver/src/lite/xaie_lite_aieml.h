@@ -1100,12 +1100,12 @@ static inline void _XAie_WriteCoreReg(XAie_DevInst *DevInst, u32 soff, u32 eoff,
  *
  * @param	DevInst: Device Instance
  *
- * @return	None.
+ * @return	XAIE_OK
  *
  * @note	None.
  *
  *****************************************************************************/
-static inline void _XAie_ClearCoreReg(XAie_DevInst *DevInst)
+static inline AieRC _XAie_ClearCoreReg(XAie_DevInst *DevInst)
 {
 	u32 soff, eoff;
 	u8 Row, Col;
@@ -1154,6 +1154,8 @@ static inline void _XAie_ClearCoreReg(XAie_DevInst *DevInst)
 
 		}
 	}
+	/* Return XAIE_OK to resolve CERT C issues*/
+	return XAIE_OK;
 }
 
 /*****************************************************************************/
