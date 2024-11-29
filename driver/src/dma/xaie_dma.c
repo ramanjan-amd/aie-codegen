@@ -1202,6 +1202,7 @@ AieRC XAie_DmaChannelReset(XAie_DevInst *DevInst, XAie_LocType Loc, u8 ChNum,
 	}
 
 	if (!_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))
+		/* Calculate Channel base address */
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 				DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
 				(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
@@ -1358,6 +1359,7 @@ AieRC XAie_DmaChannelPauseStream(XAie_DevInst *DevInst, XAie_LocType Loc,
 			DmaMod->ChProp->PauseStream.Mask);
 
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
+		/* Calculate Channel base address */
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 			DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
 			(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
@@ -1432,6 +1434,7 @@ AieRC XAie_DmaChannelPauseMem(XAie_DevInst *DevInst, XAie_LocType Loc, u8 ChNum,
 			DmaMod->ChProp->PauseMem.Mask);
 
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
+		/* Calculate Channel base address */
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 			DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
 			(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
@@ -1530,6 +1533,7 @@ AieRC XAie_DmaChannelPushBdToQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
+		/* Calculate Channel base address */
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 			DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
 			(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
@@ -1587,7 +1591,7 @@ static AieRC _XAie_DmaChannelControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 		XAIE_ERROR("Invalid Channel number\n");
 		return XAIE_INVALID_CHANNEL_NUM;
 	}
-
+	/* Calculate Channel base address */
 	Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 		DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
 		(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
@@ -1883,6 +1887,7 @@ AieRC XAie_DmaWaitForBdTaskQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
 		u8 ChNum, XAie_DmaDirection Dir, u32 TimeOutUs)
 {
 	u8 TileType;
+	u8 MaxNumChannels;
 	const XAie_DmaMod *DmaMod;
 
 	if((DevInst == XAIE_NULL) ||
@@ -1897,13 +1902,15 @@ AieRC XAie_DmaWaitForBdTaskQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
-	if(TileType == XAIEGBL_TILE_TYPE_SHIMPL) {
-		XAIE_ERROR("Invalid Tile Type\n");
+	if ((TileType == XAIEGBL_TILE_TYPE_SHIMPL) ||
+			((Dir == DMA_MM2S_CTRL) && (TileType != XAIEGBL_TILE_TYPE_SHIMNOC))) {
+		XAIE_ERROR("Invalid Tile Type or Direction\n");
 		return XAIE_INVALID_TILE;
 	}
 
 	DmaMod = DevInst->DevProp.DevMod[TileType].DmaMod;
-	if(ChNum > DmaMod->NumChannels) {
+	MaxNumChannels = _XAie_DmaGetMaxNumChannels(DevInst, DmaMod, TileType, (u8)Dir);
+	if (_XAie_ValidateChannelNumber(DevInst, TileType, Dir, ChNum, MaxNumChannels)) {
 		XAIE_ERROR("Invalid Channel number\n");
 		return XAIE_INVALID_CHANNEL_NUM;
 	}
@@ -1942,6 +1949,7 @@ AieRC XAie_DmaWaitForBdTaskQueueBusy(XAie_DevInst *DevInst, XAie_LocType Loc,
 		u8 ChNum, XAie_DmaDirection Dir, u32 TimeOutUs)
 {
 	u8 TileType;
+	u8 MaxNumChannels;
 	const XAie_DmaMod *DmaMod;
 
 	if((DevInst == XAIE_NULL) ||
@@ -1956,13 +1964,15 @@ AieRC XAie_DmaWaitForBdTaskQueueBusy(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
-	if(TileType == XAIEGBL_TILE_TYPE_SHIMPL) {
-		XAIE_ERROR("Invalid Tile Type\n");
+	if ((TileType == XAIEGBL_TILE_TYPE_SHIMPL) ||
+			((Dir == DMA_MM2S_CTRL) && (TileType != XAIEGBL_TILE_TYPE_SHIMNOC))) {
+		XAIE_ERROR("Invalid Tile Type or Direction\n");
 		return XAIE_INVALID_TILE;
 	}
 
 	DmaMod = DevInst->DevProp.DevMod[TileType].DmaMod;
-	if(ChNum > DmaMod->NumChannels) {
+	MaxNumChannels = _XAie_DmaGetMaxNumChannels(DevInst, DmaMod, TileType, (u8)Dir);
+	if (_XAie_ValidateChannelNumber(DevInst, TileType, Dir, ChNum, MaxNumChannels)) {
 		XAIE_ERROR("Invalid Channel number\n");
 		return XAIE_INVALID_CHANNEL_NUM;
 	}
