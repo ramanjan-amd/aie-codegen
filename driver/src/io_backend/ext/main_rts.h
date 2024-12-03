@@ -1,3 +1,8 @@
+/******************************************************************************
+ * * Copyright (C) 2024 AMD, Inc.  All rights reserved.
+ * * SPDX-License-Identifier: MIT
+ * ******************************************************************************/
+
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 #ifndef MAIN_RTS_IO_H
 #define MAIN_RTS_IO_H
