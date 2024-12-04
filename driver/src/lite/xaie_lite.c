@@ -80,5 +80,33 @@ AieRC XAie_PauseMem(XAie_DevInst *DevInst)
         return XAIE_OK;
 }
 
+
+/*****************************************************************************/
+/**
+*
+* This API is used to wakeup the micro controller(s) in shim tile by trigger
+* XAIE_EVENT_USER_EVENT_0_PL (USER_EVENT_O) to givem column.
+*
+* @param	DevInst: Device Instance
+* @param	ColNum: Column Number
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		None.
+*
+******************************************************************************/
+AieRC XAie_WakeupShimUc(XAie_DevInst *DevInst, u8 ColNum)
+{
+	AieRC RC = XAIE_OK;
+
+	/* Based on the Architecture corresponding API will be called*/
+	if (!_XAie_LIsDeviceGenAIE4()) {
+		XAIE_ERROR("Unsupported device generation\n");
+		return XAIE_NOT_SUPPORTED;
+	}
+
+	RC = _XAie_WakeupShimUc(DevInst, ColNum);
+	return RC;
+}
 #endif /* XAIE_FEATURE_PRIVILEGED_ENABLE && XAIE_FEATURE_LITE */
 /** @} */

@@ -1635,7 +1635,7 @@ static inline AieRC _XAie_LClearBCPort(XAie_DevInst *DevInst, u8 BcChan, u8 Col)
 	else if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
 		RegOff = XAIE_PL_MOD_EVENT_BROADCAST_B_0;
 	else
-		return XAIE_DEVICE_INVALID_MODE;
+		return XAIE_INVALID_APP_MODE;
 
 	/* The caller of this API Will shift the base address to the actual column number in
            partition. So need to add Row, Column value into register base address. */
@@ -1645,5 +1645,39 @@ static inline AieRC _XAie_LClearBCPort(XAie_DevInst *DevInst, u8 BcChan, u8 Col)
 	return XAIE_OK;
 }
 
+/*****************************************************************************/
+/**
+*
+* This API is used to wakeup the micro controller(s) in shim tile by trigger
+* XAIE_EVENT_USER_EVENT_0_PL (USER_EVENT_O) to givem column.
+*
+* @param	DevInst: Device Instance
+* @param	ColNum: Column Number
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		None.
+*
+******************************************************************************/
+static inline AieRC _XAie_WakeupShimUc(XAie_DevInst *DevInst, u8 ColNum)
+{
+	AieRC RC = XAIE_OK;
+	XAie_LocType Loc;
+
+	if((DevInst == XAIE_NULL) || (DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
+		XAIE_ERROR("Invalid device instance\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	Loc.Col = ColNum;
+	Loc.Row = XAIE_SHIM_ROW;
+	RC = XAie_EventGenerate(DevInst, Loc, XAIE_PL_MOD, XAIE_EVENT_USER_EVENT_0_PL);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("%d) XAie_EventGenerate: Failure.\n",XAIE_EVENT_USER_EVENT_0_PL);
+		return XAIE_ERR;
+	}
+
+	return RC;
+}
 
 #endif /* XAIE_LITE_AIE4_H_ */

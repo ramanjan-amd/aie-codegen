@@ -1214,5 +1214,28 @@ static inline void _XAie_PauseMem(XAie_DevInst *DevInst)
 	usleep(10000);
 }
 
+/*****************************************************************************/
+/**
+*
+* This API is used to wakeup the micro controller(s) in shim tile by trigger
+* XAIE_EVENT_USER_EVENT_0_PL (USER_EVENT_O) to givem column. Supported for
+* AIE2PS and above device generations only.
+*
+* @param	DevInst: Device Instance
+* @param	ColNum: Column Number
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		None.
+*
+******************************************************************************/
+static inline AieRC _XAie_WakeupShimUc(XAie_DevInst *DevInst, u8 ColNum)
+{
+	(void *)DevInst;
+	(void)ColNum;
+
+	return XAIE_NOT_SUPPORTED;
+}
+
 #endif		/* end of protection macro */
 /** @} */
