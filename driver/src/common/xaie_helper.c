@@ -613,7 +613,7 @@ static int TxnCmdDump(XAie_TxnCmd* cmd) {
 ******************************************************************************/
 static AieRC _XAie_ReallocCmdBuf(XAie_TxnInst *TxnInst)
 {
-	u64 NewMaxCmds = (u64)(TxnInst->MaxCmds + XAIE_DEFAULT_NUM_CMDS);
+	u64 NewMaxCmds = (u64)TxnInst->MaxCmds + XAIE_DEFAULT_NUM_CMDS;
 	if(NewMaxCmds > UINT32_MAX) {
 		XAIE_ERROR("Failed reallocate memory for transaction buffer\n");
 		return XAIE_ERR;
@@ -3506,6 +3506,7 @@ u8 _XAie_IsDeviceGenAIE4(u8 DevGen)
 	switch(DevGen) {
 	case XAIE_DEV_GEN_AIE4:
 	case XAIE_DEV_GEN_AIE4_MEDUSA:
+	case XAIE_DEV_GEN_AIE4_SOUNDWAVE:
 		return true;
 	default:
 		return false;
@@ -3532,6 +3533,7 @@ u8 _XAie_IsDeviceGenSupportDualApp(u8 DevGen)
 		switch(DevGen){
 		case XAIE_DEV_GEN_AIE4:
 		case XAIE_DEV_GEN_AIE4_MEDUSA:
+		case XAIE_DEV_GEN_AIE4_SOUNDWAVE:
 			return true;
 		default:
 			return false;
@@ -3650,6 +3652,7 @@ static inline u32 XAie_Mask_Value(u8 devGen)
 	switch(devGen) {
 	case XAIE_DEV_GEN_AIE4:
 	case XAIE_DEV_GEN_AIE4_MEDUSA:
+	case XAIE_DEV_GEN_AIE4_SOUNDWAVE:
 		return XAIE4_MASK_VALUE_APP_B;
 
 	default:
