@@ -45,7 +45,7 @@
 #define ISA_OPCODE_MASK_POLL_32 0x14
 #define ISA_OPCODE_TRACE 0x15
 #define ISA_OPCODE_NOP 0x16
-
+#define ISA_OPCODE_SAVE_TIMESTAMPS 0x1c
 
 // Operation sizes
 
@@ -71,6 +71,7 @@
 #define ISA_OPSIZE_MASK_POLL_32 0x10
 #define ISA_OPSIZE_TRACE 0x04
 #define ISA_OPSIZE_NOP 0x04
+#define ISA_OPSIZE_SAVE_TIMESTAMPS 0x08
 
 #ifdef CERT_FW
 // Operation implementation forward declarations

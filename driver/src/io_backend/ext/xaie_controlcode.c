@@ -25,16 +25,15 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "xaie_helper.h"
 #include "xaie_io.h"
 #include "xaie_io_common.h"
 #include "xaie_io_privilege.h"
 #include "xaie_npi.h"
+#include "isa_stubs.h"
 
 #ifdef __AIECONTROLCODE__
-
-#include <string.h>
-#include "isa_stubs.h"
 
 #define TEMP_ASM_FILE1    ".temp_data1.txt"
 #define TEMP_ASM_FILE2    ".temp_data2.txt"
@@ -55,14 +54,13 @@
 #define HEADER_SIZE						16*/
 
 /************************** Constant Definitions *****************************/
-
 static u8 is_shim_bd;
+
 /****************************** Type Definitions *****************************/
 typedef struct {
 	XAie_DevInst *DevInst;
 	u64 BaseAddr;
 	u64 NpiBaseAddr;
-	char ControlCodeFileName[128];
 	FILE *ControlCodefp;
 	FILE *ControlCodedatafp;
 	FILE *ControlCodedata2fp;
@@ -77,6 +75,7 @@ typedef struct {
 	u8   CombineCommands;
 	u8   IsJobOpen;
 	u8   IsPageOpen;
+	char *ScrachpadName;
 } XAie_ControlCodeIO;
 
 /************************** Function Definitions *****************************/
@@ -131,6 +130,7 @@ static AieRC XAie_ControlCodeIO_Init(XAie_DevInst *DevInst)
 
 	IOInst->BaseAddr = DevInst->BaseAddr;
 	IOInst->NpiBaseAddr = XAIE_NPI_BASEADDR;
+	IOInst->ScrachpadName = NULL;
 	DevInst->IOInst = IOInst;
 	IOInst->DevInst = DevInst;
 
@@ -200,7 +200,8 @@ static void _XAie_StartNewPage(XAie_ControlCodeIO  *ControlCodeInst) {
 		_XAie_EndPage(ControlCodeInst);
 	}
 
-	ControlCodeInst->UcPageTextSize	= 0;
+	ControlCodeInst->UcPageTextSize	 = ISA_OPSIZE_EOF;
+	ControlCodeInst->UcPageSize 	 = PAGE_HEADER_SIZE + ISA_OPSIZE_EOF;
 	ControlCodeInst->CombineCommands = 0;
 	ControlCodeInst->IsPageOpen 	 = 1;
 }
@@ -223,9 +224,15 @@ static void _XAie_StartNewJob(XAie_ControlCodeIO  *ControlCodeInst) {
 		_XAie_StartNewPage(ControlCodeInst);
 	}
 
+	u32 DataAligner = (DATA_SECTION_ALIGNMENT -
+		((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_START_JOB + ISA_OPSIZE_END_JOB) % DATA_SECTION_ALIGNMENT));
+        if (DataAligner == DATA_SECTION_ALIGNMENT) {
+                DataAligner = 0U;
+        }
+
 	// the existing page cannot fit in a new job
 	// >= to prevent an empty job
-	if (ControlCodeInst->UcPageSize + ISA_OPSIZE_START_JOB + ISA_OPSIZE_END_JOB >= ControlCodeInst->PageSizeMax) {
+	if (ControlCodeInst->UcPageSize + ISA_OPSIZE_START_JOB + ISA_OPSIZE_END_JOB + DataAligner >= ControlCodeInst->PageSizeMax) {
 		_XAie_StartNewPage(ControlCodeInst);
 	}
 
@@ -262,7 +269,7 @@ static AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
 	u32 DataAligner = (DATA_SECTION_ALIGNMENT -
-		(ControlCodeInst->UcPageTextSize % DATA_SECTION_ALIGNMENT));
+		((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC) % DATA_SECTION_ALIGNMENT));
 	if (DataAligner == DATA_SECTION_ALIGNMENT) {
 		DataAligner = 0U;
 	}
@@ -280,8 +287,8 @@ static AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 		}
 
 		if(ControlCodeInst->CombineCommands) {
-				fseek(ControlCodeInst->ControlCodedatafp, -3, SEEK_CUR);
-				fprintf(ControlCodeInst->ControlCodedatafp, " 1\n");
+			fseek(ControlCodeInst->ControlCodedatafp, -3, SEEK_CUR);
+			fprintf(ControlCodeInst->ControlCodedatafp, " 1\n");
 		}
 		else {
 			fprintf(ControlCodeInst->ControlCodefp,
@@ -294,9 +301,11 @@ static AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 			ControlCodeInst->UcPageTextSize += ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC;
 			ControlCodeInst->UcPageSize += ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC;
 		}
-		fprintf(ControlCodeInst->ControlCodedatafp,
-				"\t UC_DMA_BD\t 0, 0x%lx, @WRITE_data_%d, 1, 0, 0\n",
-				RegOff,  ControlCodeInst->UcbdDataNum);
+
+        fprintf(ControlCodeInst->ControlCodedatafp,
+        	"\t UC_DMA_BD\t 0, 0x%lx, @WRITE_data_%d, 1, 0, 0\n",
+        	RegOff,  ControlCodeInst->UcbdDataNum);
+
 		ControlCodeInst->UcPageSize += UC_DMA_BD_SIZE;
 		fprintf(ControlCodeInst->ControlCodedata2fp, "WRITE_data_%d:\n",
 				ControlCodeInst->UcbdDataNum);
@@ -354,7 +363,7 @@ static AieRC XAie_ControlCodeIO_MaskWrite32(void *IOInst, u64 RegOff, u32 Mask,
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
 	u32 DataAligner = (DATA_SECTION_ALIGNMENT -
-		(ControlCodeInst->UcPageTextSize % DATA_SECTION_ALIGNMENT));
+		((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_MASK_WRITE_32) % DATA_SECTION_ALIGNMENT));
 	if (DataAligner == DATA_SECTION_ALIGNMENT) {
 		DataAligner = 0U;
 	}
@@ -403,7 +412,7 @@ static AieRC XAie_ControlCodeIO_MaskPoll(void *IOInst, u64 RegOff, u32 Mask, u32
 
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
 	u32 DataAligner = (DATA_SECTION_ALIGNMENT -
-		(ControlCodeInst->UcPageTextSize % DATA_SECTION_ALIGNMENT));
+		((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_MASK_POLL_32) % DATA_SECTION_ALIGNMENT));
 	if (DataAligner == DATA_SECTION_ALIGNMENT) {
 		DataAligner = 0U;
 	}
@@ -451,21 +460,23 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 {
 	u32 CompletedSize = 0;
 	u32 IterationSize;
+	u32 DataAligner;
 	u32 TempItrSize = 0;
 	u64 AdjustedOff = 0;
 
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
-	u32 DataAligner = (DATA_SECTION_ALIGNMENT -
-		(ControlCodeInst->UcPageTextSize % DATA_SECTION_ALIGNMENT));
-	if (DataAligner == DATA_SECTION_ALIGNMENT) {
-		DataAligner = 0U;
-	}
+	
 
-	CompletedSize = 0;
 	while (Size > CompletedSize) {
 		if (ControlCodeInst->ControlCodefp != NULL) {
 			if (!ControlCodeInst->IsJobOpen) {
 				_XAie_StartNewJob(ControlCodeInst);
+			}
+
+			DataAligner = (DATA_SECTION_ALIGNMENT -
+				((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC) % DATA_SECTION_ALIGNMENT));
+			if (DataAligner == DATA_SECTION_ALIGNMENT) {
+				DataAligner = 0U;
 			}
 
 			if((ControlCodeInst->UcPageSize + ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC +
@@ -477,7 +488,7 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 			if(is_shim_bd){
 				ControlCodeInst->CombineCommands = 0;
 			}
-			
+
 			if(ControlCodeInst->CombineCommands) {
 				fseek(ControlCodeInst->ControlCodedatafp, -3, SEEK_CUR);
 				fprintf(ControlCodeInst->ControlCodedatafp, " 1\n");
@@ -495,7 +506,7 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 			}
 
 			DataAligner = (DATA_SECTION_ALIGNMENT -
-				(ControlCodeInst->UcPageTextSize % DATA_SECTION_ALIGNMENT));
+			(ControlCodeInst->UcPageTextSize % DATA_SECTION_ALIGNMENT));
 			if (DataAligner == DATA_SECTION_ALIGNMENT) {
 				DataAligner = 0U;
 			}
@@ -512,13 +523,14 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 				ControlCodeInst->UcPageSize += UC_DMA_WORD_LEN;
 			}
 
-			fprintf(ControlCodeInst->ControlCodedatafp,
-					"\t UC_DMA_BD\t 0, 0x%lx, @DMAWRITE_data_%d, 0x%x, 0, 0\n",
-					(RegOff + AdjustedOff),  ControlCodeInst->UcDmaDataNum, IterationSize - TempItrSize );
-			TempItrSize = IterationSize;
+            fprintf(ControlCodeInst->ControlCodedatafp,
+        			"\t UC_DMA_BD\t 0, 0x%lx, @DMAWRITE_data_%d, 0x%x, 0, 0\n",
+                	(RegOff + AdjustedOff),  ControlCodeInst->UcDmaDataNum,
+					(IterationSize - TempItrSize) );
 
-			AdjustedOff += (IterationSize * UC_DMA_WORD_LEN);
-			CompletedSize += IterationSize;
+			AdjustedOff += ((IterationSize - TempItrSize) * UC_DMA_WORD_LEN);
+			CompletedSize += (IterationSize - TempItrSize);
+			TempItrSize = IterationSize;
 			ControlCodeInst->UcDmaDataNum++;
 		}
 	}
@@ -550,17 +562,19 @@ static AieRC XAie_ControlCodeIO_BlockSet32(void *IOInst, u64 RegOff, u32 Data, u
 	u64 AdjustedOff = 0;
 
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
-	u32 DataAligner = (DATA_SECTION_ALIGNMENT -
-		(ControlCodeInst->UcPageTextSize % DATA_SECTION_ALIGNMENT));
-	if (DataAligner == DATA_SECTION_ALIGNMENT) {
-		DataAligner = 0U;
-	}
+	u32 DataAligner;
 
 	CompletedSize = 0;
 	while (Size > CompletedSize) {
 		if (ControlCodeInst->ControlCodefp != NULL) {
 			if (!ControlCodeInst->IsJobOpen) {
 				_XAie_StartNewJob(ControlCodeInst);
+			}
+
+			DataAligner = (DATA_SECTION_ALIGNMENT -
+				((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC) % DATA_SECTION_ALIGNMENT));
+			if (DataAligner == DATA_SECTION_ALIGNMENT) {
+				DataAligner = 0U;
 			}
 
 			if((ControlCodeInst->UcPageSize + ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC +
@@ -595,21 +609,24 @@ static AieRC XAie_ControlCodeIO_BlockSet32(void *IOInst, u64 RegOff, u32 Data, u
 					ControlCodeInst->UcDmaDataNum);
 			ControlCodeInst->UcPageSize += UC_DMA_BD_SIZE;
 			for(IterationSize = 0; (IterationSize + CompletedSize) < Size &&
-				(ControlCodeInst->UcPageSize + UC_DMA_WORD_LEN + DataAligner) <= ControlCodeInst->PageSizeMax; IterationSize++) {
+				(ControlCodeInst->UcPageSize + UC_DMA_WORD_LEN + DataAligner)
+				<= ControlCodeInst->PageSizeMax; IterationSize++)
+			{
 				fprintf(ControlCodeInst->ControlCodedata3fp, "\t.long 0x%08x\n", Data);
 				ControlCodeInst->UcPageSize += UC_DMA_WORD_LEN;
 			}
 
-			fprintf(ControlCodeInst->ControlCodedatafp,
-					"\t UC_DMA_BD\t 0, 0x%lx, @DMAWRITE_data_%d, %d, 0, 0\n\n",
-					( RegOff + AdjustedOff),
-					ControlCodeInst->UcDmaDataNum, IterationSize);
+            fprintf(ControlCodeInst->ControlCodedatafp,
+                    "\t UC_DMA_BD\t 0, 0x%lx, @DMAWRITE_data_%d, %d, 0, 0\n\n",
+                    ( RegOff + AdjustedOff),
+                    ControlCodeInst->UcDmaDataNum, IterationSize);
+
 			AdjustedOff += (IterationSize * UC_DMA_WORD_LEN);
 			CompletedSize += IterationSize;
 			ControlCodeInst->UcDmaDataNum++;
 		}
 	}
-
+	
 	return XAIE_OK;
 }
 
@@ -631,8 +648,8 @@ static AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u8 Arg_Index, u8 N
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
 	u32 DataAligner = (DATA_SECTION_ALIGNMENT -
-		(ControlCodeInst->UcPageTextSize % DATA_SECTION_ALIGNMENT));
-	
+		((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_APPLY_OFFSET_57) % DATA_SECTION_ALIGNMENT));
+
 	if (DataAligner == DATA_SECTION_ALIGNMENT) {
 		DataAligner = 0U;
 	}
@@ -643,18 +660,33 @@ static AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u8 Arg_Index, u8 N
 			_XAie_StartNewJob(ControlCodeInst);
 		}
 
-		if((ControlCodeInst->UcPageSize + ISA_OPSIZE_APPLY_OFFSET_57 + ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC
-			+ (Num_BDs * (UC_DMA_BD_SIZE + UC_DMA_WORD_LEN * 9)) + DataAligner) > ControlCodeInst->PageSizeMax) {
+		if((ControlCodeInst->UcPageSize + ISA_OPSIZE_APPLY_OFFSET_57 + ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC +
+			(Num_BDs * (UC_DMA_BD_SIZE + UC_DMA_WORD_LEN * 9)) + DataAligner) > ControlCodeInst->PageSizeMax) {
 			_XAie_StartNewPage(ControlCodeInst);
 			_XAie_StartNewJob(ControlCodeInst);
 		}
-		
-		fprintf(ControlCodeInst->ControlCodefp,
-				"APPLY_OFFSET_57\t @DMAWRITE_data_%d, %d, %d\n",ControlCodeInst->UcDmaDataNum,Num_BDs,Arg_Index);
+
+		if(ControlCodeInst->ScrachpadName == NULL) {
+			fprintf(ControlCodeInst->ControlCodefp,
+					"APPLY_OFFSET_57\t @DMAWRITE_data_%d, %d, %d\n",
+					ControlCodeInst->UcDmaDataNum,
+					Num_BDs, Arg_Index);
+		}
+		else {
+			fprintf(ControlCodeInst->ControlCodefp,
+                                        "APPLY_OFFSET_57\t @DMAWRITE_data_%d, %d, %d, %s\n",
+                                        ControlCodeInst->UcDmaDataNum,
+                                        Num_BDs, Arg_Index, ControlCodeInst->ScrachpadName);
+		}
 
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_APPLY_OFFSET_57;
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_APPLY_OFFSET_57;
 	}
+
+	if(ControlCodeInst->ScrachpadName)
+                free(ControlCodeInst->ScrachpadName);
+        ControlCodeInst->ScrachpadName = NULL;
+
 	return XAIE_OK;
 }
 
@@ -684,7 +716,7 @@ AieRC XAie_WaitTaskCompleteToken(XAie_DevInst *DevInst,
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)DevInst->IOInst;
 	uint32_t TileId;
 	u32 DataAligner = (DATA_SECTION_ALIGNMENT -
-		(ControlCodeInst->UcPageTextSize % DATA_SECTION_ALIGNMENT));
+		((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_WAIT_TCTS) % DATA_SECTION_ALIGNMENT));
 	if (DataAligner == DATA_SECTION_ALIGNMENT) {
 		DataAligner = 0U;
 	}
@@ -710,6 +742,56 @@ AieRC XAie_WaitTaskCompleteToken(XAie_DevInst *DevInst,
 	}
 
 	return XAIE_OK;
+}
+
+/*****************************************************************************/
+/**
+*
+* This function is used to save the time stamps.
+*
+* @param        DevInst: Device instance pointer
+* @param        Timestamp: Unique id.
+*
+* @return       XAIE_OK or XAIE_ERR.
+*
+*******************************************************************************/
+AieRC XAie_ControlCodeSaveTimestamp(XAie_DevInst *DevInst, u32 Timestamp)
+{
+        if(DevInst->Backend->Type != XAIE_IO_BACKEND_CONTROLCODE) {
+                XAIE_ERROR("This is supported only in Controlcode Backend %d \n", DevInst->Backend->Type);
+                return XAIE_INVALID_BACKEND;
+        }
+
+        XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)DevInst->IOInst;
+
+        u32 DataAligner = (DATA_SECTION_ALIGNMENT -
+                ((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_SAVE_TIMESTAMPS)% DATA_SECTION_ALIGNMENT));
+        if (DataAligner == DATA_SECTION_ALIGNMENT) {
+                DataAligner = 0U;
+        }
+
+        if (ControlCodeInst->ControlCodefp != NULL) {
+
+                if (!ControlCodeInst->IsJobOpen) {
+                        _XAie_StartNewJob(ControlCodeInst);
+                }
+
+                if((ControlCodeInst->UcPageSize + ISA_OPSIZE_SAVE_TIMESTAMPS +
+                        DataAligner) > ControlCodeInst->PageSizeMax) {
+                        _XAie_StartNewPage(ControlCodeInst);
+                        _XAie_StartNewJob(ControlCodeInst);
+                }
+
+                fprintf(ControlCodeInst->ControlCodefp, "SAVE_TIMESTAMPS\t %d\n",
+                                Timestamp );
+                ControlCodeInst->CombineCommands = 0;
+                ControlCodeInst->UcPageSize += ISA_OPSIZE_SAVE_TIMESTAMPS;
+                ControlCodeInst->UcPageTextSize += ISA_OPSIZE_SAVE_TIMESTAMPS;
+
+                return XAIE_OK;
+        }
+        else
+                return XAIE_ERR;
 }
 
 /*****************************************************************************/
@@ -784,7 +866,7 @@ static AieRC XAie_ControlCodeIO_RunOp(void *IOInst, XAie_DevInst *DevInst,
 		     XAie_BackendOpCode Op, void *Arg)
 {
 	AieRC RC = XAIE_OK;
-	(void)IOInst;
+	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
 
 	switch(Op) {
 		case XAIE_BACKEND_OP_NPIWR32:
@@ -880,11 +962,10 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 	ControlCodeInst->UcPageTextSize	= 0;
 	ControlCodeInst->IsJobOpen  	= 0;
 	ControlCodeInst->IsPageOpen  	= 0;
-	strcpy(ControlCodeInst->ControlCodeFileName, FileName);
 	ControlCodeInst->ControlCodefp      = fopen(FileName, "w");
-	ControlCodeInst->ControlCodedatafp  = fopen(TEMP_ASM_FILE1, "w");
-	ControlCodeInst->ControlCodedata2fp = fopen(TEMP_ASM_FILE2, "w");
-	ControlCodeInst->ControlCodedata3fp = fopen(TEMP_ASM_FILE3, "w");
+	ControlCodeInst->ControlCodedatafp  = fopen(TEMP_ASM_FILE1, "w+");
+	ControlCodeInst->ControlCodedata2fp = fopen(TEMP_ASM_FILE2, "w+");
+	ControlCodeInst->ControlCodedata3fp = fopen(TEMP_ASM_FILE3, "w+");
 
 	ControlCodeInst->PageSizeMax = PageSize;
 	ControlCodeInst->PageSizeMax = 8192; //TBD this line to be removed
@@ -914,8 +995,6 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 	fprintf(ControlCodeInst->ControlCodefp, ";\n");
 	fprintf(ControlCodeInst->ControlCodefp, ";text\n");
 	fprintf(ControlCodeInst->ControlCodefp, ";\n");
-	/*fprintf(ControlCodeInst->ControlCodefp, "START_JOB %d\n",
-			ControlCodeInst->UcJobNum);*/
 	ControlCodeInst->UcPageTextSize += ISA_OPSIZE_EOF;
 	ControlCodeInst->UcPageSize += PAGE_HEADER_SIZE + ISA_OPSIZE_EOF;
 	ControlCodeInst->IsPageOpen = 1;
@@ -992,34 +1071,26 @@ AieRC XAie_EndPage(XAie_DevInst *DevInst) {
 /*****************************************************************************/
 /**
 * Merges the given text file.
-* @param	SrcFile: Source File name.
-* @param	DesFile: Destination File name.
+* @param	SrcFp: file pointer of Source File.
+* @param	DesFile: file pointer of Destination File.
 *
 * @note		Internal API only.
 *
 ******************************************************************************/
-static void _XAie_MegreFiles(char *SrcFile, char *DesFile) {
-	FILE *SrcFp = NULL;
-	FILE *DesFp = NULL;
+static void _XAie_MegreFiles(FILE *SrcFp, FILE *DesFp) {
 	char TempBuf;
 
-	SrcFp = fopen(SrcFile, "r+");
-	DesFp = fopen(DesFile, "a+");
-
-
 	if (!SrcFp || !DesFp) {
-		printf("File open failed\n");
+		printf("Files not opened\n");
 		return;
 	}
+
+	fseek(SrcFp, 0, SEEK_SET);
+	fseek(DesFp, 0, SEEK_END);
 
 	while ((TempBuf = fgetc(SrcFp)) != EOF) {
 		fputc(TempBuf, DesFp);
 	}
-
-	fclose(SrcFp);
-	fclose(DesFp);
-	SrcFp = NULL;
-	DesFp = NULL;
 
 }
 
@@ -1036,15 +1107,14 @@ void XAie_CloseControlCodeFile(XAie_DevInst *DevInst) {
 		_XAie_EndPage(ControlCodeInst);
 		fprintf(ControlCodeInst->ControlCodefp, "EOF\n\n");
 
+		_XAie_MegreFiles(ControlCodeInst->ControlCodedatafp, ControlCodeInst->ControlCodefp);
+		_XAie_MegreFiles(ControlCodeInst->ControlCodedata2fp, ControlCodeInst->ControlCodefp);
+		_XAie_MegreFiles(ControlCodeInst->ControlCodedata3fp, ControlCodeInst->ControlCodefp);
+
 		fclose(ControlCodeInst->ControlCodefp);
 		fclose(ControlCodeInst->ControlCodedatafp);
 		fclose(ControlCodeInst->ControlCodedata2fp);
 		fclose(ControlCodeInst->ControlCodedata3fp);
-
-		_XAie_MegreFiles(TEMP_ASM_FILE1, ControlCodeInst->ControlCodeFileName);
-		_XAie_MegreFiles(TEMP_ASM_FILE2, ControlCodeInst->ControlCodeFileName);
-		_XAie_MegreFiles(TEMP_ASM_FILE3, ControlCodeInst->ControlCodeFileName);
-
 
 		remove(TEMP_ASM_FILE1);
 		remove(TEMP_ASM_FILE2);
@@ -1055,6 +1125,65 @@ void XAie_CloseControlCodeFile(XAie_DevInst *DevInst) {
 		ControlCodeInst->ControlCodedata2fp	= NULL;
 		ControlCodeInst->ControlCodedata3fp	= NULL;
 	}
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the function to add annotation in asm code.
+*
+* @param        DevInst: Device instance pointer
+* @param        Id: Serves as a key to a dynamic tracing probe.
+* @param        Name: Serves as a key to look up interested annotations.
+* @param        Description: Serves as comments.
+
+* @return       XAIE_OK or XAIE_ERR.
+*
+*
+*******************************************************************************/
+AieRC XAie_ControlCodeAddAnnotation(XAie_DevInst *DevInst,
+               u32 Id, const char *Name, const char *Description)
+{
+        if(DevInst->Backend->Type != XAIE_IO_BACKEND_CONTROLCODE) {
+                XAIE_ERROR("This is supported only in Controlcode Backend %d \n", DevInst->Backend->Type);
+                return XAIE_INVALID_BACKEND;
+        }
+
+        XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)DevInst->IOInst;
+
+        if (ControlCodeInst->ControlCodefp != NULL) {
+                fprintf(ControlCodeInst->ControlCodefp,".section annotation\n");
+                fprintf(ControlCodeInst->ControlCodefp,"id: %d\n", Id);
+                fprintf(ControlCodeInst->ControlCodefp,"name: %s\n", Name);
+                fprintf(ControlCodeInst->ControlCodefp,"description: %s\n", Description);
+                return XAIE_OK;
+        }
+        else
+                return XAIE_ERR;
+}
+
+/*****************************************************************************/
+/**
+*
+* This function is used to set scrachpad string.
+*
+* @param        DevInst: Device instance pointer.
+* @param        Scrachpad: It is the name of a declared scratchpad buffer
+* @return       XAIE_OK or XAIE_ERR.
+*
+*
+*******************************************************************************/
+AieRC XAie_ControlCodeSetScrachPad(XAie_DevInst *DevInst, const char *Scrachpad)
+{
+        XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)DevInst->IOInst;
+
+        ControlCodeInst->ScrachpadName = (char *)calloc(strlen(Scrachpad) + 1, sizeof(char));
+        if(ControlCodeInst->ScrachpadName == NULL)
+                return XAIE_ERR;
+        else {
+                strncpy(ControlCodeInst->ScrachpadName, Scrachpad, strlen(Scrachpad));
+                return XAIE_OK;
+        }
 }
 
 #else
@@ -1068,6 +1197,19 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 	XAIE_ERROR("Driver is not compiled with ControlCode generation "
 			"backend (__AIECONTROLCODE__)\n");
 	return XAIE_INVALID_BACKEND;
+}
+
+AieRC XAie_ControlCodeAddAnnotation(XAie_DevInst *DevInst,
+               u32 Id, const char *Name, const char *Description)
+{
+        (void)DevInst;
+        (void)Id;
+        (void)Name;
+        (void)Description;
+
+        XAIE_ERROR("Driver is not compiled with ControlCode generation "
+                        "backend (__AIECONTROLCODE__)\n");
+       return XAIE_INVALID_BACKEND;
 }
 
 AieRC XAie_StartNewJob(XAie_DevInst *DevInst)
@@ -1221,6 +1363,24 @@ static AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u8 Arg_Offset, u8 
 	XAIE_ERROR("Driver is not compiled with ControlCode generation "
 			"backend (__AIECONTROLCODE__)\n");
 	return XAIE_INVALID_BACKEND;
+}
+
+AieRC XAie_ControlCodeSaveTimestamp(XAie_DevInst *DevInst, u32 Timestamp)
+{
+        (void)DevInst;
+        (void)Timestamp;
+        XAIE_ERROR("Driver is not compiled with ControlCode generation "
+                        "backend (__AIECONTROLCODE__)\n");
+        return XAIE_INVALID_BACKEND;
+}
+
+AieRC XAie_ControlCodeSetScrachPad(XAie_DevInst *DevInst, const char *Scrachpad)
+{
+        (void)DevInst;
+        (void)Scrachpad;
+        XAIE_ERROR("Driver is not compiled with ControlCode generation "
+                        "backend (__AIECONTROLCODE__)\n");
+        return XAIE_INVALID_BACKEND;
 }
 
 #endif /* __AIECONTROLCODE__ */
