@@ -132,9 +132,11 @@ static inline u32 _XAie_LRawRead32(u64 RegAddr)
 __FORCE_INLINE__
 static inline int _XAie_LRawPoll32(u64 RegAddr, u32 Mask, u32 Value, u32 TimeOutUs)
 {
-	u32 MinTimeOutUs = 20, Count, RegVal;
+	u32 MinTimeOutUs = 1, Count, RegVal;
 	Count = TimeOutUs / MinTimeOutUs;
 
+	/* User needs to pass valid timeout value to make sure, HW gets enough
+	   Time to change register status.*/
 	if(Count == 0) {
 		Count++;
 	}

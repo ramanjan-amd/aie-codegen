@@ -1198,7 +1198,8 @@ static inline void _XAie_PauseMem(XAie_DevInst *DevInst)
 	u32 RegVal;
 	u8 Col, Dir, ChNum;
 
-	for(Col = DevInst->StartCol; Col < DevInst->NumCols; Col++) {
+	/* Here column value will be relative. So Column number will always start from 0 */
+	for(Col = 0; Col < DevInst->NumCols; Col++) {
 		for(Dir = 0; Dir < MAX_DMA_DIR; Dir++) {
 			for(ChNum = 0; ChNum < MAX_DMA_CHAN; ChNum++) {
 				RegAddr = _XAie_LGetTileAddr(XAIE_SHIM_ROW, Col) +
