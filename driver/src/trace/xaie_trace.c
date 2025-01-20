@@ -60,6 +60,7 @@ AieRC XAie_TraceEvent(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u32 RegOffset, FldVal, FldMask;
 	u8 TileType, EventRegOffId;
 	u16 MappedEvent;
+	int TempRegOffId;
 	const XAie_TraceMod *TraceMod;
 	const XAie_EvntMod *EvntMod;
 
@@ -110,8 +111,14 @@ AieRC XAie_TraceEvent(XAie_DevInst *DevInst, XAie_LocType Loc,
 		XAIE_ERROR("Invalid trace slot index\n");
 		return XAIE_INVALID_ARGS;
 	}
-
-	EventRegOffId = SlotId / TraceMod->NumEventsPerSlot;
+	
+	TempRegOffId = SlotId / TraceMod->NumEventsPerSlot;  
+	if (TempRegOffId < 0 || TempRegOffId > UCHAR_MAX) {  
+		XAIE_ERROR("invalid  EventRegOffId \n");
+		return XAIE_ERR;
+	}  
+  
+	EventRegOffId = (u8)TempRegOffId;
 	RegOffset = TraceMod->EventRegOffs[EventRegOffId];
 	FldMask = TraceMod->Event[SlotId].Mask;
 
@@ -473,6 +480,7 @@ AieRC XAie_TraceGetState(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u64 RegAddr;
 	u32 RegOffset, RegValue;
 	u8 TileType;
+	u32 TraceState;
 	const XAie_TraceMod *TraceMod;
 
 	if((DevInst == XAIE_NULL) || (State == NULL) ||
@@ -510,9 +518,15 @@ AieRC XAie_TraceGetState(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_ERR;
 	}
 
-	*State = XAie_GetField(RegValue, TraceMod->State.Lsb,
+	TraceState = XAie_GetField(RegValue, TraceMod->State.Lsb,
 			TraceMod->State.Mask);
+	
+	if(TraceState > XAIE_TRACE_OVERRUN){
+		XAIE_ERROR("Incorrect Trace State\n");
+		return XAIE_ERR;
+	}
 
+	*State = TraceState;
 	return XAIE_OK;
 }
 
@@ -543,6 +557,7 @@ AieRC XAie_TraceGetMode(XAie_DevInst *DevInst, XAie_LocType Loc,
 	AieRC RC;
 	u64 RegAddr;
 	u32 RegOffset, RegValue;
+	u32 TraceMode;
 	u8 TileType;
 	const XAie_TraceMod *TraceMod;
 
@@ -581,8 +596,15 @@ AieRC XAie_TraceGetMode(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_ERR;
 	}
 
-	*Mode = XAie_GetField(RegValue, TraceMod->ModeSts.Lsb,
+	TraceMode = XAie_GetField(RegValue, TraceMod->ModeSts.Lsb,
 			TraceMod->ModeSts.Mask);
+
+	if(TraceMode > XAIE_TRACE_INST_EXEC){
+		XAIE_ERROR("Incorrect Trace Mode\n");
+		return XAIE_ERR;
+	}
+
+	*Mode  = TraceMode;
 
 	return XAIE_OK;
 }
@@ -874,6 +896,7 @@ AieRC XAie_TraceEventReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 	AieRC RC;
 	u64 RegAddr;
 	u8 EventRegOffId, TileType;
+	int TempRegOffId;
 	const XAie_TraceMod *TraceMod;
 
 	if((DevInst == XAIE_NULL) ||
@@ -898,7 +921,12 @@ AieRC XAie_TraceEventReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 	else
 		TraceMod = &DevInst->DevProp.DevMod[TileType].TraceMod[Module];
 
-	EventRegOffId = SlotId / TraceMod->NumEventsPerSlot;
+	TempRegOffId = SlotId / TraceMod->NumEventsPerSlot;  
+	if (TempRegOffId < 0 || TempRegOffId > UCHAR_MAX) {  
+		XAIE_ERROR("invalid  EventRegOffId \n");
+		return XAIE_ERR;
+	}  
+	EventRegOffId = (u8)TempRegOffId;
 	RegAddr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 		TraceMod->EventRegOffs[EventRegOffId];
 

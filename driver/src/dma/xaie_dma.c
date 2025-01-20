@@ -115,7 +115,7 @@ static inline u8 _XAie_DmaGetPrivateMaxNumBds(const XAie_DmaMod *DmaMod, u8 DevG
 u8 _XAie_DmaGetMaxNumChannels(XAie_DevInst *DevInst, const XAie_DmaMod *DmaMod,
 				    u8 TileType, XAie_DmaDirection Dir)
 {
-	u8 NumChannels;
+	u8 NumChannels = 0;
 
 	if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) {
 		switch (Dir) {
@@ -461,6 +461,12 @@ AieRC XAie_DmaSetDoubleBuffer(XAie_DmaDesc *DmaDesc, u64 Addr, XAie_Lock Acq,
 		return XAIE_INVALID_LOCK_ID;
 	}
 
+	if ((DmaMod->BdProp->AddrAlignShift > _XAie_MaxBitsNeeded(Addr)) &&
+		(Addr >= (1ULL << DmaMod->BdProp->AddrAlignShift))) {
+		XAIE_ERROR("Loss of precision for Rightshift\n");
+		return XAIE_INVALID_ADDRESS;
+	}
+
 	DmaDesc->AddrDesc_2.Address = Addr >> DmaMod->BdProp->AddrAlignShift;
 	DmaDesc->EnDoubleBuff = XAIE_ENABLE;
 
@@ -515,6 +521,12 @@ AieRC XAie_DmaSetAddrLen(XAie_DmaDesc *DmaDesc, u64 Addr, u32 Len)
 	if(((Addr & DmaMod->BdProp->AddrAlignMask) != 0U) ||
 			((Addr + Len) > DmaMod->BdProp->AddrMax)) {
 		XAIE_ERROR("Invalid Address\n");
+		return XAIE_INVALID_ADDRESS;
+	}
+
+	if ((DmaMod->BdProp->AddrAlignShift > _XAie_MaxBitsNeeded(Addr)) &&
+		(Addr >= (1ULL << DmaMod->BdProp->AddrAlignShift))) {
+		XAIE_ERROR("Loss of precision for Rightshift\n");
 		return XAIE_INVALID_ADDRESS;
 	}
 
@@ -579,6 +591,12 @@ AieRC XAie_DmaSetAddrOffsetLen(XAie_DmaDesc *DmaDesc, XAie_MemInst *MemInst,
 		return XAIE_INVALID_ADDRESS;
 	}
 
+	if ((DmaMod->BdProp->AddrAlignShift > _XAie_MaxBitsNeeded(Addr)) &&
+		(Addr >= (1ULL << DmaMod->BdProp->AddrAlignShift))) {
+		XAIE_ERROR("Loss of precision for Rightshift\n");
+		return XAIE_INVALID_ADDRESS;
+	}
+
 	DmaDesc->AddrDesc.Address = Addr >> DmaMod->BdProp->AddrAlignShift;
 	DmaDesc->AddrDesc.Length = (Len >> XAIE_DMA_32BIT_TXFER_LEN) -
 		DmaMod->BdProp->LenActualOffset;
@@ -632,6 +650,12 @@ AieRC XAie_DmaSetMultiDimAddr(XAie_DmaDesc *DmaDesc, XAie_DmaTensor *Tensor,
 	if(Tensor->NumDim > DmaMod->NumAddrDim) {
 		XAIE_ERROR("Tensor dimension not supported\n");
 		return XAIE_FEATURE_NOT_SUPPORTED;
+	}
+
+	if ((DmaMod->BdProp->AddrAlignShift > _XAie_MaxBitsNeeded(Addr)) &&
+		(Addr >= (1ULL << DmaMod->BdProp->AddrAlignShift))) {
+		XAIE_ERROR("Loss of precision for Rightshift\n");
+		return XAIE_INVALID_ADDRESS;
 	}
 
 	DmaDesc->AddrDesc.Address = Addr >> DmaMod->BdProp->AddrAlignShift;
@@ -1511,7 +1535,7 @@ AieRC XAie_DmaChannelReset(XAie_DevInst *DevInst, XAie_LocType Loc, u8 ChNum,
 	if (!_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))
 		/* Calculate Channel base address */
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
-				DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
+				DmaMod->ChCtrlBase + ChNum * (u32)DmaMod->ChIdxOffset +
 				(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	else
 		Addr = _XAie4_DmaGetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);
@@ -1667,7 +1691,7 @@ AieRC XAie_DmaChannelPauseStream(XAie_DevInst *DevInst, XAie_LocType Loc,
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
 		/* Calculate Channel base address */
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
-			DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
+			DmaMod->ChCtrlBase + ChNum * (u32)DmaMod->ChIdxOffset +
 			(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	else
 		Addr = _XAie4_DmaGetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);
@@ -1742,7 +1766,7 @@ AieRC XAie_DmaChannelPauseMem(XAie_DevInst *DevInst, XAie_LocType Loc, u8 ChNum,
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
 		/* Calculate Channel base address */
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
-			DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
+			DmaMod->ChCtrlBase + ChNum * (u32)DmaMod->ChIdxOffset +
 			(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	else
 		Addr = _XAie4_DmaGetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);
@@ -1820,7 +1844,7 @@ AieRC XAie_DmaChannelPushBdToQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
 		/* Calculate Channel base address */
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
-			DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
+			DmaMod->ChCtrlBase + ChNum * (u32)DmaMod->ChIdxOffset +
 			(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	else
 		Addr = _XAie4_DmaGetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);
@@ -1878,7 +1902,7 @@ static AieRC _XAie_DmaChannelControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 	/* Calculate Channel base address */
 	Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
-		DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
+		DmaMod->ChCtrlBase + ChNum * (u32)DmaMod->ChIdxOffset +
 		(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
 
 	return XAie_MaskWrite32(DevInst,
@@ -2451,7 +2475,7 @@ AieRC XAie_DmaChannelSetStartQueueGeneric(XAie_DevInst *DevInst,
 
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen))) {
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
-			DmaMod->StartQueueBase + ChNum * DmaMod->ChIdxOffset +
+			DmaMod->StartQueueBase + ChNum * (u32)DmaMod->ChIdxOffset +
 			(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	} else {
 		Addr = _XAie4_DmaGetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);
@@ -2758,7 +2782,7 @@ AieRC XAie_DmaWriteChannel(XAie_DevInst *DevInst,
 
 	if (!(_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)))
 		Addr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
-			DmaMod->ChCtrlBase + ChNum * DmaMod->ChIdxOffset +
+			DmaMod->ChCtrlBase + ChNum * (u32)DmaMod->ChIdxOffset +
 			(u32)((u8)Dir * (u32)DmaMod->ChIdxOffset * DmaMod->NumChannels);
 	else
 		Addr = _XAie4_DmaGetChannelCtrlAddr(DevInst, DmaMod, Loc, Dir, ChNum);

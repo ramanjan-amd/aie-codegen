@@ -744,6 +744,12 @@ static AieRC _XAie_EventSelectDmaChannelConfig(XAie_DevInst *DevInst,
 	/* Calculate 32-bit value to write and register address */
 	ChannelDirLsb = EvntMod->DmaChannelMM2SOff * (u32)DmaDir;
 	ChannelIdLsb = (u32)(EvntMod->DmaChannelIdOff * (u32)SelectId) + ChannelDirLsb;
+
+	if (_XAie_CheckPrecisionExceeds(ChannelIdLsb,
+			_XAie_MaxBitsNeeded(EvntMod->DmaChannelIdMask), MAX_VALID_AIE_REG_BIT_INDEX)){
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
 	ChannelIdMask = (u32)EvntMod->DmaChannelIdMask << ChannelIdLsb;
 
 	if (_XAie_CheckPrecisionExceeds(ChannelIdLsb,
@@ -1199,6 +1205,12 @@ AieRC XAie_EventBroadcastBlockMapDir(XAie_DevInst *DevInst, XAie_LocType Loc,
 		EvntMod = &DevInst->DevProp.DevMod[TileType].EvntMod[Module];
 	}
 
+	if (_XAie_CheckPrecisionExceeds(EvntMod->NumBroadcastIds,
+			_XAie_MaxBitsNeeded(XAIE_ENABLE), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
+
 	if(ChannelBitMap >= (u32)(XAIE_ENABLE << EvntMod->NumBroadcastIds) ||
 					(u8)Switch > EvntMod->NumSwitches) {
 		XAIE_ERROR("Invalid broadcast bitmap or switch value\n");
@@ -1599,7 +1611,7 @@ AieRC XAie_EventEdgeControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 		u8 Trigger)
 {
 	AieRC RC;
-	u32 FldVal, EventVal;
+	u32 FldVal, FldValTemp, EventVal;
 	u64 RegAddr;
 	u8 TileType;
 	u16 HwEvent;
@@ -1657,11 +1669,18 @@ AieRC XAie_EventEdgeControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}
-	FldVal = (XAie_SetField(HwEvent, EvntMod->EdgeDetectEvent.Lsb,
+	FldValTemp = (XAie_SetField(HwEvent, EvntMod->EdgeDetectEvent.Lsb,
 			EvntMod->EdgeDetectEvent.Mask) |
 		XAie_SetField(Trigger, EvntMod->EdgeDetectTrigger.Lsb,
-			EvntMod->EdgeDetectTrigger.Mask)) <<
-		((SelectId % 2) * EvntMod->EdgeEventSelectIdOff);
+			EvntMod->EdgeDetectTrigger.Mask)) ;
+
+	if (_XAie_CheckPrecisionExceeds(((SelectId % 2) * EvntMod->EdgeEventSelectIdOff),
+			_XAie_MaxBitsNeeded(FldValTemp), MAX_VALID_AIE_REG_BIT_INDEX)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
+		
+	FldVal = FldValTemp << 	((SelectId % 2) * EvntMod->EdgeEventSelectIdOff) ;
 
 	RegAddr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) + (EvntMod->EdgeEventRegOff +  (4 * SelectId/2)) ;
 

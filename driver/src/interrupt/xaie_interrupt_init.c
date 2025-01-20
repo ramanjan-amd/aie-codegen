@@ -983,6 +983,11 @@ static AieRC _XAie_ErrorHandlingInitAie(XAie_DevInst *DevInst)
 			if (RC != XAIE_OK) {
 				L1BroadcastIdSwB = XAIE_ERROR_L2_ENABLE;
 			} else {
+				if ((_XAie_CheckPrecisionExceeds((L1BroadcastIdSwB + 1U),
+					_XAie_MaxBitsNeeded(1U),MAX_VALID_AIE_REG_BIT_INDEX))) {
+					XAIE_ERROR("Check Precision Exceeds Failed\n");
+					return XAIE_ERR;
+				}
 				L1BroadcastIdSwB = (1U <<
 						(L1BroadcastIdSwB + 1U)) - 1U;
 			}

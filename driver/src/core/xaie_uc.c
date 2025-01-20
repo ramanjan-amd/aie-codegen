@@ -342,6 +342,7 @@ AieRC XAie_LoadUc(XAie_DevInst *DevInst, XAie_LocType Loc, const char *ElfPtr)
 	u8 TileType;
 	FILE *Fd;
 	int Ret;
+	u64 RetFread;
 	unsigned char *ElfMem;
 	long int ElfSize;
 	u64 ElfSz;
@@ -377,7 +378,9 @@ AieRC XAie_LoadUc(XAie_DevInst *DevInst, XAie_LocType Loc, const char *ElfPtr)
 	if(Ret != 0) {
 		XAIE_ERROR("Failed to get end of file, %d: %s\n",
 			errno, strerror(errno));
-		fclose(Fd);
+		if(fclose(Fd) == EOF) {  
+        		XAIE_ERROR("Failed to close file \n");  
+    		}
 		return XAIE_INVALID_ELF;
 	}
 
@@ -385,7 +388,9 @@ AieRC XAie_LoadUc(XAie_DevInst *DevInst, XAie_LocType Loc, const char *ElfPtr)
 	if (ElfSize < 0) {
 		XAIE_ERROR("Failed to determine file size, %d: %s\n",
 				errno, strerror(errno));
-		fclose(Fd);
+		if(fclose(Fd) == EOF) {  
+        		XAIE_ERROR("Failed to close file \n");  
+    		}
 		return XAIE_INVALID_ELF;
 	}
 
@@ -396,20 +401,26 @@ AieRC XAie_LoadUc(XAie_DevInst *DevInst, XAie_LocType Loc, const char *ElfPtr)
 	/* Read entire elf file into memory */
 	ElfMem = (unsigned char*) malloc(ElfSz);
 	if(ElfMem == NULL) {
-		fclose(Fd);
+		if(fclose(Fd) == EOF) { 
+			XAIE_ERROR("Failed to close file \n");  
+    		}
 		XAIE_ERROR("Memory allocation failed\n");
 		return XAIE_ERR;
 	}
 
-	Ret = (int)fread((void*)ElfMem, ElfSz, 1U, Fd);
-	if(Ret == 0) {
-		fclose(Fd);
+	RetFread = fread((void*)ElfMem, ElfSz, 1U, Fd);
+	if(RetFread == 0) {
+		if(fclose(Fd) == EOF) {  
+        		XAIE_ERROR("Failed to close file \n");  
+    		}
 		free(ElfMem);
 		XAIE_ERROR("Failed to read Elf into memory\n");
 		return XAIE_ERR;
 	}
 
-	fclose(Fd);
+	if(fclose(Fd) == EOF) {
+		XAIE_ERROR("Failed to close file \n"); 
+	}
 
 	RC = _XAie_LoadElfFromMem(DevInst, Loc, ElfMem);
 	free(ElfMem);

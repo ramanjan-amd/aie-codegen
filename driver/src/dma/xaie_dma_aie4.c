@@ -912,6 +912,13 @@ AieRC _XAie4_ShimTileDmaGetBdLen_common(XAie_DevInst *DevInst, const XAie_DmaMod
 		return RC;
 	}
 
+	
+	if (_XAie_CheckPrecisionExceedsForRightShift(DmaMod->BdProp->BufferLen.Lsb,
+			DmaMod->BdProp->BufferLen.Mask)) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
+
 	*Len = (XAie_GetField(RegVal, DmaMod->BdProp->BufferLen.Lsb,
 				DmaMod->BdProp->BufferLen.Mask) +
 			DmaMod->BdProp->LenActualOffset) << XAIE_DMA_32BIT_TXFER_LEN;
@@ -1091,7 +1098,16 @@ AieRC _XAie4_ShimTileDmaUpdateBdAddr_common(XAie_DevInst *DevInst,
 
 	RegAddr = BaseAddr + (DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Idx * 4U);
 	Mask = DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Mask;
-	RegVal = XAie_SetField(Addr >> DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb,
+
+	if(((DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb > _XAie_MaxBitsNeeded(Addr)) &&
+		(Addr >= (1ULL << DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb))) || 
+		(_XAie_CheckPrecisionExceeds(DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb,
+			_XAie_MaxBitsNeeded((Addr >> DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb) & 0xFFFFFFFFU),
+			MAX_VALID_AIE_REG_BIT_INDEX))) {
+		XAIE_ERROR("Check Precision Exceeds Failed\n");
+		return XAIE_ERR;
+	}
+	RegVal = XAie_SetField((Addr >> DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb) & 0xFFFFFFFFU,
 			DmaMod->BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb, Mask);
 
 	/* Addrlow maps to a single register without other fields */
@@ -1223,6 +1239,7 @@ AieRC _XAie4_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 	u32 BdWord[XAIE4_TILEDMA_NUM_BD_WORDS] = {0};
 	const XAie_DmaMod *DmaMod;
 	const XAie_DmaBdProp *BdProp;
+	u8 LockAcqVal, LockRelVal;
 
 	DmaMod = DevInst->DevProp.DevMod[DmaDesc->TileType].DmaMod;
 	BdProp = DmaMod->BdProp;
@@ -1328,6 +1345,17 @@ AieRC _XAie4_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 				BdProp->AddrMode->AieMlMultiDimAddr.Iter.StepSize.Lsb,
 				BdProp->AddrMode->AieMlMultiDimAddr.Iter.StepSize.Mask);
 
+	if(DmaDesc->LockDesc.LockAcqVal < 0)
+			LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
+	else
+			LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+
+	if(DmaDesc->LockDesc.LockRelVal < 0)
+			LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
+	else
+			LockRelVal = DmaDesc->LockDesc.LockRelVal;
+				
+
 	if ((_XAie_CheckPrecisionExceeds(BdProp->BdEn->TlastSuppress.Lsb,
 			_XAie_MaxBitsNeeded(DmaDesc->TlastSuppress),MAX_VALID_AIE_REG_BIT_INDEX)) ||
 		(_XAie_CheckPrecisionExceeds(BdProp->BdEn->NxtBd.Lsb,
@@ -1339,7 +1367,11 @@ AieRC _XAie4_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckAcqEn.Lsb,
 			_XAie_MaxBitsNeeded(DmaDesc->LockDesc.LockAcqEn),MAX_VALID_AIE_REG_BIT_INDEX)) ||
 		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckAcqId.Lsb,
-			_XAie_MaxBitsNeeded(DmaDesc->LockDesc.LockAcqId),MAX_VALID_AIE_REG_BIT_INDEX))) {
+			_XAie_MaxBitsNeeded(DmaDesc->LockDesc.LockAcqId),MAX_VALID_AIE_REG_BIT_INDEX)) ||
+		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckRelVal.Lsb,
+			_XAie_MaxBitsNeeded(LockRelVal),MAX_VALID_AIE_REG_BIT_INDEX)) ||
+		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
+			_XAie_MaxBitsNeeded(LockAcqVal),MAX_VALID_AIE_REG_BIT_INDEX))) {
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}
@@ -1353,7 +1385,7 @@ AieRC _XAie4_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 		XAie_SetField(DmaDesc->BdEnDesc.UseNxtBd,
 				BdProp->BdEn->UseNxtBd.Lsb,
 				BdProp->BdEn->UseNxtBd.Mask) |
-		XAie_SetField(DmaDesc->LockDesc.LockRelVal,
+		XAie_SetField(LockRelVal,
 				BdProp->Lock->AieMlDmaLock.LckRelVal.Lsb,
 				BdProp->Lock->AieMlDmaLock.LckRelVal.Mask) |
 		XAie_SetField(DmaDesc->LockDesc.LockRelId,
@@ -1362,7 +1394,7 @@ AieRC _XAie4_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 		XAie_SetField(DmaDesc->LockDesc.LockAcqEn,
 				BdProp->Lock->AieMlDmaLock.LckAcqEn.Lsb,
 				BdProp->Lock->AieMlDmaLock.LckAcqEn.Mask) |
-		XAie_SetField(DmaDesc->LockDesc.LockAcqVal,
+		XAie_SetField(LockAcqVal,
 				BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
 				BdProp->Lock->AieMlDmaLock.LckAcqVal.Mask) |
 		XAie_SetField(DmaDesc->LockDesc.LockAcqId,
@@ -1400,6 +1432,7 @@ AieRC _XAie4_MemTileDmaWriteBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *
 	u32 BdWord[XAIE4_MEMTILEDMA_NUM_BD_WORDS] = {0};
 	const XAie_DmaMod *DmaMod;	
 	const XAie_DmaBdProp *BdProp;
+	u8 LockAcqVal, LockRelVal;
 
 	RC = _XAie4_DmaMemTileCheckPaddingConfig(DmaDesc);
 	if (RC != XAIE_OK) {
@@ -1423,18 +1456,30 @@ AieRC _XAie4_MemTileDmaWriteBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *
 			BdProp->Buffer->TileDmaBuff.BaseAddr.Lsb,
 			BdProp->Buffer->TileDmaBuff.BaseAddr.Mask);
 
-	if (_XAie_CheckPrecisionExceeds(BdProp->BufferLen.Lsb,
-			_XAie_MaxBitsNeeded(DmaDesc->AddrDesc.Length),MAX_VALID_AIE_REG_BIT_INDEX)) {
+ 	if(DmaDesc->LockDesc.LockAcqVal < 0)
+		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
+	else
+		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+
+	if ((_XAie_CheckPrecisionExceeds(BdProp->BufferLen.Lsb,
+			_XAie_MaxBitsNeeded(DmaDesc->AddrDesc.Length),MAX_VALID_AIE_REG_BIT_INDEX)) || 
+			(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
+			_XAie_MaxBitsNeeded(LockAcqVal),MAX_VALID_AIE_REG_BIT_INDEX))) {
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}
 
-	BdWord[1U] = XAie_SetField(DmaDesc->LockDesc.LockAcqVal,
+	BdWord[1U] = XAie_SetField(LockAcqVal,
 			BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
 			BdProp->Lock->AieMlDmaLock.LckAcqVal.Mask) |
 		XAie_SetField(DmaDesc->AddrDesc.Length,
 			BdProp->BufferLen.Lsb,
 			BdProp->BufferLen.Mask);
+
+	if(DmaDesc->LockDesc.LockRelVal < 0)
+		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
+	else
+		LockRelVal = DmaDesc->LockDesc.LockRelVal;
 
 	if ((_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckAcqId.Lsb,
 			_XAie_MaxBitsNeeded(DmaDesc->LockDesc.LockAcqId),
@@ -1444,6 +1489,9 @@ AieRC _XAie4_MemTileDmaWriteBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *
 			MAX_VALID_AIE_REG_BIT_INDEX)) ||
 		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckAcqEn.Lsb,
 			_XAie_MaxBitsNeeded(DmaDesc->LockDesc.LockAcqEn),
+			MAX_VALID_AIE_REG_BIT_INDEX))  ||
+		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckRelVal.Lsb,
+			_XAie_MaxBitsNeeded(LockRelVal),
 			MAX_VALID_AIE_REG_BIT_INDEX))) {
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
@@ -1452,7 +1500,7 @@ AieRC _XAie4_MemTileDmaWriteBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *
 	BdWord[2U] = XAie_SetField(DmaDesc->LockDesc.LockAcqId,
 			BdProp->Lock->AieMlDmaLock.LckAcqId.Lsb,
 			BdProp->Lock->AieMlDmaLock.LckAcqId.Mask) |
-		XAie_SetField(DmaDesc->LockDesc.LockRelVal,
+		XAie_SetField(LockRelVal,
 			BdProp->Lock->AieMlDmaLock.LckRelVal.Lsb,
 			BdProp->Lock->AieMlDmaLock.LckRelVal.Mask) |
 		XAie_SetField(DmaDesc->LockDesc.LockRelId,
@@ -1631,6 +1679,7 @@ AieRC _XAie4_ShimDmaWriteBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc
 	u64 Addr;	
 	u32 BdWord[XAIE4_SHIMDMA_NUM_BD_WORDS];
 	XAie_ShimDmaBdArgs Args;
+	u8 LockAcqVal, LockRelVal;
 
 	const XAie_DmaBdProp *BdProp = DmaDesc->DmaMod->BdProp;
 
@@ -1655,6 +1704,12 @@ AieRC _XAie4_ShimDmaWriteBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc
 			XAie_SetField((DmaDesc->AddrDesc.Address >> 32U),
 				BdProp->Buffer->ShimDmaBuff.AddrHigh.Lsb,
 				BdProp->Buffer->ShimDmaBuff.AddrHigh.Mask);
+
+	if ((BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb > _XAie_MaxBitsNeeded(DmaDesc->AddrDesc.Address)) &&
+		(DmaDesc->AddrDesc.Address >= (1ULL << BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb))) {
+		XAIE_ERROR("Loss of precision for Rightshift\n");
+		return XAIE_INVALID_ADDRESS;
+	}
 
 	BdWord[1U] = XAie_SetField(DmaDesc->AddrDesc.Address >>	BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb,
 			BdProp->Buffer->ShimDmaBuff.AddrLow.Lsb,
@@ -1701,12 +1756,26 @@ AieRC _XAie4_ShimDmaWriteBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc
 		XAie_SetField(DmaDesc->MultiDimDesc.AieMlMultiDimDesc.DimDesc[2U].Wrap,
 				BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[2U].Wrap.Lsb,
 				BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[2U].Wrap.Mask);
+	
+	if(DmaDesc->LockDesc.LockAcqVal < 0)
+		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
+	else
+		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+
+	if(DmaDesc->LockDesc.LockRelVal < 0)
+		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
+	else
+		LockRelVal = DmaDesc->LockDesc.LockRelVal;
 
 	if ((_XAie_CheckPrecisionExceeds(BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[0U].Wrap.Lsb,
 			_XAie_MaxBitsNeeded(DmaDesc->MultiDimDesc.AieMlMultiDimDesc.DimDesc[0U].Wrap),
 			MAX_VALID_AIE_REG_BIT_INDEX)) ||
 		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckRelId.Lsb,
-			_XAie_MaxBitsNeeded(DmaDesc->LockDesc.LockRelId), MAX_VALID_AIE_REG_BIT_INDEX))) {
+			_XAie_MaxBitsNeeded(DmaDesc->LockDesc.LockRelId), MAX_VALID_AIE_REG_BIT_INDEX)) ||
+		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
+			_XAie_MaxBitsNeeded(LockAcqVal), MAX_VALID_AIE_REG_BIT_INDEX)) ||
+		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckRelVal.Lsb,
+			_XAie_MaxBitsNeeded(LockRelVal), MAX_VALID_AIE_REG_BIT_INDEX))) {
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}
@@ -1714,13 +1783,13 @@ AieRC _XAie4_ShimDmaWriteBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc
 	BdWord[4U] = XAie_SetField(DmaDesc->MultiDimDesc.AieMlMultiDimDesc.DimDesc[0U].Wrap,
 				BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[0U].Wrap.Lsb,
 				BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[0U].Wrap.Mask) |
-		XAie_SetField(DmaDesc->LockDesc.LockRelVal,
+		XAie_SetField(LockRelVal,
 				BdProp->Lock->AieMlDmaLock.LckRelVal.Lsb,
 				BdProp->Lock->AieMlDmaLock.LckRelVal.Mask) |
 		XAie_SetField(DmaDesc->LockDesc.LockRelId,
 				BdProp->Lock->AieMlDmaLock.LckRelId.Lsb,
 				BdProp->Lock->AieMlDmaLock.LckRelId.Mask) |
-		XAie_SetField(DmaDesc->LockDesc.LockAcqVal,
+		XAie_SetField(LockAcqVal,
 				BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
 				BdProp->Lock->AieMlDmaLock.LckAcqVal.Mask);
 
@@ -1951,6 +2020,7 @@ AieRC _XAie4_TileDmaReadBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 	u64 BdBaseAddr;
 	u32 BdWord[XAIE4_TILEDMA_NUM_BD_WORDS];
 	const XAie_DmaBdProp *BdProp;
+	u8 LockAcqVal, LockRelVal;
 
 	BdProp = DmaDesc->DmaMod->BdProp;
 	BdBaseAddr = (u64)(DmaDesc->DmaMod->BaseAddr +
@@ -2127,9 +2197,14 @@ AieRC _XAie4_TileDmaReadBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}
-	DmaDesc->LockDesc.LockRelVal = (s8)XAie_GetField(BdWord[5U],
+	LockRelVal  = (u8)(XAie_GetField(BdWord[5U],
 			BdProp->Lock->AieMlDmaLock.LckRelVal.Lsb,
-			BdProp->Lock->AieMlDmaLock.LckRelVal.Mask);
+			BdProp->Lock->AieMlDmaLock.LckRelVal.Mask) & 0xFFU);
+
+	if(LockRelVal > 127)
+		DmaDesc->LockDesc.LockRelVal = (s8)LockRelVal;
+	else
+		DmaDesc->LockDesc.LockRelVal = LockRelVal;
 
 	if (_XAie_CheckPrecisionExceedsForRightShift(BdProp->Lock->AieMlDmaLock.LckRelId.Lsb,
 			BdProp->Lock->AieMlDmaLock.LckRelId.Mask)) {
@@ -2154,9 +2229,13 @@ AieRC _XAie4_TileDmaReadBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}
-	DmaDesc->LockDesc.LockAcqVal = (s8)XAie_GetField(BdWord[5U],
+	LockAcqVal  = (u8)(XAie_GetField(BdWord[5U],
 			BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
-			BdProp->Lock->AieMlDmaLock.LckAcqVal.Mask);
+			BdProp->Lock->AieMlDmaLock.LckAcqVal.Mask) & 0xFFU);
+	if(LockAcqVal > 127)
+		DmaDesc->LockDesc.LockAcqVal = (s8)LockAcqVal;
+	else
+		DmaDesc->LockDesc.LockAcqVal = LockAcqVal;
 
 	if (_XAie_CheckPrecisionExceedsForRightShift(BdProp->Lock->AieMlDmaLock.LckAcqId.Lsb,
 			BdProp->Lock->AieMlDmaLock.LckAcqId.Mask)) {
@@ -2195,6 +2274,7 @@ AieRC _XAie4_MemTileDmaReadBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *D
 	u64 BdBaseAddr;
 	u32 BdWord[XAIE4_MEMTILEDMA_NUM_BD_WORDS];
 	const XAie_DmaBdProp *BdProp;
+	u8 LockAcqVal, LockRelVal;
 
 	BdProp = DmaDesc->DmaMod->BdProp;
 	
@@ -2225,9 +2305,14 @@ AieRC _XAie4_MemTileDmaReadBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *D
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}
-	DmaDesc->LockDesc.LockAcqVal = (s8)XAie_GetField(BdWord[1U],
+	LockAcqVal = (u8)(XAie_GetField(BdWord[1U],
 			BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
-			BdProp->Lock->AieMlDmaLock.LckAcqVal.Mask);
+			BdProp->Lock->AieMlDmaLock.LckAcqVal.Mask) & 0xFFU);
+
+	if(LockAcqVal > 127)
+		DmaDesc->LockDesc.LockAcqVal = (s8)LockAcqVal;
+	else
+		DmaDesc->LockDesc.LockAcqVal = LockAcqVal;
 
 	if (_XAie_CheckPrecisionExceedsForRightShift(BdProp->BufferLen.Lsb,
 			BdProp->BufferLen.Mask)) {
@@ -2253,9 +2338,14 @@ AieRC _XAie4_MemTileDmaReadBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *D
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}
-	DmaDesc->LockDesc.LockRelVal = (s8)XAie_GetField(BdWord[2U],
+	LockRelVal  = (u8)(XAie_GetField(BdWord[2U],
 			BdProp->Lock->AieMlDmaLock.LckRelVal.Lsb,
-			BdProp->Lock->AieMlDmaLock.LckRelVal.Mask);
+			BdProp->Lock->AieMlDmaLock.LckRelVal.Mask) & 0xFFU);
+
+	if(LockRelVal > 127)
+		DmaDesc->LockDesc.LockRelVal = (s8)LockRelVal;
+	else
+		DmaDesc->LockDesc.LockRelVal = LockRelVal;
 
 	if (_XAie_CheckPrecisionExceedsForRightShift(BdProp->Lock->AieMlDmaLock.LckRelId.Lsb,
 			BdProp->Lock->AieMlDmaLock.LckRelId.Mask)) {
@@ -2489,6 +2579,7 @@ AieRC _XAie4_ShimDmaReadBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 	u64 Addr;
 	u32 BdWord[XAIE4_SHIMDMA_NUM_BD_WORDS];
 	const XAie_DmaBdProp *BdProp = DmaDesc->DmaMod->BdProp;
+	u8 LockAcqVal, LockRelVal;
 	
 	Addr = BdBaseAddr + XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
 
@@ -2613,9 +2704,14 @@ AieRC _XAie4_ShimDmaReadBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}
-	DmaDesc->LockDesc.LockRelVal = XAie_GetField(BdWord[4U],
+	LockRelVal = (u8)(XAie_GetField(BdWord[4U],
 			BdProp->Lock->AieMlDmaLock.LckRelVal.Lsb,
-			BdProp->Lock->AieMlDmaLock.LckRelVal.Mask);
+			BdProp->Lock->AieMlDmaLock.LckRelVal.Mask) & 0xFFU);
+		
+	if(LockRelVal > 127)
+		DmaDesc->LockDesc.LockRelVal = (s8)LockRelVal;
+	else
+		DmaDesc->LockDesc.LockRelVal = LockRelVal;
 
 	if (_XAie_CheckPrecisionExceedsForRightShift(BdProp->Lock->AieMlDmaLock.LckRelId.Lsb,
 			BdProp->Lock->AieMlDmaLock.LckRelId.Mask)) {
@@ -2631,9 +2727,13 @@ AieRC _XAie4_ShimDmaReadBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 		XAIE_ERROR("Check Precision Exceeds Failed\n");
 		return XAIE_ERR;
 	}
-	DmaDesc->LockDesc.LockAcqVal = XAie_GetField(BdWord[4U],
+	LockAcqVal = XAie_GetField(BdWord[4U],
 			BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
 			BdProp->Lock->AieMlDmaLock.LckAcqVal.Mask) & 0xFFU;
+	if(LockAcqVal > 127)
+		DmaDesc->LockDesc.LockAcqVal = (s8)LockAcqVal;
+	else
+		DmaDesc->LockDesc.LockAcqVal = LockAcqVal;
 
 
 	if (_XAie_CheckPrecisionExceedsForRightShift(BdProp->Pkt->EnPkt.Lsb,

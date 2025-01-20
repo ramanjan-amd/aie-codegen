@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include "xaie_io.h"
 #include "xaiegbl_regdef.h"
-#include "xaie_core.h"
 #include "xaie_dma.h"
 #include "xaie_locks.h"
 

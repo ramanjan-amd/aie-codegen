@@ -33,6 +33,7 @@
 #include "xaie_helper_internal.h"
 #include "xaie_reset_aie.h"
 #include "xaie_txn.h"
+#include "xaie_core.h"
 
 #ifdef __AIESOCKET__
 	#define XAIE4_APP_B_OFFSET  0x08000000U
@@ -4174,7 +4175,7 @@ u64 XAie_GetTileAddr(XAie_DevInst *DevInst, u8 R, u8 C)
 			/* TBD - Implement Shim Row South and North Handling */
 			break;
 		case XAIEGBL_TILE_TYPE_AIETILE:
-			R += (DevInst->MemTileNumRows * XAIE_DEV_GEN_AIE4_AIE_TILE_SHIFT_OFFSET);
+			R += ((DevInst->MemTileNumRows * XAIE_DEV_GEN_AIE4_AIE_TILE_SHIFT_OFFSET) & 0xFFU);
 			break;
 		case XAIEGBL_TILE_TYPE_MEMTILE:
 			if(R != DevInst->MemTileRowStart) {
