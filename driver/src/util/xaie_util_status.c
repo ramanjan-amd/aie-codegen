@@ -185,7 +185,7 @@ int XAie_DmaS2MMStatus_CSV(u32 Reg, char *Buf, u32 BufSize,  u8 TType) {
     u8 CommaNeeded = 0U;
     FlagVal = (u32)Flag;
 
-    for(FlagVal = (u32)XAIE_DMA_STATUS_S2MM_STATUS; FlagVal <= (u32)XAIE_DMA_STATUS_S2MM_MAX;
+    for(FlagVal = (u32)XAIE_DMA_STATUS_S2MM_STATUS; FlagVal < (u32)XAIE_DMA_STATUS_S2MM_MAX;
 		    FlagVal++) {
 	Ret = 0;
 	CommaNeeded = 1U;
@@ -352,7 +352,7 @@ int XAie_DmaMM2SStatus_CSV(u32 Reg, char *Buf, u32 BufSize, u8 TType) {
     u8 CommaNeeded = 0U;
     FlagVal = (u32)Flag;
 
-    for(FlagVal = (u32)XAIE_DMA_STATUS_MM2S_STATUS; FlagVal <= (u32)XAIE_DMA_STATUS_MM2S_MAX;
+    for(FlagVal = (u32)XAIE_DMA_STATUS_MM2S_STATUS; FlagVal < (u32)XAIE_DMA_STATUS_MM2S_MAX;
 			 FlagVal++) {
 	Ret = 0;
 	CommaNeeded = 1U;

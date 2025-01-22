@@ -97,7 +97,7 @@ int XAie_EventStatus_CSV(XAie_DevInst* DevInst, u32 Reg, char* Buf, u32 BufSize,
 		}
 		if(XAie_EvntStrings[MappedEvent] != NULL) {
 			CommaNeeded = 0x1U;
-			u32 Val = (Reg >> MappedEvent) & 0x1U;
+			u32 Val = (Reg >> (MappedEvent % 32 )) & 0x1U;
 			if(Val) {
 				Ret = _XAie_strcpy(&Buf[CharsWritten],
 						BufSize-(u32)CharsWritten,
