@@ -250,15 +250,21 @@ AieRC _XAie_ShimDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 	BdWord[1U] = XAie_SetField(DmaDesc->AddrDesc.Length,
 			BdProp->BufferLen.Lsb, BdProp->BufferLen.Mask);
 
-	if(DmaDesc->LockDesc.LockAcqVal < 0)
+	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-	else
+		LockAcqVal = LockAcqVal >> 1;
+	}
+	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+	}
 
-	if(DmaDesc->LockDesc.LockRelVal < 0)
+	if(DmaDesc->LockDesc.LockRelVal < 0) {
 		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-	else
+		LockRelVal = LockRelVal >> 1;
+	}
+	else {
 		LockRelVal = DmaDesc->LockDesc.LockRelVal;
+	}
 
 	if ((_XAie_CheckPrecisionExceeds(BdProp->Buffer->ShimDmaBuff.AddrHigh.Lsb,
 			_XAie_MaxBitsNeeded((DmaDesc->AddrDesc.Address >> 32) & 0xFFFFFFFFU),MAX_VALID_AIE_REG_BIT_INDEX)) ||
@@ -664,15 +670,21 @@ AieRC _XAie_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 
 	BdBaseAddr = (u64)(DmaMod->BaseAddr + BdNum * (u64)DmaMod->IdxOffset);
 	
-	if(DmaDesc->LockDesc.LockAcqVal < 0)
+	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-	else
+		LockAcqVal = LockAcqVal >> 1;
+	}
+	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+	}
 
-	if(DmaDesc->LockDesc.LockRelVal < 0)
+	if(DmaDesc->LockDesc.LockRelVal < 0) {
 		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-	else
+		LockRelVal = LockRelVal >> 1;
+	}
+	else {
 		LockRelVal = DmaDesc->LockDesc.LockRelVal;
+	}
 
 	if ((_XAie_CheckPrecisionExceeds(BdProp->Lock->AieDmaLock.LckId_A.Lsb,
 			_XAie_MaxBitsNeeded(DmaDesc->LockDesc.LockAcqId),MAX_VALID_AIE_REG_BIT_INDEX))||

@@ -1345,15 +1345,21 @@ AieRC _XAie4_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 				BdProp->AddrMode->AieMlMultiDimAddr.Iter.StepSize.Lsb,
 				BdProp->AddrMode->AieMlMultiDimAddr.Iter.StepSize.Mask);
 
-	if(DmaDesc->LockDesc.LockAcqVal < 0)
+	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 			LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-	else
+			LockAcqVal = LockAcqVal >> 1;
+	}
+	else {
 			LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+	}
 
-	if(DmaDesc->LockDesc.LockRelVal < 0)
+	if(DmaDesc->LockDesc.LockRelVal < 0) {
 			LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-	else
+			LockRelVal = LockRelVal >> 1;
+	}
+	else {
 			LockRelVal = DmaDesc->LockDesc.LockRelVal;
+	}
 				
 
 	if ((_XAie_CheckPrecisionExceeds(BdProp->BdEn->TlastSuppress.Lsb,
@@ -1456,10 +1462,13 @@ AieRC _XAie4_MemTileDmaWriteBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *
 			BdProp->Buffer->TileDmaBuff.BaseAddr.Lsb,
 			BdProp->Buffer->TileDmaBuff.BaseAddr.Mask);
 
- 	if(DmaDesc->LockDesc.LockAcqVal < 0)
+	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-	else
+		LockAcqVal = LockAcqVal >> 1;
+	}
+	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+	}
 
 	if ((_XAie_CheckPrecisionExceeds(BdProp->BufferLen.Lsb,
 			_XAie_MaxBitsNeeded(DmaDesc->AddrDesc.Length),MAX_VALID_AIE_REG_BIT_INDEX)) || 
@@ -1757,15 +1766,21 @@ AieRC _XAie4_ShimDmaWriteBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc
 				BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[2U].Wrap.Lsb,
 				BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[2U].Wrap.Mask);
 	
-	if(DmaDesc->LockDesc.LockAcqVal < 0)
+	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-	else
+		LockAcqVal = LockAcqVal >> 1;
+	}
+	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+	}
 
-	if(DmaDesc->LockDesc.LockRelVal < 0)
+	if(DmaDesc->LockDesc.LockRelVal < 0) {
 		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-	else
+		LockRelVal = LockRelVal >> 1;
+	}
+	else {
 		LockRelVal = DmaDesc->LockDesc.LockRelVal;
+	}
 
 	if ((_XAie_CheckPrecisionExceeds(BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[0U].Wrap.Lsb,
 			_XAie_MaxBitsNeeded(DmaDesc->MultiDimDesc.AieMlMultiDimDesc.DimDesc[0U].Wrap),
