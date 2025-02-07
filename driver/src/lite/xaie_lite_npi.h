@@ -219,7 +219,7 @@ static inline void _XAie_LNpiSetMeIporReset(u8 RstEnable)
 
 	RegVal = XAie_ClearBitField((u32)RstEnable, XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_LSB,
 			XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_MASK);
-	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_MASK_REG, RegVal);
+	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_CONTROL_REG, RegVal);
 }
 
 #endif		/* end of protection macro */
