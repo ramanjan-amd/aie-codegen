@@ -460,15 +460,21 @@ AieRC _XAieMl_MemTileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 				BdProp->AddrMode->AieMlMultiDimAddr.Iter.StepSize.Lsb,
 				BdProp->AddrMode->AieMlMultiDimAddr.Iter.StepSize.Mask);
 
-	if(DmaDesc->LockDesc.LockAcqVal < 0)
+	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-	else
+		LockAcqVal = LockAcqVal >> 1;
+	}
+	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+	}
 
-	if(DmaDesc->LockDesc.LockRelVal < 0)
+	if(DmaDesc->LockDesc.LockRelVal < 0) {
 		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-	else
+		LockRelVal = LockRelVal >> 1;
+	}
+	else {
 		LockRelVal = DmaDesc->LockDesc.LockRelVal;
+	}
 
 	if ((_XAie_CheckPrecisionExceeds(BdProp->BdEn->ValidBd.Lsb,
 			_XAie_MaxBitsNeeded(DmaDesc->BdEnDesc.ValidBd),
@@ -1017,15 +1023,21 @@ AieRC _XAieMl_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 				BdProp->AddrMode->AieMlMultiDimAddr.Iter.StepSize.Lsb,
 				BdProp->AddrMode->AieMlMultiDimAddr.Iter.StepSize.Mask);
 	
-	if(DmaDesc->LockDesc.LockAcqVal < 0)
+	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-	else
+		LockAcqVal = LockAcqVal >> 1;
+	}
+	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+	}
 
-	if(DmaDesc->LockDesc.LockRelVal < 0)
+	if(DmaDesc->LockDesc.LockRelVal < 0) {
 		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-	else
+		LockRelVal = LockRelVal >> 1;
+	}
+	else {
 		LockRelVal = DmaDesc->LockDesc.LockRelVal;
+	}
 
 	if ((_XAie_CheckPrecisionExceeds(BdProp->BdEn->ValidBd.Lsb,
 			_XAie_MaxBitsNeeded(DmaDesc->BdEnDesc.ValidBd),MAX_VALID_AIE_REG_BIT_INDEX)) ||
@@ -1540,10 +1552,13 @@ AieRC _XAieMl_ShimDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 				BdProp->AddrMode->AieMlMultiDimAddr.Iter.StepSize.Mask);
 
 
-	if(DmaDesc->LockDesc.LockAcqVal < 0)
-            LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-    else
-            LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+	if(DmaDesc->LockDesc.LockAcqVal < 0) {
+		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
+		LockAcqVal = LockAcqVal >> 1;
+	}
+	else {
+		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+	}
 
     if(DmaDesc->LockDesc.LockRelVal < 0)
             LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
