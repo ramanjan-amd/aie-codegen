@@ -51,7 +51,7 @@ AieRC _XAie4_DmaWaitForDone(XAie_DevInst *DevInst, XAie_LocType Loc,
 AieRC _XAie4_DmaWaitForBdTaskQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
 		const XAie_DmaMod *DmaMod, u8 ChNum, XAie_DmaDirection Dir,
 		u32 TimeOutUs, u8 BusyPoll);
-AieRC _XAie4_ShimTileDmaCheckBdChValidity(u8 BdNum, u8 ChNum);
+AieRC _XAie4_ShimTileDmaCheckBdChValidity(const XAie_DmaMod *DmaMod, XAie_DmaDirection Dir, u16 BdNum, u8 ChNum);
 AieRC _XAie4_DmaGetChannelStatus(XAie_DevInst *DevInst, XAie_LocType Loc,
 		const XAie_DmaMod *DmaMod, u8 ChNum, XAie_DmaDirection Dir,
 		u32 *Status);

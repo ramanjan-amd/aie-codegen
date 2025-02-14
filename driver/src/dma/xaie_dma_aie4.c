@@ -208,7 +208,7 @@ u64 _XAie4_DmaGetChannelStatusAddr(XAie_DevInst *DevInst, const XAie_DmaMod *Dma
 		}
 	}
 
-	addr |= DmaMod->ChStatusBase + XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
+	addr |= ChStatusBase + XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 			ChNum * XAIE4_DMA_STATUS_CHNUM_OFFSET;
 
 	return addr;
@@ -570,11 +570,37 @@ AieRC _XAie4_DmaWaitForBdTaskQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
  * @note		Internal only. For AIE4 SHIM Tiles only.
  *
  ******************************************************************************/
-AieRC _XAie4_ShimTileDmaCheckBdChValidity(u8 BdNum, u8 ChNum)
+AieRC _XAie4_ShimTileDmaCheckBdChValidity(const XAie_DmaMod *DmaMod, XAie_DmaDirection Dir, u16 BdNum, u8 ChNum)
 {
-	if((BdNum < 16U) && (ChNum < 2U))
+	u8 NumChannels = 0;
+	switch (Dir) {
+		case DMA_S2MM:
+			NumChannels = DmaMod->NumChannels;
+			break;
+		case DMA_MM2S:
+			NumChannels = DmaMod->NumMm2sChannels;
+			break;
+		case DMA_MM2S_CTRL:			
+		case DMA_S2MM_TRACE:			
+			break;
+		default:
+			XAIE_ERROR("Invalid Channel direction \n");
+			break; 
+	}
+	
+	/* for Ctrl MM2S and Trace S2MM channel */
+	if(NumChannels == 0)
 		return XAIE_OK;
-	else if((BdNum < 32U) && (ChNum < 4U))
+
+	/* Each DMA transfer is defined by a DMA Buffer Descriptor (BD). There is a shared pool of 32 BDs:
+		• BDs 0-15 are accessible from MM2S channels 0 and 1 and S2MM channel 0
+			o In dual-application mode, these are assigned to application A
+		• BDs 16-31 are accessible from MM2S channels 2 and 3 and S2MM channel 1
+			o In dual-application mode, these are assigned to application B*/
+
+	if((BdNum < 16U) && (ChNum < NumChannels))
+		return XAIE_OK;
+	else if(((BdNum >= 16U) && (BdNum < 32U)) && (ChNum >= NumChannels))
 		return XAIE_OK;
 
 	XAIE_ERROR("Invalid BdNum, ChNum combination\n");
@@ -1683,9 +1709,10 @@ AieRC _XAie4_MemTileDmaWriteBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *
 }
 
 AieRC _XAie4_ShimDmaWriteBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
-		XAie_LocType Loc, u16 BdNum, u64 BdBaseAddr)
+		XAie_LocType Loc, XAie_DmaDirection Dir, u16 BdNum, u64 BdBaseAddr)
 {
-	u64 Addr;	
+	u64 Addr;
+	AieRC RC;
 	u32 BdWord[XAIE4_SHIMDMA_NUM_BD_WORDS];
 	XAie_ShimDmaBdArgs Args;
 	u8 LockAcqVal, LockRelVal;
@@ -1766,36 +1793,38 @@ AieRC _XAie4_ShimDmaWriteBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc
 				BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[2U].Wrap.Lsb,
 				BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[2U].Wrap.Mask);
 	
-	if(DmaDesc->LockDesc.LockAcqVal < 0) {
-		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-		LockAcqVal = LockAcqVal >> 1;
-	}
-	else {
-		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
-	}
 
-	if(DmaDesc->LockDesc.LockRelVal < 0) {
-		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-		LockRelVal = LockRelVal >> 1;
-	}
-	else {
-		LockRelVal = DmaDesc->LockDesc.LockRelVal;
-	}
+	/* BD[4] index is not used for Ctrl MM2S and Trace S2MM channel*/
+	if(!((Dir == DMA_MM2S_CTRL) || (Dir == DMA_S2MM_TRACE))){
 
-	if ((_XAie_CheckPrecisionExceeds(BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[0U].Wrap.Lsb,
-			_XAie_MaxBitsNeeded(DmaDesc->MultiDimDesc.AieMlMultiDimDesc.DimDesc[0U].Wrap),
-			MAX_VALID_AIE_REG_BIT_INDEX)) ||
-		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckRelId.Lsb,
-			_XAie_MaxBitsNeeded(DmaDesc->LockDesc.LockRelId), MAX_VALID_AIE_REG_BIT_INDEX)) ||
-		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
-			_XAie_MaxBitsNeeded(LockAcqVal), MAX_VALID_AIE_REG_BIT_INDEX)) ||
-		(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckRelVal.Lsb,
-			_XAie_MaxBitsNeeded(LockRelVal), MAX_VALID_AIE_REG_BIT_INDEX))) {
-		XAIE_ERROR("Check Precision Exceeds Failed\n");
-		return XAIE_ERR;
-	}
+		if(DmaDesc->LockDesc.LockAcqVal < 0) {
+			LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
+			LockAcqVal = LockAcqVal >> 1;
+		} else {
+			LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
+		}
 
-	BdWord[4U] = XAie_SetField(DmaDesc->MultiDimDesc.AieMlMultiDimDesc.DimDesc[0U].Wrap,
+		if(DmaDesc->LockDesc.LockRelVal < 0) {
+			LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
+			LockRelVal = LockRelVal >> 1;
+		} else {
+			LockRelVal = DmaDesc->LockDesc.LockRelVal;
+		}
+
+		if ((_XAie_CheckPrecisionExceeds(BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[0U].Wrap.Lsb,
+				_XAie_MaxBitsNeeded(DmaDesc->MultiDimDesc.AieMlMultiDimDesc.DimDesc[0U].Wrap),
+				MAX_VALID_AIE_REG_BIT_INDEX)) ||
+			(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckRelId.Lsb,
+				_XAie_MaxBitsNeeded(DmaDesc->LockDesc.LockRelId), MAX_VALID_AIE_REG_BIT_INDEX)) ||
+			(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
+				_XAie_MaxBitsNeeded(LockAcqVal), MAX_VALID_AIE_REG_BIT_INDEX)) ||
+			(_XAie_CheckPrecisionExceeds(BdProp->Lock->AieMlDmaLock.LckRelVal.Lsb,
+				_XAie_MaxBitsNeeded(LockRelVal), MAX_VALID_AIE_REG_BIT_INDEX))) {
+			XAIE_ERROR("Check Precision Exceeds Failed\n");
+			return XAIE_ERR;
+		}
+
+		BdWord[4U] = XAie_SetField(DmaDesc->MultiDimDesc.AieMlMultiDimDesc.DimDesc[0U].Wrap,
 				BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[0U].Wrap.Lsb,
 				BdProp->AddrMode->AieMlMultiDimAddr.DmaDimProp[0U].Wrap.Mask) |
 		XAie_SetField(LockRelVal,
@@ -1807,7 +1836,8 @@ AieRC _XAie4_ShimDmaWriteBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc
 		XAie_SetField(LockAcqVal,
 				BdProp->Lock->AieMlDmaLock.LckAcqVal.Lsb,
 				BdProp->Lock->AieMlDmaLock.LckAcqVal.Mask);
-
+	}
+	
 	if ((_XAie_CheckPrecisionExceeds(BdProp->Pkt->EnPkt.Lsb,
 			_XAie_MaxBitsNeeded(DmaDesc->PktDesc.PktEn),MAX_VALID_AIE_REG_BIT_INDEX)) ||
 		(_XAie_CheckPrecisionExceeds(BdProp->BdEn->NxtBd.Lsb,
@@ -1921,15 +1951,32 @@ AieRC _XAie4_ShimDmaWriteBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc
 
 	Addr = BdBaseAddr + XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
 
-	Args.NumBdWords = XAIE4_SHIMDMA_NUM_BD_WORDS;
-	Args.BdWords = &BdWord[0U];
 	Args.Loc = Loc;
 	Args.VAddr = DmaDesc->AddrDesc.Address;
-	Args.BdNum = BdNum;
-	Args.Addr = Addr;
+	Args.BdNum = BdNum;	
 	Args.MemInst = DmaDesc->MemInst;
+	
+	/* for Ctrl MM2S asn Trace S2MM channel the total number of BD words is 8*/
+	if(!((Dir == DMA_MM2S_CTRL) || (Dir == DMA_S2MM_TRACE))) {
+		Args.Addr = Addr;
+		Args.BdWords = &BdWord[0U];
+		Args.NumBdWords = XAIE4_SHIMDMA_NUM_BD_WORDS;
+		RC = XAie_RunOp(DevInst, XAIE_BACKEND_OP_CONFIG_SHIMDMABD, (void *)&Args);
+	} else {
+		Args.Addr = Addr;
+		Args.BdWords = &BdWord[0U];
+		Args.NumBdWords = 4;
+		RC = XAie_RunOp(DevInst, XAIE_BACKEND_OP_CONFIG_SHIMDMABD, (void *)&Args);
+		if(RC != XAIE_OK) {
+			return RC;
+		}
 
-	return XAie_RunOp(DevInst, XAIE_BACKEND_OP_CONFIG_SHIMDMABD, (void *)&Args);
+		Args.Addr = Addr + 0x14;
+		Args.BdWords = &BdWord[5U];
+		Args.NumBdWords = 4;
+		RC = XAie_RunOp(DevInst, XAIE_BACKEND_OP_CONFIG_SHIMDMABD, (void *)&Args);
+	}	
+	return RC;
 }
 
 /*****************************************************************************/
@@ -1954,6 +2001,7 @@ AieRC _XAie4_ShimDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 {
 	u64 BdBaseAddr = 0;
 	const XAie_DmaMod *DmaMod = DmaDesc->DmaMod;
+	XAie_DmaDirection Dir = DMA_MAX;
 
 	/*Add App_B base address if BD is from second half of the resources*/
 	if (BdNum >= DmaMod->NumBds) {
@@ -1964,7 +2012,7 @@ AieRC _XAie4_ShimDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 	BdBaseAddr |= DmaMod->BaseAddr + BdNum * (u64)DmaMod->IdxOffset;
 
 	return _XAie4_ShimDmaWriteBd_common(DevInst , DmaDesc,
-										Loc, BdNum, BdBaseAddr);
+										Loc, Dir, BdNum, BdBaseAddr);
 }
 
 /*****************************************************************************/
@@ -2008,7 +2056,7 @@ AieRC _XAie4_ShimDmaWriteBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *Dma
 				(BdNum * (u64)DmaMod->IdxOffset);
 
 	return _XAie4_ShimDmaWriteBd_common(DevInst , DmaDesc,
-										Loc, BdNum, BdBaseAddr);
+										Loc, Dir, BdNum, BdBaseAddr);
 }
 
 /*****************************************************************************/

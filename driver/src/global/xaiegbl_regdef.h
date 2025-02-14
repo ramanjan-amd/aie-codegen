@@ -618,7 +618,7 @@ struct XAie_DmaMod {
 	AieRC (*WaitforBdTaskQueue)(XAie_DevInst *DevINst, XAie_LocType Loc,
 			const XAie_DmaMod *DmaMod, u8 ChNum,
 			XAie_DmaDirection Dir, u32 TimeOutUs, u8 BusyPoll);
-	AieRC (*BdChValidity)(u8 BdNum, u8 ChNum);
+	AieRC (*BdChValidity)(const XAie_DmaMod *DmaMod, XAie_DmaDirection Dir, u16 BdNum, u8 ChNum);
 	AieRC (*UpdateBdLen)(XAie_DevInst *DevInst, const XAie_DmaMod *DmaMod,
 			XAie_LocType Loc, u32 Len, u16 BdNum);
 	AieRC (*GetBdLen)(XAie_DevInst *DevInst, const XAie_DmaMod *DmaMod,

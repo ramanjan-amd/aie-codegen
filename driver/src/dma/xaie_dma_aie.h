@@ -51,7 +51,7 @@ AieRC _XAie_DmaWaitForDone(XAie_DevInst *DevInst, XAie_LocType Loc,
 AieRC _XAie_DmaGetChannelStatus(XAie_DevInst *DevInst, XAie_LocType Loc,
 		const XAie_DmaMod *DmaMod, u8 ChNum, XAie_DmaDirection Dir,
 		u32 *Status);
-AieRC _XAie_DmaCheckBdChValidity(u8 BdNum, u8 ChNum);
+AieRC _XAie_DmaCheckBdChValidity(const XAie_DmaMod *DmaMod, XAie_DmaDirection Dir, u16 BdNum, u8 ChNum);
 AieRC _XAie_DmaUpdateBdLen(XAie_DevInst *DevInst, const XAie_DmaMod *DmaMod,
 		XAie_LocType Loc, u32 Len, u16 BdNum);
 AieRC _XAie_ShimDmaUpdateBdLen(XAie_DevInst *DevInst, const XAie_DmaMod *DmaMod,

@@ -47,6 +47,7 @@
 /**************************** Macro Definitions ******************************/
 #define XAIE4_TILES_BITMAPSIZE	32U
 
+#define NOT_AVAILABLE_IN_THE_AIE4 0U
 /************************** Variable Definitions *****************************/
 /* bitmaps to capture modules being used by the application */
 static u32 Aie4TilesInUse[XAIE4_TILES_BITMAPSIZE];
@@ -349,22 +350,22 @@ static const  XAie_DmaBdProp Aie4MemTileDmaBdProp =
 static const XAie_DmaChStatus Aie4MemTileDmaChStatus =
 {
 	/* This database is common for mm2s and s2mm channels */
-	.AieMlDmaChStatus.Status.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_STATUS_LSB,
-	.AieMlDmaChStatus.Status.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_STATUS_MASK,
-	.AieMlDmaChStatus.TaskQSize.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_SIZE_LSB,
-	.AieMlDmaChStatus.TaskQSize.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_SIZE_MASK,
-	.AieMlDmaChStatus.ChannelRunning.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_CHANNEL_RUNNING_LSB,
-	.AieMlDmaChStatus.ChannelRunning.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_CHANNEL_RUNNING_MASK,
-	.AieMlDmaChStatus.StalledLockAcq.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_ACQ_LSB,
-	.AieMlDmaChStatus.StalledLockAcq.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_ACQ_MASK,
-	.AieMlDmaChStatus.StalledLockRel.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_REL_LSB,
-	.AieMlDmaChStatus.StalledLockRel.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_REL_MASK,
-	.AieMlDmaChStatus.StalledStreamStarve.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_STALLED_STREAM_STARVATION_LSB,
-	.AieMlDmaChStatus.StalledStreamStarve.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_STALLED_STREAM_STARVATION_MASK,
-	.AieMlDmaChStatus.StalledTCT.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_STALLED_TCT_OR_COUNT_FIFO_FULL_LSB,
-	.AieMlDmaChStatus.StalledTCT.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_STALLED_TCT_OR_COUNT_FIFO_FULL_MASK,
-	.AieMlDmaChStatus.TaskQOverFlow.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_OVERFLOW_LSB,
-	.AieMlDmaChStatus.TaskQOverFlow.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_OVERFLOW_MASK,
+	.AieMlDmaChStatus.Status.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_STATUS_LSB,
+	.AieMlDmaChStatus.Status.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_STATUS_MASK,
+	.AieMlDmaChStatus.TaskQSize.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_SIZE_LSB,
+	.AieMlDmaChStatus.TaskQSize.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_SIZE_MASK,
+	.AieMlDmaChStatus.ChannelRunning.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_CHANNEL_RUNNING_LSB,
+	.AieMlDmaChStatus.ChannelRunning.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_CHANNEL_RUNNING_MASK,
+	.AieMlDmaChStatus.StalledLockAcq.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_ACQ_LSB,
+	.AieMlDmaChStatus.StalledLockAcq.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_ACQ_MASK,
+	.AieMlDmaChStatus.StalledLockRel.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_REL_LSB,
+	.AieMlDmaChStatus.StalledLockRel.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_REL_MASK,
+	.AieMlDmaChStatus.StalledStreamStarve.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_STALLED_STREAM_STARVATION_LSB,
+	.AieMlDmaChStatus.StalledStreamStarve.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_STALLED_STREAM_STARVATION_MASK,
+	.AieMlDmaChStatus.StalledTCT.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_STALLED_TCT_OR_COUNT_FIFO_FULL_LSB,
+	.AieMlDmaChStatus.StalledTCT.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_STALLED_TCT_OR_COUNT_FIFO_FULL_MASK,
+	.AieMlDmaChStatus.TaskQOverFlow.Lsb = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_OVERFLOW_LSB,
+	.AieMlDmaChStatus.TaskQOverFlow.Mask = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_OVERFLOW_MASK,
 };
 
 static const  XAie_DmaChProp Aie4MemTileDmaChProp =
@@ -408,7 +409,7 @@ static const  XAie_DmaMod Aie4MemTileDmaMod =
 {
 	.BaseAddr = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_BD0_0,
 	.IdxOffset = 0x30,  /* This is the offset between each BD */
-	.NumBds = 16,		/* Number of BDs for each channel in AIE4 MemTile DMA */
+	.NumBds = 16U,		/* Number of BDs for each channel in AIE4 MemTile DMA */
 	.NumLocks = 480U,
 	.NumAddrDim = 4U,
 	.DoubleBuffering = XAIE_FEATURE_UNAVAILABLE,	/* Same as AIE2PS */
@@ -423,10 +424,10 @@ static const  XAie_DmaMod Aie4MemTileDmaMod =
 	.StartQueueBase = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_START_QUEUE,
 	.ChCtrlBase = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_CTRL,
 	.ChCtrlMm2sBase = XAIE4GBL_MEM_TILE_MODULE_DMA_MM2S_0_CTRL,
-	.NumChannels = 4,	/* number of s2mm channels */
-	.NumMm2sChannels = 6,	/* number of mm2s channels */
+	.NumChannels = 4U,	/* number of s2mm channels */
+	.NumMm2sChannels = 5U,	/* number of mm2s channels */
 	.ChIdxOffset = 0x8,	/* This is the offset between each channel */
-	.ChStatusBase = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_STATUS_0,
+	.ChStatusBase = XAIE4GBL_MEM_TILE_MODULE_DMA_S2MM_0_STATUS,
 	.ChStatusOffset = 0x30,
 	.PadValueBase = XAIE4GBL_MEM_TILE_MODULE_DMA_MM2S_0_CONSTANT_PAD_VALUE,
 	.BdProp = &Aie4MemTileDmaBdProp,
@@ -563,22 +564,22 @@ static const  XAie_DmaBdProp Aie4TileDmaBdProp =
 static const XAie_DmaChStatus Aie4TileDmaChStatus =
 {
 		/* This database is common for mm2s and s2mm channels */
-		.AieMlDmaChStatus.Status.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_STATUS_LSB,
-		.AieMlDmaChStatus.Status.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_STATUS_MASK,
-		.AieMlDmaChStatus.TaskQSize.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_SIZE_LSB,
-		.AieMlDmaChStatus.TaskQSize.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_SIZE_MASK,
-		.AieMlDmaChStatus.ChannelRunning.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_CHANNEL_RUNNING_LSB,
-		.AieMlDmaChStatus.ChannelRunning.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_CHANNEL_RUNNING_MASK,
-		.AieMlDmaChStatus.StalledLockAcq.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_ACQ_LSB,
-		.AieMlDmaChStatus.StalledLockAcq.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_ACQ_MASK,
-		.AieMlDmaChStatus.StalledLockRel.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_REL_LSB,
-		.AieMlDmaChStatus.StalledLockRel.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_REL_MASK,
-		.AieMlDmaChStatus.StalledStreamStarve.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_STALLED_STREAM_STARVATION_LSB,
-		.AieMlDmaChStatus.StalledStreamStarve.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_STALLED_STREAM_STARVATION_MASK,
-		.AieMlDmaChStatus.StalledTCT.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_STALLED_TCT_OR_COUNT_FIFO_FULL_LSB,
-		.AieMlDmaChStatus.StalledTCT.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_STALLED_TCT_OR_COUNT_FIFO_FULL_MASK,
-		.AieMlDmaChStatus.TaskQOverFlow.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_OVERFLOW_LSB,
-		.AieMlDmaChStatus.TaskQOverFlow.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_OVERFLOW_MASK,
+		.AieMlDmaChStatus.Status.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_STATUS_LSB,
+		.AieMlDmaChStatus.Status.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_STATUS_MASK,
+		.AieMlDmaChStatus.TaskQSize.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_SIZE_LSB,
+		.AieMlDmaChStatus.TaskQSize.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_SIZE_MASK,
+		.AieMlDmaChStatus.ChannelRunning.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_CHANNEL_RUNNING_LSB,
+		.AieMlDmaChStatus.ChannelRunning.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_CHANNEL_RUNNING_MASK,
+		.AieMlDmaChStatus.StalledLockAcq.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_ACQ_LSB,
+		.AieMlDmaChStatus.StalledLockAcq.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_ACQ_MASK,
+		.AieMlDmaChStatus.StalledLockRel.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_REL_LSB,
+		.AieMlDmaChStatus.StalledLockRel.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_REL_MASK,
+		.AieMlDmaChStatus.StalledStreamStarve.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_STALLED_STREAM_STARVATION_LSB,
+		.AieMlDmaChStatus.StalledStreamStarve.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_STALLED_STREAM_STARVATION_MASK,
+		.AieMlDmaChStatus.StalledTCT.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_STALLED_TCT_OR_COUNT_FIFO_FULL_LSB,
+		.AieMlDmaChStatus.StalledTCT.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_STALLED_TCT_OR_COUNT_FIFO_FULL_MASK,
+		.AieMlDmaChStatus.TaskQOverFlow.Lsb = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_OVERFLOW_LSB,
+		.AieMlDmaChStatus.TaskQOverFlow.Mask = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_OVERFLOW_MASK,
 };
 
 /* Data structure to capture register offsets and masks for Mem Tile and
@@ -643,7 +644,7 @@ static const  XAie_DmaMod Aie4TileDmaMod =
 	.NumChannels = 2U,  /* Number of s2mm channels */
 	.NumMm2sChannels = 1U, /* Number of mm2s channels */
 	.ChIdxOffset = 0x8,  /* This is the offset between each channel */
-	.ChStatusBase = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_STATUS_0,
+	.ChStatusBase = XAIE4GBL_MEMORY_MODULE_DMA_S2MM_0_STATUS,
 	.ChStatusOffset = 0x10,
 	.PadValueBase = XAIE_FEATURE_UNAVAILABLE,
 	.BdProp = &Aie4TileDmaBdProp,
@@ -828,22 +829,22 @@ static const  XAie_DmaBdProp Aie4ShimDmaBdProp =
 static const XAie_DmaChStatus Aie4ShimDmaChStatus =
 {
 	/* This database is common for mm2s and s2mm channels */
-	.AieMlDmaChStatus.Status.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_STATUS_LSB,
-	.AieMlDmaChStatus.Status.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_STATUS_MASK,
-	.AieMlDmaChStatus.TaskQSize.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_SIZE_LSB,
-	.AieMlDmaChStatus.TaskQSize.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_SIZE_MASK,
-	.AieMlDmaChStatus.ChannelRunning.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_CHANNEL_RUNNING_LSB,
-	.AieMlDmaChStatus.ChannelRunning.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_CHANNEL_RUNNING_MASK,
-	.AieMlDmaChStatus.StalledLockAcq.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_ACQ_LSB,
-	.AieMlDmaChStatus.StalledLockAcq.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_ACQ_MASK,
-	.AieMlDmaChStatus.StalledLockRel.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_REL_LSB,
-	.AieMlDmaChStatus.StalledLockRel.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_STALLED_LOCK_REL_MASK,
-	.AieMlDmaChStatus.StalledStreamStarve.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_STALLED_STREAM_STARVATION_LSB,
-	.AieMlDmaChStatus.StalledStreamStarve.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_STALLED_STREAM_STARVATION_MASK,
-	.AieMlDmaChStatus.StalledTCT.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_STALLED_TCT_OR_COUNT_FIFO_FULL_LSB,
-	.AieMlDmaChStatus.StalledTCT.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_STALLED_TCT_OR_COUNT_FIFO_FULL_MASK,
-	.AieMlDmaChStatus.TaskQOverFlow.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_OVERFLOW_LSB,
-	.AieMlDmaChStatus.TaskQOverFlow.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0_TASK_QUEUE_OVERFLOW_MASK,
+	.AieMlDmaChStatus.Status.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STATUS_LSB,
+	.AieMlDmaChStatus.Status.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STATUS_MASK,
+	.AieMlDmaChStatus.TaskQSize.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_SIZE_LSB,
+	.AieMlDmaChStatus.TaskQSize.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_SIZE_MASK,
+	.AieMlDmaChStatus.ChannelRunning.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_CHANNEL_RUNNING_LSB,
+	.AieMlDmaChStatus.ChannelRunning.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_CHANNEL_RUNNING_MASK,
+	.AieMlDmaChStatus.StalledLockAcq.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_ACQ_LSB,
+	.AieMlDmaChStatus.StalledLockAcq.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_ACQ_MASK,
+	.AieMlDmaChStatus.StalledLockRel.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_REL_LSB,
+	.AieMlDmaChStatus.StalledLockRel.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STALLED_LOCK_REL_MASK,
+	.AieMlDmaChStatus.StalledStreamStarve.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STALLED_STREAM_STARVATION_LSB,
+	.AieMlDmaChStatus.StalledStreamStarve.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STALLED_STREAM_STARVATION_MASK,
+	.AieMlDmaChStatus.StalledTCT.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STALLED_TCT_OR_COUNT_FIFO_FULL_LSB,
+	.AieMlDmaChStatus.StalledTCT.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STALLED_TCT_OR_COUNT_FIFO_FULL_MASK,
+	.AieMlDmaChStatus.TaskQOverFlow.Lsb = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_OVERFLOW_LSB,
+	.AieMlDmaChStatus.TaskQOverFlow.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_TASK_QUEUE_OVERFLOW_MASK,
 };
 
 /* Data structure to capture register offsets and masks for Mem Tile and
@@ -887,6 +888,30 @@ static const  XAie_DmaChProp Aie4ShimDmaChProp =
 	.EnCompression.Mask = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_CTRL_COMPRESSION_ENABLE_MASK,
 };
 
+/* Data structure to capture register offsets and masks for shim Tile and
+ * ctrl mm2s channel
+ */
+static const XAie_DmaCustomChProp Aie4ShimDmaCtrlMm2sProp =
+{
+	.NumBds = 8U,	/* Number Bds for each Control MM2S channel */
+	.NumChannels = 1U,
+	.BdBaseAddr = XAIE4GBL_NOC_MODULE_DMA_CONTROL_MM2S_0_BD0_0,
+	.ChCtrlBase = XAIE4GBL_NOC_MODULE_DMA_CONTROL_MM2S_0_CTRL,
+	.ChStatusBase = XAIE4GBL_NOC_MODULE_DMA_CONTROL_MM2S_STATUS_0,
+};
+
+/* Data structure to capture register offsets and masks for shim Tile and
+ * trace s2mm channel
+ */
+static const XAie_DmaCustomChProp Aie4ShimDmaTraceS2mmProp =
+{
+	.NumBds = 4U,	/* Number Bds for each Trace S2MM channel */
+	.NumChannels = 1U,
+	.BdBaseAddr = XAIE4GBL_NOC_MODULE_DMA_TRACE_S2MM_BD0_0,
+	.ChCtrlBase = XAIE4GBL_NOC_MODULE_DMA_TRACE_S2MM_CTRL,
+	.ChStatusBase = XAIE4GBL_NOC_MODULE_DMA_TRACE_S2MM_STATUS,
+};
+
 /* Shim Dma Module */
 static const  XAie_DmaMod Aie4ShimDmaMod =
 {
@@ -907,12 +932,14 @@ static const  XAie_DmaMod Aie4ShimDmaMod =
 	.StartQueueBase = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_TASK_QUEUE,
 	.ChCtrlBase = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_CTRL,
 	.ChCtrlMm2sBase = XAIE4GBL_NOC_MODULE_DMA_MM2S_0_CTRL,
-	.NumChannels = 2U,	/* Number of mm2s channels */
+	.NumChannels = 1U,	/* Number of s2mm channels */
 	.NumMm2sChannels = 2U, /* Number of mm2s channels */
 	.ChIdxOffset = 0x8,  /* This is the offset between each channel */
-	.ChStatusBase = XAIE4GBL_NOC_MODULE_DMA_S2MM_STATUS_0,
+	.ChStatusBase = XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS,
 	.ChStatusOffset = 0x10,
 	.PadValueBase = XAIE_FEATURE_UNAVAILABLE,
+	.CtrlMm2sProp = &Aie4ShimDmaCtrlMm2sProp,
+	.TraceS2mmProp = &Aie4ShimDmaTraceS2mmProp,
 	.BdProp = &Aie4ShimDmaBdProp,
 	.ChProp = &Aie4ShimDmaChProp,
 	.DmaBdInit = &_XAie4_ShimDmaInit,
@@ -940,6 +967,8 @@ static const  XAie_DmaMod Aie4ShimDmaMod =
 #endif /* XAIE_FEATURE_DMA_ENABLE */
 
 #ifdef XAIE_FEATURE_SS_ENABLE
+
+/************************ XAie_StrmPort Config Details Start****************************/
 /*
  * Array of all Tile Stream Switch Master Config registers
  * The data structure contains number of ports and the register offsets
@@ -960,15 +989,13 @@ static const  XAie_StrmPort Aie4TileStrmMstr[SS_PORT_TYPE_MAX] =
 	},
 	{	/* Ctrl */
 		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_TILE_CTRL_0,
+		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_TILE_CONTROL,
 		.PortPhysicalId = 30,
 		.PortLogicalId = 14,
 	},
 	{	/* Fifo */
-		.NumPorts = 2,
-		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_FIFO_0,
-		.PortPhysicalId = 4,
-		.PortLogicalId = 4,
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
 	},
 	{	/* South */
 		.NumPorts = 6,
@@ -1002,7 +1029,7 @@ static const  XAie_StrmPort Aie4TileStrmMstr[SS_PORT_TYPE_MAX] =
 	{	/* UCTRLR */
 		/* No UCTRLR ports in AIE4 for 512B switch */
 		.NumPorts = 0,
-		.PortBaseAddr = 0
+		.PortBaseAddr = 0,
 	},
 	{	/* Nort_Control */
 		.NumPorts = 2,
@@ -1017,7 +1044,7 @@ static const  XAie_StrmPort Aie4TileStrmMstr[SS_PORT_TYPE_MAX] =
 	},
 	{	/* 32b switch */
 		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_32B_SWITCH_0,
+		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_32B_SWITCH,
 		.PortPhysicalId = 31,
 		.PortLogicalId = 15,
 	},
@@ -1047,10 +1074,8 @@ static const  XAie_StrmPort Aie4TileStrmSlv[SS_PORT_TYPE_MAX] =
 		.PortBaseAddr = 0,
 	},
 	{	/* Fifo */
-		.NumPorts = 2,
-		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_FIFO_0,
-		.PortPhysicalId = 3,
-		.PortLogicalId = 3,
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
 	},
 	{	/* South */
 		.NumPorts = 8,
@@ -1100,7 +1125,7 @@ static const  XAie_StrmPort Aie4TileStrmSlv[SS_PORT_TYPE_MAX] =
 	},
 	{	/* 32b switch */
 		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_32B_SWITCH_0,
+		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_32B_SWITCH,
 		.PortPhysicalId = 29,
 		.PortLogicalId = 13,
 	},
@@ -1161,7 +1186,7 @@ static const  XAie_StrmPort Aie4TileStrmMstr32b[SS_PORT_TYPE_MAX] =
 	},
 	{	/* _32B_Switch_512b */
 		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_512B_SWITCH_0,
+		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_512B_SWITCH,
 		.PortPhysicalId = 6,
 		.PortLogicalId = 2,
 	}
@@ -1192,13 +1217,13 @@ static const  XAie_StrmPort Aie4TileStrmSlv32b[SS_PORT_TYPE_MAX] =
 
 	{	/* _32B_control */
 		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0,
+		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP,
 		.PortPhysicalId = 0,
 		.PortLogicalId = 0,
 	},
 	{	/* _32B_Trace */
 		.NumPorts = 2,
-		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_AIE_TRACE_0,
+		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_AIE_TRACE,
 		.PortPhysicalId = 1,
 		.PortLogicalId = 1,
 	},
@@ -1235,6 +1260,280 @@ static const  XAie_StrmPort Aie4TileStrmSlv32b[SS_PORT_TYPE_MAX] =
 };
 
 /*
+ * Array of all Mem Tile Stream Switch Manager Config registers
+ * The data structure contains number of ports and the register offsets.
+ * This is having half of the resource, user of this array needs
+ * to check and double the resource count if its in single app mode.
+ */
+static const  XAie_StrmPort Aie4MemTileStrmMstr[SS_PORT_TYPE_MAX] =
+{
+	{	/* Core */
+		/* No core ports in MEM tile */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{	/* DMA */
+		.NumPorts = 4,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_DMA_0,
+		.PortPhysicalId = 0,
+		.PortLogicalId = 0,
+	},
+	{	/* Ctrl */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_TILE_CTRL_0,
+		.PortPhysicalId = 26,
+		.PortLogicalId = 12,
+	},
+	{	/* Fifo */
+		/* Spec (0.9.4) mentioned TBD for FIFo in memtile, so considering no fifos */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{	/* South */
+		.NumPorts = 2,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_SOUTH_0,
+		.PortPhysicalId = 10,
+		.PortLogicalId = 4,
+	},
+	{	/* West */
+		/* No west ports for MEM tile */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{	/* North */
+		.NumPorts = 4,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_NORTH_0,
+		.PortPhysicalId = 16,
+		.PortLogicalId = 7,
+	},
+	{	/* East */
+		/* No East ports in MEM tile */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{	/* Trace */
+		/* No Trace ports in mem tile */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{	/* UCtrl */
+		/* No Uctrl ports in mem tile */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{	/* North Control */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_NORTH_CONTROL_0,
+		.PortPhysicalId = 24,
+		.PortLogicalId = 11,
+	},
+	{	/* South control */
+		/* No South control ports in mem tile */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{	/* 32b switch */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_32B_SWITCH_0,
+		.PortPhysicalId = 28,
+		.PortLogicalId = 13,
+	}
+};
+
+/*
+ * Array of all Mem Tile Stream Switch Slave Config registers
+ * The data structure contains number of ports and the register offsets
+ * This is having half of the resource, user of this array needs
+ * to check and double the resource count if its in single app mode.
+ */
+static const  XAie_StrmPort Aie4MemTileStrmSlv[SS_PORT_TYPE_MAX] =
+{
+	{   /* Core */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{   /* DMA */
+		.NumPorts = 5,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_DMA_0,
+		.PortPhysicalId = 0,
+		.PortLogicalId = 0,
+	},
+	{   /* Ctrl */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{   /* Fifo */
+		/* Spec (0.9.4) mentioned TBD for FIFo in memtile, so considering no fifos */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{   /* South */
+		.NumPorts = 2,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_SOUTH_0,
+		.PortPhysicalId = 14,
+		.PortLogicalId = 6,
+	},
+	{   /* West */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{   /* North */
+		.NumPorts = 2,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_NORTH_0,
+		.PortPhysicalId = 22,
+		.PortLogicalId = 10,
+	},
+	{   /* East */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{   /* Trace */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{   /* Uctrl */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{   /* Nort control */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	},
+	{   /* Soutch Control */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_SOUTH_CONTROL_0,
+		.PortPhysicalId = 28,
+		.PortLogicalId = 13,
+	},
+	{   /* 32b Switch */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_32B_SWITCH_0,
+		.PortPhysicalId = 30,
+		.PortLogicalId = 14,
+	}
+};
+
+/*
+ * Array of all Mem Tile 32bit Stream Switch Manager Config registers
+ * The data structure contains number of ports and the register offsets
+ * This is having half of the resource, user of this array needs
+ * to check and double the resource count if its in single app mode.
+ */
+static const  XAie_StrmPort Aie4MemTileStrmMstr32b[SS_PORT_TYPE_MAX] =
+{
+	{/*Core*/.NumPorts = 0,},
+	{/*DMA_0*/.NumPorts = 0,},
+	{/*Ctrl*/.NumPorts = 0,},
+	{/*Fifo*/.NumPorts = 0,},
+	{/*South*/.NumPorts = 0,},
+	{/* West */.NumPorts = 0,},
+	{/*North*/.NumPorts = 0,},
+	{/* East */.NumPorts = 0,},
+	{/*Trace*/.NumPorts = 0,},
+	{/*UCtrlr*/.NumPorts = 0,},
+	{/*North_control*/.NumPorts = 0,},
+	{/*South_control*/.NumPorts = 0,},
+	{/*To 32b switch*/.NumPorts = 0,},
+	{/*DMA control*/.NumPorts = 0,},
+	{/*DMA trace*/.NumPorts = 0,},
+	{/*PL*/.NumPorts = 0,},
+
+	{	/* 32bit Ctrl */
+		.NumPorts = 0,
+	},
+	{	/* 32bit trace */
+		.NumPorts = 0,
+	},
+	{	/* 32bit South */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0,
+		.PortPhysicalId = 0,
+		.PortLogicalId = 0,
+	},
+	{	/* 32bit West */
+		.NumPorts = 0,
+	},
+	{	/* 32bit North */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_NORTH_0,
+		.PortPhysicalId = 3,
+		.PortLogicalId = 1,
+	},
+	{	/* 32bit East */
+		.NumPorts = 0,
+	},
+	{	/* 32bit switch 512b */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_512B_SWITCH_0,
+		.PortPhysicalId = 6,
+		.PortLogicalId = 2,
+	},
+};
+
+
+/*
+ * Array of all Mem Tile Stream Switch Slave Config registers
+ * The data structure contains number of ports and the register offsets
+ */
+static const  XAie_StrmPort Aie4MemTileStrmSlv32b[SS_PORT_TYPE_MAX] =
+{
+	{/*Core*/.NumPorts = 0,},
+	{/*DMA_0*/.NumPorts = 0,},
+	{/*Ctrl*/.NumPorts = 0,},
+	{/*Fifo*/.NumPorts = 0,},
+	{/*South*/.NumPorts = 0,},
+	{/* West */.NumPorts = 0,},
+	{/*North*/.NumPorts = 0,},
+	{/* East */.NumPorts = 0,},
+	{/*Trace*/.NumPorts = 0,},
+	{/*UCtrlr*/.NumPorts = 0,},
+	{/*North_control*/.NumPorts = 0,},
+	{/*South_control*/.NumPorts = 0,},
+	{/*To 32b switch*/.NumPorts = 0,},
+	{/*DMA control*/.NumPorts = 0,},
+	{/*DMA trace*/.NumPorts = 0,},
+	{/*PL*/.NumPorts = 0,},
+
+	{	/* 32bit Ctrl */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0,
+		.PortPhysicalId = 0,
+		.PortLogicalId = 0,
+	},
+	{	/* 32bit trace */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TRACE_0,
+		.PortPhysicalId = 2,
+		.PortLogicalId = 1,
+	},
+	{	/* 32bit South */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_SOUTH_0,
+		.PortPhysicalId = 4,
+		.PortLogicalId = 2,
+	},
+	{	/* 32bit West */
+		.NumPorts = 0,
+	},
+	{	/* 32bit North */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_NORTH_0,
+		.PortPhysicalId = 7,
+		.PortLogicalId = 3,
+	},
+	{	/* 32bit East */
+		.NumPorts = 0,
+	},
+	{	/* 32bit switch 512b */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_512B_SWITCH_0,
+		.PortPhysicalId = 10,
+		.PortLogicalId = 4,
+	},
+};
+
+
+/*
  * Array of all Shim NOC Stream Switch Master Config registers
  * The data structure contains number of ports and the register offsets
  */
@@ -1245,7 +1544,7 @@ static const  XAie_StrmPort Aie4ShimStrmMstr[SS_PORT_TYPE_MAX] =
 		.PortBaseAddr = 0,
 	},
 	{       /* DMA */
-		.NumPorts = 2,
+		.NumPorts = 1,
 		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_MANAGER_CONFIG_DMA_0,
 		.PortPhysicalId = 0,
 		.PortLogicalId = 0,
@@ -1277,7 +1576,7 @@ static const  XAie_StrmPort Aie4ShimStrmMstr[SS_PORT_TYPE_MAX] =
 		.PortLogicalId = 0xFF, /* will not be available in dualapp mode */
 	},
 	{       /* North */
-		.NumPorts = 3,
+		.NumPorts = 2,
 		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_MANAGER_CONFIG_NORTH_0,
 		.PortPhysicalId = 16,
 		.PortLogicalId = 2,
@@ -1323,78 +1622,8 @@ static const  XAie_StrmPort Aie4ShimStrmMstr[SS_PORT_TYPE_MAX] =
 		.PortLogicalId = 1,
 	},
 	{       /* PL */
-		/* Spec (0.9.4) mentioned TBD for PL in ShimTile, so considering no PL ports */
 		.NumPorts = 0,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_MANAGER_CONFIG_PL_0,
-	}
-};
-
-/*
- * Array of all Shim NOC Stream Switch Master Config registers
- * The data structure contains number of ports and the register offsets
- */
-static const  XAie_StrmPort Aie4ShimStrmMstr32b[SS_PORT_TYPE_MAX] =
-{
-	{/*Core*/.NumPorts = 0,},
-	{/*DMA_0*/.NumPorts = 0,},
-	{/*Ctrl*/.NumPorts = 0,},
-	{/*Fifo*/.NumPorts = 0,},
-	{/*South*/.NumPorts = 0,},
-	{/* West */.NumPorts = 0,},
-	{/*North*/.NumPorts = 0,},
-	{/* East */.NumPorts = 0,},
-	{/*Trace*/.NumPorts = 0,},
-	{/*UCtrlr*/.NumPorts = 0,},
-	{/*North_control*/.NumPorts = 0,},
-	{/*South_control*/.NumPorts = 0,},
-	{/*To 32b switch*/.NumPorts = 0,},
-	{/*DMA control*/.NumPorts = 0,},
-	{/*DMA trace*/.NumPorts = 0,},
-	{/*PL*/.NumPorts = 0,},
-
-	{	/* _32B_control */
-		.NumPorts = 0,
-	},
-	{	/* _32B_Trace */
-		.NumPorts = 0,
-	},
-	{	/* _32B_South */
-		.NumPorts = 0,
-	},
-	{	/* _32B_West */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_WEST_0,
-		.PortPhysicalId = 2,
-		.PortLogicalId = 0xFF, /*in dual app mode West ports not available, so no logical ID*/
-	},
-	{	/* 32B_North */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_NORTH_0,
-		.PortPhysicalId = 3,
-		.PortLogicalId = 1,
-	},
-	{	/* _32B_East */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_EAST_0,
-		.PortPhysicalId = 5,
-		.PortLogicalId = 0xFF, /*in dual app mode East ports not available, so no logical ID*/
-	},
-	{	/* _32B_Switch_512b */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_512B_SWITCH_0,
-		.PortPhysicalId = 6,
-		.PortLogicalId = 2,
-	},
-	{	/* _32B_Uctrlr */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_UCONTROLLER_0,
-		.PortPhysicalId = 0,
-		.PortLogicalId = 0,
-	},
-	{	/* _32B_PL */
-		/* Spec (0.9.4) mentioned TBD for PL in ShimTile, so considering no PL ports */
-		.NumPorts = 0,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_PL_0,
+		.PortBaseAddr = 0,
 	}
 };
 
@@ -1483,10 +1712,77 @@ static const  XAie_StrmPort Aie4ShimStrmSlv[SS_PORT_TYPE_MAX] =
 		.PortBaseAddr = 0,
 	},
 	{       /* PL */
-		/* Spec (0.9.4) mentioned TBD for PL in ShimTile, so considering no PL ports */
 		.NumPorts = 0,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_PL_0,
+		.PortBaseAddr = 0,
 	},
+};
+
+/*
+ * Array of all Shim NOC Stream Switch Master Config registers
+ * The data structure contains number of ports and the register offsets
+ */
+static const  XAie_StrmPort Aie4ShimStrmMstr32b[SS_PORT_TYPE_MAX] =
+{
+	{/*Core*/.NumPorts = 0,},
+	{/*DMA_0*/.NumPorts = 0,},
+	{/*Ctrl*/.NumPorts = 0,},
+	{/*Fifo*/.NumPorts = 0,},
+	{/*South*/.NumPorts = 0,},
+	{/* West */.NumPorts = 0,},
+	{/*North*/.NumPorts = 0,},
+	{/* East */.NumPorts = 0,},
+	{/*Trace*/.NumPorts = 0,},
+	{/*UCtrlr*/.NumPorts = 0,},
+	{/*North_control*/.NumPorts = 0,},
+	{/*South_control*/.NumPorts = 0,},
+	{/*To 32b switch*/.NumPorts = 0,},
+	{/*DMA control*/.NumPorts = 0,},
+	{/*DMA trace*/.NumPorts = 0,},
+	{/*PL*/.NumPorts = 0,},
+
+	{	/* _32B_control */
+		.NumPorts = 0,
+	},
+	{	/* _32B_Trace */
+		.NumPorts = 0,
+	},
+	{	/* _32B_South */
+		.NumPorts = 0,
+	},
+	{	/* _32B_West */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_WEST_0,
+		.PortPhysicalId = 2,
+		.PortLogicalId = 0xFF, /*in dual app mode West ports not available, so no logical ID*/
+	},
+	{	/* 32B_North */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_NORTH_0,
+		.PortPhysicalId = 3,
+		.PortLogicalId = 1,
+	},
+	{	/* _32B_East */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_EAST_0,
+		.PortPhysicalId = 5,
+		.PortLogicalId = 0xFF, /*in dual app mode East ports not available, so no logical ID*/
+	},
+	{	/* _32B_Switch_512b */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_512B_SWITCH_0,
+		.PortPhysicalId = 6,
+		.PortLogicalId = 2,
+	},
+	{	/* _32B_Uctrlr */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_UCONTROLLER_0,
+		.PortPhysicalId = 0,
+		.PortLogicalId = 0,
+	},
+	{	/* _32B_PL */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	}
 };
 
 /*
@@ -1514,7 +1810,7 @@ static const  XAie_StrmPort Aie4ShimStrmSlv32b[SS_PORT_TYPE_MAX] =
 
 	{	/* _32B_control */
 		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0,
 		.PortPhysicalId = 0,
 		.PortLogicalId = 0,
 	},
@@ -1558,434 +1854,13 @@ static const  XAie_StrmPort Aie4ShimStrmSlv32b[SS_PORT_TYPE_MAX] =
 		.PortLogicalId = 2,
 	},
 	{	/* _32B_PL */
-		/* Spec (0.9.4) mentioned TBD for PL in ShimTile, so considering no PL ports */
 		.NumPorts = 0,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_PL_0,
+		.PortBaseAddr = 0,
 	}
 };
+/************************ XAie_StrmPort Config Details End****************************/
 
-
-/*
- * Array of all Mem Tile Stream Switch Manager Config registers
- * The data structure contains number of ports and the register offsets.
- * This is having half of the resource, user of this array needs
- * to check and double the resource count if its in single app mode.
- */
-static const  XAie_StrmPort Aie4MemTileStrmMstr[SS_PORT_TYPE_MAX] =
-{
-	{	/* Core */
-		/* No core ports in MEM tile */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{	/* DMA */
-		.NumPorts = 4,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_DMA_0,
-		.PortPhysicalId = 0,
-		.PortLogicalId = 0,
-	},
-	{	/* Ctrl */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_TILE_CTRL_0,
-		.PortPhysicalId = 26,
-		.PortLogicalId = 12,
-	},
-	{	/* Fifo */
-		/* Spec (0.9.4) mentioned TBD for FIFo in memtile, so considering no fifos */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{	/* South */
-		.NumPorts = 3,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_SOUTH_0,
-		.PortPhysicalId = 10,
-		.PortLogicalId = 4,
-	},
-	{	/* West */
-		/* No west ports for MEM tile */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{	/* North */
-		.NumPorts = 4,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_NORTH_0,
-		.PortPhysicalId = 16,
-		.PortLogicalId = 7,
-	},
-	{	/* East */
-		/* No East ports in MEM tile */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{	/* Trace */
-		/* No Trace ports in mem tile */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{	/* UCtrl */
-		/* No Uctrl ports in mem tile */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{	/* North Control */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_NORTH_CONTROL_0,
-		.PortPhysicalId = 24,
-		.PortLogicalId = 11,
-	},
-	{	/* South control */
-		/* No South control ports in mem tile */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{	/* 32b switch */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_MANAGER_CONFIG_32B_SWITCH_0,
-		.PortPhysicalId = 28,
-		.PortLogicalId = 13,
-	}
-};
-
-
-/*
- * Array of all Mem Tile Stream Switch Slave Config registers
- * The data structure contains number of ports and the register offsets
- * This is having half of the resource, user of this array needs
- * to check and double the resource count if its in single app mode.
- */
-static const  XAie_StrmPort Aie4MemTileStrmSlv[SS_PORT_TYPE_MAX] =
-{
-	{   /* Core */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{   /* DMA */
-		.NumPorts = 5,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_DMA_0,
-		.PortPhysicalId = 0,
-		.PortLogicalId = 0,
-	},
-	{   /* Ctrl */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{   /* Fifo */
-		/* Spec (0.9.4) mentioned TBD for FIFo in memtile, so considering no fifos */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{   /* South */
-		.NumPorts = 4,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_SOUTH_0,
-		.PortPhysicalId = 14,
-		.PortLogicalId = 6,
-	},
-	{   /* West */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{   /* North */
-		.NumPorts = 3,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_NORTH_0,
-		.PortPhysicalId = 22,
-		.PortLogicalId = 10,
-	},
-	{   /* East */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{   /* Trace */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{   /* Uctrl */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{   /* Nort control */
-		.NumPorts = 0,
-		.PortBaseAddr = 0,
-	},
-	{   /* Soutch Control */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_SOUTH_CONTROL_0,
-		.PortPhysicalId = 28,
-		.PortLogicalId = 13,
-	},
-	{   /* 32b Switch */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_CONFIG_32B_SWITCH_0,
-		.PortPhysicalId = 30,
-		.PortLogicalId = 14,
-	}
-};
-
-/*
- * Array of all Mem Tile 32bit Stream Switch Manager Config registers
- * The data structure contains number of ports and the register offsets
- * This is having half of the resource, user of this array needs
- * to check and double the resource count if its in single app mode.
- */
-static const  XAie_StrmPort Aie4MemTileStrmMstr32b[SS_PORT_TYPE_MAX] =
-{
-	{/*Core*/.NumPorts = 0,},
-	{/*DMA_0*/.NumPorts = 0,},
-	{/*Ctrl*/.NumPorts = 0,},
-	{/*Fifo*/.NumPorts = 0,},
-	{/*South*/.NumPorts = 0,},
-	{/* West */.NumPorts = 0,},
-	{/*North*/.NumPorts = 0,},
-	{/* East */.NumPorts = 0,},
-	{/*Trace*/.NumPorts = 0,},
-	{/*UCtrlr*/.NumPorts = 0,},
-	{/*North_control*/.NumPorts = 0,},
-	{/*South_control*/.NumPorts = 0,},
-	{/*To 32b switch*/.NumPorts = 0,},
-	{/*DMA control*/.NumPorts = 0,},
-	{/*DMA trace*/.NumPorts = 0,},
-	{/*PL*/.NumPorts = 0,},
-
-	{	/* 32bit Ctrl */
-		.NumPorts = 0,
-	},
-	{	/* 32bit trace */
-		.NumPorts = 0,
-	},
-	{	/* 32bit South */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0,
-		.PortPhysicalId = 0,
-		.PortLogicalId = 0,
-	},
-	{	/* 32bit West */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_WEST_0,
-		.PortPhysicalId = 2,
-		.PortLogicalId = 0xFF, /* will not be available in dualapp mode */
-	},
-	{	/* 32bit North */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_NORTH_0,
-		.PortPhysicalId = 3,
-		.PortLogicalId = 1,
-	},
-	{	/* 32bit East */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_EAST_0,
-		.PortPhysicalId = 5,
-		.PortLogicalId = 0xFF, /* will not be available in dualapp mode */
-	},
-	{	/* 32bit switch 512b */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_512B_SWITCH_0,
-		.PortPhysicalId = 6,
-		.PortLogicalId = 2,
-	},
-};
-
-
-/*
- * Array of all Mem Tile Stream Switch Slave Config registers
- * The data structure contains number of ports and the register offsets
- */
-static const  XAie_StrmPort Aie4MemTileStrmSlv32b[SS_PORT_TYPE_MAX] =
-{
-	{/*Core*/.NumPorts = 0,},
-	{/*DMA_0*/.NumPorts = 0,},
-	{/*Ctrl*/.NumPorts = 0,},
-	{/*Fifo*/.NumPorts = 0,},
-	{/*South*/.NumPorts = 0,},
-	{/* West */.NumPorts = 0,},
-	{/*North*/.NumPorts = 0,},
-	{/* East */.NumPorts = 0,},
-	{/*Trace*/.NumPorts = 0,},
-	{/*UCtrlr*/.NumPorts = 0,},
-	{/*North_control*/.NumPorts = 0,},
-	{/*South_control*/.NumPorts = 0,},
-	{/*To 32b switch*/.NumPorts = 0,},
-	{/*DMA control*/.NumPorts = 0,},
-	{/*DMA trace*/.NumPorts = 0,},
-	{/*PL*/.NumPorts = 0,},
-
-	{	/* 32bit Ctrl */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0,
-		.PortPhysicalId = 0,
-		.PortLogicalId = 0,
-	},
-	{	/* 32bit trace */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TRACE_0,
-		.PortPhysicalId = 2,
-		.PortLogicalId = 1,
-	},
-	{	/* 32bit South */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_SOUTH_0,
-		.PortPhysicalId = 4,
-		.PortLogicalId = 2,
-	},
-	{	/* 32bit West */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_WEST_0,
-		.PortPhysicalId = 6,
-		.PortLogicalId = 0xFF, /* will not be available in dualapp mode */
-	},
-	{	/* 32bit North */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_NORTH_0,
-		.PortPhysicalId = 7,
-		.PortLogicalId = 3,
-	},
-	{	/* 32bit East */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_EAST_0,
-		.PortPhysicalId = 9,
-		.PortLogicalId = 0xFF, /* will not be available in dualapp mode */
-	},
-	{	/* 32bit switch 512b */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_512B_SWITCH_0,
-		.PortPhysicalId = 10,
-		.PortLogicalId = 4,
-	},
-};
-
-/*
- * Array of all Shim Stream Switch Slave Slot Config registers of AIE4.
- * The data structure contains number of ports and the register base address.
- */
-static const  XAie_StrmPort Aie4ShimStrmSlaveSlot[SS_PORT_TYPE_MAX] =
-{
-        {       /* Core */
-                .NumPorts = 0,
-                .PortBaseAddr = 0,
-        },
-        {       /* DMA */
-                .NumPorts = 2,
-                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_DMA_0_SLOT0,
-        },
-        {       /* Ctrl */
-                .NumPorts = 0,
-                .PortBaseAddr = 0,
-        },
-        {       /* Fifo */
-                .NumPorts = 0,
-                .PortBaseAddr = 0,
-        },
-        {       /* South */
-                .NumPorts = 0,
-                .PortBaseAddr = 0,
-        },
-        {       /* West */
-                .NumPorts = 2,
-                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_WEST_0_SLOT0,
-        },
-        {       /* North */
-                .NumPorts = 2,
-                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_NORTH_0_SLOT0,
-        },
-        {       /* East */
-                .NumPorts = 2,
-                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_EAST_0_SLOT0,
-        },
-        {       /* Trace */
-                .NumPorts = 0,
-                .PortBaseAddr = 0,
-        },
-        {       /* UCtrl */
-                .NumPorts = 0,
-                .PortBaseAddr = 0,
-        },
-        {       /* Nort control */
-                .NumPorts = 0,
-                .PortBaseAddr = 0,
-        },
-        {       /* south control */
-                .NumPorts = 0,
-                .PortBaseAddr = 0,
-        },
-        {       /* 32b switch control */
-                .NumPorts = 1,
-                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_32B_SWITCH_0_SLOT0,
-        },
-        {       /* DMA control */
-                .NumPorts = 1,
-                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_DMA_CONTROL_0_SLOT0,
-        },
-		{       /* DMA trace */
-                .NumPorts = 0,
-                .PortBaseAddr = 0,
-        },
-        {       /* PL */
-                .NumPorts = 4,
-                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_PL_0_SLOT3,
-        }
-};
-
-/*
- * Array of all Shim Stream Switch Slave Slot Config registers of AIE4.
- * The data structure contains number of ports and the register base address.
- */
-static const  XAie_StrmPort Aie4ShimStrmSlaveSlot32b[SS_PORT_TYPE_MAX] =
-{
-	{/*Core*/.NumPorts = 0,},
-	{/*DMA_0*/.NumPorts = 0,},
-	{/*Ctrl*/.NumPorts = 0,},
-	{/*Fifo*/.NumPorts = 0,},
-	{/*South*/.NumPorts = 0,},
-	{/* West */.NumPorts = 0,},
-	{/*North*/.NumPorts = 0,},
-	{/* East */.NumPorts = 0,},
-	{/*Trace*/.NumPorts = 0,},
-	{/*UCtrlr*/.NumPorts = 0,},
-	{/*North_control*/.NumPorts = 0,},
-	{/*South_control*/.NumPorts = 0,},
-	{/*To 32b switch*/.NumPorts = 0,},
-	{/*DMA control*/.NumPorts = 0,},
-	{/*DMA trace*/.NumPorts = 0,},
-	{/*PL*/.NumPorts = 0,},
-
-	{	/* _32B_control */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0,
-	},
-	{	/* _32B_Trace */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TRACE_0_SLOT0,
-	},
-	{	/* _32B_South */
-		.NumPorts = 0,
-	},
-	{	/* _32B_West */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_WEST_0_SLOT0,
-	},
-	{	/* 32B_North */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_NORTH_0_SLOT0,
-		.PortPhysicalId = 7,
-		.PortLogicalId = 3,
-	},
-	{	/* _32B_East */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_EAST_0_SLOT0,
-	},
-	{	/* _32B_Switch_512b */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_512B_SWITCH_0_SLOT0,
-	},
-	{	/* _32B_Uctrlr */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_UCONTROLLER_0_SLOT0,
-	},
-	{	/* _32B_PL */
-		/* Spec (0.9.4) mentioned TBD for PL in ShimTile, so considering no PL ports */
-		.NumPorts = 0,
-		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_PL_0_SLOT0,
-	}
-};
-
+/************************ XAie_StrmPort Slot Details Start ***************************/
 /*
  * Array of all AIE4 Tile Stream Switch Slave Slot Config registers.
  * The data structure contains number of ports and the register offsets
@@ -1997,7 +1872,7 @@ static const  XAie_StrmPort Aie4AieTileStrmSlaveSlot[SS_PORT_TYPE_MAX] =
                 .PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_AIE_CORE_0_SLOT0,
         },
         {       /* DMA */
-                .NumPorts = 2,
+                .NumPorts = 1,
                 .PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_DMA_0_SLOT0,
         },
         {       /* Ctrl */
@@ -2005,23 +1880,23 @@ static const  XAie_StrmPort Aie4AieTileStrmSlaveSlot[SS_PORT_TYPE_MAX] =
                 .PortBaseAddr = 0,
         },
         {       /* Fifo */
-                .NumPorts = 2,
-                .PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_FIFO_0_SLOT0,
+                .NumPorts = 0,
+                .PortBaseAddr = 0,
         },
         {       /* South */
                 .NumPorts = 8,
                 .PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_SOUTH_0_SLOT0,
         },
         {       /* West */
-                .NumPorts = 4,
+                .NumPorts = 2,
                 .PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_WEST_0_SLOT0,
         },
         {       /* North */
-                .NumPorts = 6,
+                .NumPorts = 4,
                 .PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_NORTH_0_SLOT0,
         },
         {       /* East */
-                .NumPorts = 4,
+                .NumPorts = 2,
                 .PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_EAST_0_SLOT0,
         },
         {       /* Trace */
@@ -2042,7 +1917,7 @@ static const  XAie_StrmPort Aie4AieTileStrmSlaveSlot[SS_PORT_TYPE_MAX] =
         },
         {       /* 32b switch */
                 .NumPorts = 1,
-                .PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_32B_SWITCH_0_SLOT0
+                .PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_SUBORDINATE_32B_SWITCH_SLOT0
         }
 };
 
@@ -2071,11 +1946,11 @@ static const  XAie_StrmPort Aie4AieTileStrmSlaveSlot32b[SS_PORT_TYPE_MAX] =
 
 	{	/* 32b Core */
 		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0,
+		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_SLOT0,
 	},
 	{	/* 32b Trace */
 		.NumPorts = 2,
-		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_AIE_TRACE_0_SLOT0,
+		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_AIE_TRACE_SLOT0,
 	},
 	{    /* 32b South */
 		.NumPorts = 2,
@@ -2095,7 +1970,7 @@ static const  XAie_StrmPort Aie4AieTileStrmSlaveSlot32b[SS_PORT_TYPE_MAX] =
 	},
 	{	/* 32b switch_512b*/
 		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_512B_SWITCH_0_SLOT0
+		.PortBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_512B_SWITCH_SLOT0
 	}
 };
 
@@ -2112,7 +1987,7 @@ static const  XAie_StrmPort Aie4MemTileStrmSlaveSlot[SS_PORT_TYPE_MAX] =
 		.PortBaseAddr = 0,
 	},
 	{       /* DMA */
-		.NumPorts = 6,
+		.NumPorts = 5,
 		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_DMA_0_SLOT0,
 	},
 	{       /* Ctrl */
@@ -2125,7 +2000,7 @@ static const  XAie_StrmPort Aie4MemTileStrmSlaveSlot[SS_PORT_TYPE_MAX] =
 		.PortBaseAddr = 0,
 	},
 	{       /* South */
-		.NumPorts = 4,
+		.NumPorts = 2,
 		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_SOUTH_0_SLOT0,
 	},
 	{       /* West */
@@ -2133,7 +2008,7 @@ static const  XAie_StrmPort Aie4MemTileStrmSlaveSlot[SS_PORT_TYPE_MAX] =
 		.PortBaseAddr = 0,
 	},
 	{       /* North */
-		.NumPorts = 3,
+		.NumPorts = 2,
 		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_SUBORDINATE_NORTH_0_SLOT0,
 	},
 	{       /* East */
@@ -2189,7 +2064,7 @@ static const  XAie_StrmPort Aie4MemTileStrmSlaveSlot32b[SS_PORT_TYPE_MAX] =
 
 	{	/* 32bit Ctrl */
 		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0,
+		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0,
 	},
 	{	/* 32bit trace */
 		.NumPorts = 0,
@@ -2200,16 +2075,16 @@ static const  XAie_StrmPort Aie4MemTileStrmSlaveSlot32b[SS_PORT_TYPE_MAX] =
 		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_SOUTH_0_SLOT0,
 	},
 	{	/* 32bit West */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_WEST_0_SLOT0,
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
 	},
 	{	/* 32bit North */
 		.NumPorts = 1,
 		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_NORTH_0_SLOT0,
 	},
 	{	/* 32bit East */
-		.NumPorts = 1,
-		.PortBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_EAST_0_SLOT0,
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
 	},
 	{	/* 32bit switch 512b */
 		.NumPorts = 1,
@@ -2217,7 +2092,143 @@ static const  XAie_StrmPort Aie4MemTileStrmSlaveSlot32b[SS_PORT_TYPE_MAX] =
 	},
 };
 
+/*
+ * Array of all Shim Stream Switch Slave Slot Config registers of AIE4.
+ * The data structure contains number of ports and the register base address.
+ */
+static const  XAie_StrmPort Aie4ShimStrmSlaveSlot[SS_PORT_TYPE_MAX] =
+{
+        {       /* Core */
+                .NumPorts = 0,
+                .PortBaseAddr = 0,
+        },
+        {       /* DMA */
+                .NumPorts = 2,
+                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_DMA_0_SLOT0,
+        },
+        {       /* Ctrl */
+                .NumPorts = 0,
+                .PortBaseAddr = 0,
+        },
+        {       /* Fifo */
+                .NumPorts = 0,
+                .PortBaseAddr = 0,
+        },
+        {       /* South */
+                .NumPorts = 0,
+                .PortBaseAddr = 0,
+        },
+        {       /* West */
+                .NumPorts = 1,
+                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_WEST_0_SLOT0,
+        },
+        {       /* North */
+                .NumPorts = 2,
+                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_NORTH_0_SLOT0,
+        },
+        {       /* East */
+                .NumPorts = 1,
+                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_EAST_0_SLOT0,
+        },
+        {       /* Trace */
+                .NumPorts = 0,
+                .PortBaseAddr = 0,
+        },
+        {       /* UCtrl */
+                .NumPorts = 0,
+                .PortBaseAddr = 0,
+        },
+        {       /* Nort control */
+                .NumPorts = 0,
+                .PortBaseAddr = 0,
+        },
+        {       /* south control */
+                .NumPorts = 0,
+                .PortBaseAddr = 0,
+        },
+        {       /* 32b switch control */
+                .NumPorts = 1,
+                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_32B_SWITCH_0_SLOT0,
+        },
+        {       /* DMA control */
+                .NumPorts = 1,
+                .PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_SUBORDINATE_DMA_CONTROL_0_SLOT0,
+        },
+		{       /* DMA trace */
+                .NumPorts = 0,
+                .PortBaseAddr = 0,
+        },
+        {       /* PL */
+                .NumPorts = 0,
+                .PortBaseAddr = 0,
+        }
+};
 
+/*
+ * Array of all Shim Stream Switch Slave Slot Config registers of AIE4.
+ * The data structure contains number of ports and the register base address.
+ */
+static const  XAie_StrmPort Aie4ShimStrmSlaveSlot32b[SS_PORT_TYPE_MAX] =
+{
+	{/*Core*/.NumPorts = 0,},
+	{/*DMA_0*/.NumPorts = 0,},
+	{/*Ctrl*/.NumPorts = 0,},
+	{/*Fifo*/.NumPorts = 0,},
+	{/*South*/.NumPorts = 0,},
+	{/* West */.NumPorts = 0,},
+	{/*North*/.NumPorts = 0,},
+	{/* East */.NumPorts = 0,},
+	{/*Trace*/.NumPorts = 0,},
+	{/*UCtrlr*/.NumPorts = 0,},
+	{/*North_control*/.NumPorts = 0,},
+	{/*South_control*/.NumPorts = 0,},
+	{/*To 32b switch*/.NumPorts = 0,},
+	{/*DMA control*/.NumPorts = 0,},
+	{/*DMA trace*/.NumPorts = 0,},
+	{/*PL*/.NumPorts = 0,},
+
+	{	/* _32B_control */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0,
+	},
+	{	/* _32B_Trace */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TRACE_0_SLOT0,
+	},
+	{	/* _32B_South */
+		.NumPorts = 0,
+	},
+	{	/* _32B_West */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_WEST_0_SLOT0,
+	},
+	{	/* 32B_North */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_NORTH_0_SLOT0,
+		.PortPhysicalId = 7,
+		.PortLogicalId = 3,
+	},
+	{	/* _32B_East */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_EAST_0_SLOT0,
+	},
+	{	/* _32B_Switch_512b */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_512B_SWITCH_0_SLOT0,
+	},
+	{	/* _32B_Uctrlr */
+		.NumPorts = 1,
+		.PortBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_UCONTROLLER_0_SLOT0,
+	},
+	{	/* _32B_PL */
+		.NumPorts = 0,
+		.PortBaseAddr = 0,
+	}
+};
+/************************ XAie_StrmPort Slot Details End ***************************/
+
+
+/************************ XAie_StrmSwPortMap Details Start ***************************/
 static const XAie_StrmSwPortMap Aie4TileStrmSwMasterPortMap[] =
 {
 	{
@@ -2537,7 +2548,7 @@ static const XAie_StrmSwPortMap Aie4TileStrmSwSlavePortMap[] =
 	},
 };
 
-static const XAie_StrmSwPortMap Aie4TileStrmSw32bMasterPortMap[] =
+static const XAie_StrmSwPortMap Aie4TileStrmSwMasterPortMap32b[] =
 {
 	{
 		/* PhyPort 0 */
@@ -2576,7 +2587,7 @@ static const XAie_StrmSwPortMap Aie4TileStrmSw32bMasterPortMap[] =
 	},
 };
 
-static const XAie_StrmSwPortMap Aie4TileStrmSw32bSlavePortMap[] =
+static const XAie_StrmSwPortMap Aie4TileStrmSwSlavePortMap32b[] =
 {
 	{
 		/* PhyPort 0 */
@@ -2630,412 +2641,6 @@ static const XAie_StrmSwPortMap Aie4TileStrmSw32bSlavePortMap[] =
 	},
 };
 
-static const XAie_StrmSwPortMap Aie4ShimStrmSwMasterPortMap[] =
-{
-	{
-		/* PhyPort 0 */
-		.PortType = DMA,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 1 */
-		.PortType = DMA,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 2 */
-		.PortType = DMA,
-		.PortNum = 2,
-	},
-	{
-		/* PhyPort 3 */
-		.PortType = DMA,
-		.PortNum = 3,
-	},
-	{
-		/* PhyPort 4 */
-		.PortType = FIFO,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 5 */
-		.PortType = FIFO,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 6 */
-		.PortType = PL,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 7 */
-		.PortType = PL,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 8 */
-		.PortType = PL,
-		.PortNum = 2,
-	},
-	{
-		/* PhyPort 9 */
-		.PortType = PL,
-		.PortNum = 3,
-	},
-	{
-		/* PhyPort 10 */
-		.PortType = PL,
-		.PortNum = 4,
-	},
-	{
-		/* PhyPort 11 */
-		.PortType = PL,
-		.PortNum = 5,
-	},
-	{
-		/* PhyPort 12 */
-		.PortType = WEST,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 13 */
-		.PortType = WEST,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 14 */
-		.PortType = WEST,
-		.PortNum = 2,
-	},
-	{
-		/* PhyPort 15 */
-		.PortType = WEST,
-		.PortNum = 3,
-	},
-	{
-		/* PhyPort 16 */
-		.PortType = NORTH,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 17 */
-		.PortType = NORTH,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 18 */
-		.PortType = NORTH,
-		.PortNum = 'X',
-	},
-	{
-		/* PhyPort 19 */
-		.PortType = NORTH,
-		.PortNum = 2,
-	},
-	{
-		/* PhyPort 20 */
-		.PortType = NORTH,
-		.PortNum = 3,
-	},
-	{
-		/* PhyPort 21 */
-		.PortType = NORTH,
-		.PortNum = 'Y',
-	},
-	{
-		/* PhyPort 22 */
-		.PortType = EAST,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 23 */
-		.PortType = EAST,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 24 */
-		.PortType = EAST,
-		.PortNum = 2,
-	},
-	{
-		/* PhyPort 25 */
-		.PortType = EAST,
-		.PortNum = 3,
-	},
-	{
-		/* PhyPort 26 */
-		.PortType = NORTH_CTRL,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 27 */
-		.PortType = NORTH_CTRL,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 28 */
-		.PortType = CTRL,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 29 */
-		.PortType = CTRL,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 30 */
-		.PortType = SWITCH_32b,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 31 */
-		.PortType = SWITCH_32b,
-		.PortNum = 1,
-	}
-};
-
-static const XAie_StrmSwPortMap Aie4ShimStrmSwMasterPortMap32b[] =
-{
-	{
-		/* PhyPort 0 */
-		.PortType = _32B_UCTRLR,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 1 */
-		.PortType = _32B_UCTRLR,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 2 */
-		.PortType = _32B_WEST,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 3 */
-		.PortType = _32B_NORTH,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 4 */
-		.PortType = _32B_NORTH,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 5 */
-		.PortType = _32B_EAST,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 6 */
-		.PortType = _32B_SWITCH_512b,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 7 */
-		.PortType = _32B_SWITCH_512b,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 8 */
-		.PortType = _32B_PL,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 9 */
-		.PortType = _32B_PL,
-		.PortNum = 1,
-	},
-};
-
-static const XAie_StrmSwPortMap Aie4ShimStrmSwSlavePortMap[] =
-{
-	{
-		/* PhyPort 0 */
-		.PortType = DMA,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 1 */
-		.PortType = DMA,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 2 */
-		.PortType = DMA,
-		.PortNum = 2,
-	},
-	{
-		/* PhyPort 3 */
-		.PortType = DMA,
-		.PortNum = 3,
-	},
-	{
-		/* PhyPort 4 */
-		.PortType = FIFO,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 5 */
-		.PortType = FIFO,
-		.PortNum = 5,
-	},
-	/* TODO: If needed, PortType PL should be added.... Need to check this*/
-	{
-		/* PhyPort 14 */
-		.PortType = WEST,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 15 */
-		.PortType = WEST,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 16 */
-		.PortType = WEST,
-		.PortNum = 2,
-	},
-	{
-		/* PhyPort 17 */
-		.PortType = WEST,
-		.PortNum = 3,
-	},
-	{
-		/* PhyPort 18 */
-		.PortType = NORTH,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 19 */
-		.PortType = NORTH,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 20 */
-		.PortType = NORTH,
-		.PortNum = 2,
-	},
-	{
-		/* PhyPort 21 */
-		.PortType = NORTH,
-		.PortNum = 3,
-	},
-	{
-		/* PhyPort 22 */
-		.PortType = EAST,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 23 */
-		.PortType = EAST,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 24 */
-		.PortType = EAST,
-		.PortNum = 2,
-	},
-	{
-		/* PhyPort 25 */
-		.PortType = EAST,
-		.PortNum = 3,
-	},
-	{
-		/* PhyPort 26 */
-		.PortType = DMA_CTRL,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 27 */
-		.PortType = DMA_CTRL,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 28 */
-		.PortType = SWITCH_32b,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 29 */
-		.PortType = SWITCH_32b,
-		.PortNum = 1,
-	}
-};
-
-static const XAie_StrmSwPortMap Aie4ShimStrmSwSlavePortMap32b[] =
-{
-	{
-		/* PhyPort 0 */
-		.PortType = _32B_CTRL,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 1 */
-		.PortType = _32B_CTRL,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 2 */
-		.PortType = _32B_TRACE,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 3 */
-		.PortType = _32B_TRACE,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 4 */
-		.PortType = _32B_UCTRLR,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 5 */
-		.PortType = _32B_UCTRLR,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 6 */
-		.PortType = _32B_WEST,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 7 */
-		.PortType = _32B_NORTH,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 8 */
-		.PortType = _32B_NORTH,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 9 */
-		.PortType = _32B_EAST,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 10 */
-		.PortType = _32B_SWITCH_512b,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 11 */
-		.PortType = _32B_SWITCH_512b,
-		.PortNum = 1,
-	},
-	{
-		/* PhyPort 12 */
-		.PortType = _32B_PL,
-		.PortNum = 0,
-	},
-	{
-		/* PhyPort 13 */
-		.PortType = _32B_PL,
-		.PortNum = 1,
-	}
-};
 
 static const XAie_StrmSwPortMap Aie4MemTileStrmSwMasterPortMap[] =
 {
@@ -3355,7 +2960,7 @@ static const XAie_StrmSwPortMap Aie4MemTileStrmSwSlavePortMap[] =
 	}
 };
 
-static const XAie_StrmSwPortMap Aie4MemTileStrmSw32bMasterPortMap[] =
+static const XAie_StrmSwPortMap Aie4MemTileStrmSwMasterPortMap32b[] =
 {
 	{
 		/* PhyPort 0 */
@@ -3399,7 +3004,7 @@ static const XAie_StrmSwPortMap Aie4MemTileStrmSw32bMasterPortMap[] =
 	},
 };
 
-static const XAie_StrmSwPortMap Aie4MemTileStrmSw32bSlavePortMap[] =
+static const XAie_StrmSwPortMap Aie4MemTileStrmSwSlavePortMap32b[] =
 {
 	{
 		/* PhyPort 0 */
@@ -3462,6 +3067,414 @@ static const XAie_StrmSwPortMap Aie4MemTileStrmSw32bSlavePortMap[] =
 		.PortNum = 1,
 	},
 };
+
+static const XAie_StrmSwPortMap Aie4ShimStrmSwMasterPortMap[] =
+{
+	{
+		/* PhyPort 0 */
+		.PortType = DMA,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 1 */
+		.PortType = DMA,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 2 */
+		.PortType = DMA,
+		.PortNum = 2,
+	},
+	{
+		/* PhyPort 3 */
+		.PortType = DMA,
+		.PortNum = 3,
+	},
+	{
+		/* PhyPort 4 */
+		.PortType = FIFO,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 5 */
+		.PortType = FIFO,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 6 */
+		.PortType = PL,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 7 */
+		.PortType = PL,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 8 */
+		.PortType = PL,
+		.PortNum = 2,
+	},
+	{
+		/* PhyPort 9 */
+		.PortType = PL,
+		.PortNum = 3,
+	},
+	{
+		/* PhyPort 10 */
+		.PortType = PL,
+		.PortNum = 4,
+	},
+	{
+		/* PhyPort 11 */
+		.PortType = PL,
+		.PortNum = 5,
+	},
+	{
+		/* PhyPort 12 */
+		.PortType = WEST,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 13 */
+		.PortType = WEST,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 14 */
+		.PortType = WEST,
+		.PortNum = 2,
+	},
+	{
+		/* PhyPort 15 */
+		.PortType = WEST,
+		.PortNum = 3,
+	},
+	{
+		/* PhyPort 16 */
+		.PortType = NORTH,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 17 */
+		.PortType = NORTH,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 18 */
+		.PortType = NORTH,
+		.PortNum = 'X',
+	},
+	{
+		/* PhyPort 19 */
+		.PortType = NORTH,
+		.PortNum = 2,
+	},
+	{
+		/* PhyPort 20 */
+		.PortType = NORTH,
+		.PortNum = 3,
+	},
+	{
+		/* PhyPort 21 */
+		.PortType = NORTH,
+		.PortNum = 'Y',
+	},
+	{
+		/* PhyPort 22 */
+		.PortType = EAST,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 23 */
+		.PortType = EAST,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 24 */
+		.PortType = EAST,
+		.PortNum = 2,
+	},
+	{
+		/* PhyPort 25 */
+		.PortType = EAST,
+		.PortNum = 3,
+	},
+	{
+		/* PhyPort 26 */
+		.PortType = NORTH_CTRL,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 27 */
+		.PortType = NORTH_CTRL,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 28 */
+		.PortType = CTRL,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 29 */
+		.PortType = CTRL,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 30 */
+		.PortType = SWITCH_32b,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 31 */
+		.PortType = SWITCH_32b,
+		.PortNum = 1,
+	}
+};
+
+static const XAie_StrmSwPortMap Aie4ShimStrmSwSlavePortMap[] =
+{
+	{
+		/* PhyPort 0 */
+		.PortType = DMA,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 1 */
+		.PortType = DMA,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 2 */
+		.PortType = DMA,
+		.PortNum = 2,
+	},
+	{
+		/* PhyPort 3 */
+		.PortType = DMA,
+		.PortNum = 3,
+	},
+	{
+		/* PhyPort 4 */
+		.PortType = FIFO,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 5 */
+		.PortType = FIFO,
+		.PortNum = 5,
+	},
+	/* TODO: If needed, PortType PL should be added.... Need to check this*/
+	{
+		/* PhyPort 14 */
+		.PortType = WEST,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 15 */
+		.PortType = WEST,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 16 */
+		.PortType = WEST,
+		.PortNum = 2,
+	},
+	{
+		/* PhyPort 17 */
+		.PortType = WEST,
+		.PortNum = 3,
+	},
+	{
+		/* PhyPort 18 */
+		.PortType = NORTH,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 19 */
+		.PortType = NORTH,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 20 */
+		.PortType = NORTH,
+		.PortNum = 2,
+	},
+	{
+		/* PhyPort 21 */
+		.PortType = NORTH,
+		.PortNum = 3,
+	},
+	{
+		/* PhyPort 22 */
+		.PortType = EAST,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 23 */
+		.PortType = EAST,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 24 */
+		.PortType = EAST,
+		.PortNum = 2,
+	},
+	{
+		/* PhyPort 25 */
+		.PortType = EAST,
+		.PortNum = 3,
+	},
+	{
+		/* PhyPort 26 */
+		.PortType = DMA_CTRL,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 27 */
+		.PortType = DMA_CTRL,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 28 */
+		.PortType = SWITCH_32b,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 29 */
+		.PortType = SWITCH_32b,
+		.PortNum = 1,
+	}
+};
+
+static const XAie_StrmSwPortMap Aie4ShimStrmSwMasterPortMap32b[] =
+{
+	{
+		/* PhyPort 0 */
+		.PortType = _32B_UCTRLR,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 1 */
+		.PortType = _32B_UCTRLR,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 2 */
+		.PortType = _32B_WEST,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 3 */
+		.PortType = _32B_NORTH,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 4 */
+		.PortType = _32B_NORTH,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 5 */
+		.PortType = _32B_EAST,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 6 */
+		.PortType = _32B_SWITCH_512b,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 7 */
+		.PortType = _32B_SWITCH_512b,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 8 */
+		.PortType = _32B_PL,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 9 */
+		.PortType = _32B_PL,
+		.PortNum = 1,
+	},
+};
+
+static const XAie_StrmSwPortMap Aie4ShimStrmSwSlavePortMap32b[] =
+{
+	{
+		/* PhyPort 0 */
+		.PortType = _32B_CTRL,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 1 */
+		.PortType = _32B_CTRL,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 2 */
+		.PortType = _32B_TRACE,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 3 */
+		.PortType = _32B_TRACE,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 4 */
+		.PortType = _32B_UCTRLR,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 5 */
+		.PortType = _32B_UCTRLR,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 6 */
+		.PortType = _32B_WEST,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 7 */
+		.PortType = _32B_NORTH,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 8 */
+		.PortType = _32B_NORTH,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 9 */
+		.PortType = _32B_EAST,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 10 */
+		.PortType = _32B_SWITCH_512b,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 11 */
+		.PortType = _32B_SWITCH_512b,
+		.PortNum = 1,
+	},
+	{
+		/* PhyPort 12 */
+		.PortType = _32B_PL,
+		.PortNum = 0,
+	},
+	{
+		/* PhyPort 13 */
+		.PortType = _32B_PL,
+		.PortNum = 1,
+	}
+};
+/************************ XAie_StrmSwPortMap Details End ***************************/
 
 /*
  * Data structure to capture stream switch deterministic merge properties for
@@ -3570,7 +3583,7 @@ static const  XAie_StrmMod Aie4TileStrmSw =
 
 static const XAie_StrmMod Aie4TileStrmSw32b =
 {
-	.SlvConfigBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0,
+	.SlvConfigBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP,
 	.MstrConfigBaseAddr = XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0,
 	.PortOffset = 0x4,
 	.NumSlaveSlots = 4U,
@@ -3581,20 +3594,20 @@ static const XAie_StrmMod Aie4TileStrmSw32b =
 	.MstrPktEn = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_PACKET_ENABLE_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_PACKET_ENABLE_MASK},
 	.DrpHdr = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_DROP_HEADER_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_DROP_HEADER_MASK},
 	.Config = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_CONFIGURATION_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_CONFIGURATION_MASK},
-	.SlvEn = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_SUBORDINATE_ENABLE_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_SUBORDINATE_ENABLE_MASK},
-	.SlvPktEn = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_PACKET_ENABLE_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_PACKET_ENABLE_MASK},
-	.SlotPktId = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ID_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ID_MASK},
-	.SlotMask = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MASK_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MASK_MASK},
-	.SlotEn = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ENABLE_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ENABLE_MASK},
-	.SlotMsel = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MSEL_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MSEL_MASK},
-	.SlotArbitor = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ARBIT_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ARBIT_MASK},
+	.SlvEn = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_SUBORDINATE_ENABLE_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_SUBORDINATE_ENABLE_MASK},
+	.SlvPktEn = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_PACKET_ENABLE_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_PACKET_ENABLE_MASK},
+	.SlotPktId = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_SLOT0_ID_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_SLOT0_ID_MASK},
+	.SlotMask = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_SLOT0_MASK_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_SLOT0_MASK_MASK},
+	.SlotEn = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_SLOT0_ENABLE_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_SLOT0_ENABLE_MASK},
+	.SlotMsel = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_SLOT0_MSEL_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_SLOT0_MSEL_MASK},
+	.SlotArbitor = {XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_SLOT0_ARBIT_LSB, XAIE4GBL_CORE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_SLOT0_ARBIT_MASK},
 	.MstrConfig = Aie4TileStrmMstr32b,
 	.SlvConfig = Aie4TileStrmSlv32b,
 	.SlvSlotConfig = Aie4AieTileStrmSlaveSlot32b,
 	.MaxMasterPhyPortId = 6U,
 	.MaxSlavePhyPortId = 9U,
-	.MasterPortMap = Aie4TileStrmSw32bMasterPortMap,
-	.SlavePortMap = Aie4TileStrmSw32bSlavePortMap,
+	.MasterPortMap = Aie4TileStrmSwMasterPortMap32b,
+	.SlavePortMap = Aie4TileStrmSwSlavePortMap32b,
 	.DetMerge = NULL,
 	.PortVerify = _XAie4_StrmSw32bCheckPortValidity,
 };
@@ -3638,7 +3651,7 @@ static const  XAie_StrmMod Aie4ShimStrmSw =
  */
 static const  XAie_StrmMod Aie4ShimStrmSw32b =
 {
-	.SlvConfigBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0,
+	.SlvConfigBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0,
 	.MstrConfigBaseAddr = XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_UCONTROLLER_0,
 	.PortOffset = 0x4,
 	.NumSlaveSlots = 4U,
@@ -3649,13 +3662,13 @@ static const  XAie_StrmMod Aie4ShimStrmSw32b =
 	.MstrPktEn = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_UCONTROLLER_0_PACKET_ENABLE_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_UCONTROLLER_0_PACKET_ENABLE_MASK},
 	.DrpHdr = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_UCONTROLLER_0_DROP_HEADER_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_UCONTROLLER_0_DROP_HEADER_MASK},
 	.Config = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_UCONTROLLER_0_CONFIGURATION_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_UCONTROLLER_0_CONFIGURATION_MASK},
-	.SlvEn = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_SUBORDINATE_ENABLE_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_SUBORDINATE_ENABLE_MASK},
-	.SlvPktEn = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_PACKET_ENABLE_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_PACKET_ENABLE_MASK},
-	.SlotPktId = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ID_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ID_MASK},
-	.SlotMask = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MASK_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MASK_MASK},
-	.SlotEn = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ENABLE_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ENABLE_MASK},
-	.SlotMsel = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MSEL_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MSEL_MASK},
-	.SlotArbitor = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ARBIT_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ARBIT_MASK},
+	.SlvEn = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0_SUBORDINATE_ENABLE_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0_SUBORDINATE_ENABLE_MASK},
+	.SlvPktEn = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0_PACKET_ENABLE_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0_PACKET_ENABLE_MASK},
+	.SlotPktId = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ID_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ID_MASK},
+	.SlotMask = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_MASK_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_MASK_MASK},
+	.SlotEn = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ENABLE_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ENABLE_MASK},
+	.SlotMsel = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_MSEL_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_MSEL_MASK},
+	.SlotArbitor = {XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ARBIT_LSB, XAIE4GBL_PL_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ARBIT_MASK},
 	.MstrConfig = Aie4ShimStrmMstr32b,
 	.SlvConfig = Aie4ShimStrmSlv32b,
 	.SlvSlotConfig = Aie4ShimStrmSlaveSlot32b,
@@ -3707,7 +3720,7 @@ static const  XAie_StrmMod Aie4MemTileStrmSw =
  */
 static const  XAie_StrmMod Aie4MemTileStrmSw32b =
 {
-	.SlvConfigBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0,
+	.SlvConfigBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0,
 	.MstrConfigBaseAddr = XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0,
 	.PortOffset = 0x4,
 	.NumSlaveSlots = 4U,
@@ -3718,20 +3731,20 @@ static const  XAie_StrmMod Aie4MemTileStrmSw32b =
 	.MstrPktEn = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_PACKET_ENABLE_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_PACKET_ENABLE_MASK},
 	.DrpHdr = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_DROP_HEADER_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_DROP_HEADER_MASK},
 	.Config = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_CONFIGURATION_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_MANAGER_CONFIG_SOUTH_0_CONFIGURATION_MASK},
-	.SlvEn = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_SUBORDINATE_ENABLE_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_SUBORDINATE_ENABLE_MASK},
-	.SlvPktEn = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_PACKET_ENABLE_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CTRL_0_PACKET_ENABLE_MASK},
-	.SlotPktId = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ID_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ID_MASK},
-	.SlotMask = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MASK_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MASK_MASK},
-	.SlotEn = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ENABLE_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ENABLE_MASK},
-	.SlotMsel = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MSEL_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_MSEL_MASK},
-	.SlotArbitor = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ARBIT_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CTRL_0_SLOT0_ARBIT_MASK},
+	.SlvEn = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0_SUBORDINATE_ENABLE_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0_SUBORDINATE_ENABLE_MASK},
+	.SlvPktEn = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0_PACKET_ENABLE_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_CONFIG_TILE_CONTROL_RSP_0_PACKET_ENABLE_MASK},
+	.SlotPktId = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ID_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ID_MASK},
+	.SlotMask = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_MASK_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_MASK_MASK},
+	.SlotEn = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ENABLE_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ENABLE_MASK},
+	.SlotMsel = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_MSEL_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_MSEL_MASK},
+	.SlotArbitor = {XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ARBIT_LSB, XAIE4GBL_MEM_TILE_MODULE_STREAM_SWITCH_32B_SUBORDINATE_TILE_CONTROL_RSP_0_SLOT0_ARBIT_MASK},
 	.MstrConfig = Aie4MemTileStrmMstr32b,
 	.SlvConfig = Aie4MemTileStrmSlv32b,
 	.SlvSlotConfig = Aie4MemTileStrmSlaveSlot32b,
 	.MaxMasterPhyPortId = 7U,
 	.MaxSlavePhyPortId = 11U,
-	.MasterPortMap = Aie4MemTileStrmSw32bMasterPortMap,
-	.SlavePortMap = Aie4MemTileStrmSw32bSlavePortMap,
+	.MasterPortMap = Aie4MemTileStrmSwMasterPortMap32b,
+	.SlavePortMap = Aie4MemTileStrmSwSlavePortMap32b,
 	.DetMerge = NULL,
 	.PortVerify = _XAie4_StrmSw32bCheckPortValidity,
 };
@@ -3741,66 +3754,66 @@ static const  XAie_StrmMod Aie4MemTileStrmSw32b =
 /* Register field attributes for PL interface down sizer for 32 and 64 bits */
 static const  XAie_RegFldAttr Aie4DownSzr32_64Bit[] =
 {
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH0_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH0_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH1_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH1_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH2_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH2_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH3_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH3_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH4_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH4_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH5_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH5_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH6_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH6_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH7_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH7_MASK}
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4}
 };
 
 /* Register field attributes for PL interface down sizer for 128 bits */
 static const  XAie_RegFldAttr Aie4DownSzr128Bit[] =
 {
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH0_SOUTH1_128_COMBINE_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH0_SOUTH1_128_COMBINE_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH2_SOUTH3_128_COMBINE_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH2_SOUTH3_128_COMBINE_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH4_SOUTH5_128_COMBINE_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH4_SOUTH5_128_COMBINE_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH6_SOUTH7_128_COMBINE_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG_SOUTH6_SOUTH7_128_COMBINE_MASK}
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4}
 };
 
 /* Register field attributes for PL interface up sizer */
 static const  XAie_RegFldAttr Aie4UpSzr32_64Bit[] =
 {
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH0_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH0_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH1_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH1_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH2_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH2_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH3_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH3_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH4_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH4_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH5_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH5_MASK}
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4}
 };
 
 /* Register field attributes for PL interface up sizer for 128 bits */
 static const  XAie_RegFldAttr Aie4UpSzr128Bit[] =
 {
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH0_SOUTH1_128_COMBINE_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH0_SOUTH1_128_COMBINE_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH2_SOUTH3_128_COMBINE_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH2_SOUTH3_128_COMBINE_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH4_SOUTH5_128_COMBINE_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG_SOUTH4_SOUTH5_128_COMBINE_MASK}
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4}
 };
 
 /* Register field attributes for PL interface down sizer bypass */
 static const  XAie_RegFldAttr Aie4DownSzrByPass[] =
 {
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH0_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH0_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH1_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH1_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH2_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH2_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH4_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH4_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH5_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH5_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH6_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS_SOUTH6_MASK}
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4}
 };
 
 /* Register field attributes for PL interface down sizer enable */
 static const  XAie_RegFldAttr Aie4DownSzrEnable[] =
 {
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH0_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH0_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH1_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH1_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH2_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH2_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH3_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH3_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH4_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH4_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH5_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH5_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH6_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH6_MASK},
-	{XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH7_LSB, XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE_SOUTH7_MASK}
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4},
+	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4}
 };
 
 
@@ -3947,10 +3960,10 @@ static const  XAie_MemMod Aie4MemTileMemMod =
 /* PL Only module for SHIMNOC Tiles */
 static const  XAie_PlIfMod Aie4ShimTilePlIfMod =
 {
-	.UpSzrOff = XAIE4GBL_PL_MODULE_PL_INTERFACE_UPSIZER_CONFIG,
-	.DownSzrOff = XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_CONFIG,
-	.DownSzrEnOff = XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_ENABLE,
-	.DownSzrByPassOff = XAIE4GBL_PL_MODULE_PL_INTERFACE_DOWNSIZER_BYPASS,
+	.UpSzrOff = NOT_AVAILABLE_IN_THE_AIE4,
+	.DownSzrOff = NOT_AVAILABLE_IN_THE_AIE4,
+	.DownSzrEnOff = NOT_AVAILABLE_IN_THE_AIE4,
+	.DownSzrByPassOff = NOT_AVAILABLE_IN_THE_AIE4,
 	.ColRstOff = 0xE00A0,
 	.NumUpSzrPorts = 0x6,
 	.MaxByPassPortNum = 0x6,
@@ -4356,15 +4369,15 @@ static const u16 Aie4PlModEventMapping[] =
 	  XAIE4_EVENTS_PL_COMBO_EVENT_7,
 	  XAIE4_EVENTS_PL_GROUP_DMA_ACTIVITY,
       XAIE4_EVENTS_PL_DMA_S2MM_0_START_BD,
+      XAIE4_EVENTS_PL_DMA_S2MM_1_START_BD,
 	  XAIE_EVENT_INVALID,
-      XAIE4_EVENTS_PL_DMA_S2MM_2_START_BD,
       XAIE4_EVENTS_PL_DMA_MM2S_0_START_BD,
       XAIE4_EVENTS_PL_DMA_MM2S_1_START_BD,
       XAIE4_EVENTS_PL_DMA_MM2S_2_START_BD,
       XAIE4_EVENTS_PL_DMA_MM2S_3_START_BD,
       XAIE4_EVENTS_PL_DMA_S2MM_0_FINISHED_BD,
+      XAIE4_EVENTS_PL_DMA_S2MM_1_FINISHED_BD,
 	  XAIE_EVENT_INVALID,
-      XAIE4_EVENTS_PL_DMA_S2MM_2_FINISHED_BD,
       XAIE4_EVENTS_PL_DMA_MM2S_0_FINISHED_BD,
       XAIE4_EVENTS_PL_DMA_MM2S_1_FINISHED_BD,
       XAIE4_EVENTS_PL_DMA_MM2S_2_FINISHED_BD,
@@ -4490,43 +4503,43 @@ static const u16 Aie4PlModEventMapping[] =
 	  XAIE4_EVENTS_PL_EDGE_DETECTION_EVENT_6,
 	  XAIE4_EVENTS_PL_EDGE_DETECTION_EVENT_7,
       XAIE4_EVENTS_PL_DMA_S2MM_0_START_TASK,
+      XAIE4_EVENTS_PL_DMA_S2MM_1_START_TASK,
 	  XAIE_EVENT_INVALID,
-      XAIE4_EVENTS_PL_DMA_S2MM_2_START_TASK,
       XAIE4_EVENTS_PL_DMA_MM2S_0_START_TASK,
       XAIE4_EVENTS_PL_DMA_MM2S_1_START_TASK,
       XAIE4_EVENTS_PL_DMA_MM2S_2_START_TASK,
       XAIE4_EVENTS_PL_DMA_MM2S_3_START_TASK,
       XAIE4_EVENTS_PL_DMA_S2MM_0_FINISHED_TASK,
+      XAIE4_EVENTS_PL_DMA_S2MM_1_FINISHED_TASK,
 	  XAIE_EVENT_INVALID,
-      XAIE4_EVENTS_PL_DMA_S2MM_2_FINISHED_TASK,
       XAIE4_EVENTS_PL_DMA_MM2S_0_FINISHED_TASK,
       XAIE4_EVENTS_PL_DMA_MM2S_1_FINISHED_TASK,
       XAIE4_EVENTS_PL_DMA_MM2S_2_FINISHED_TASK,
       XAIE4_EVENTS_PL_DMA_MM2S_3_FINISHED_TASK,
       XAIE4_EVENTS_PL_DMA_S2MM_0_STALLED_LOCK,
-	  XAIE_EVENT_INVALID,
-      XAIE4_EVENTS_PL_DMA_S2MM_2_STALLED_LOCK,
+	  XAIE4_EVENTS_PL_DMA_S2MM_1_STALLED_LOCK,
+	  XAIE_EVENT_INVALID,     
       XAIE4_EVENTS_PL_DMA_MM2S_0_STALLED_LOCK,
       XAIE4_EVENTS_PL_DMA_MM2S_1_STALLED_LOCK,
       XAIE4_EVENTS_PL_DMA_MM2S_2_STALLED_LOCK,
       XAIE4_EVENTS_PL_DMA_MM2S_3_STALLED_LOCK,
       XAIE4_EVENTS_PL_DMA_S2MM_0_STREAM_STARVATION,
+      XAIE4_EVENTS_PL_DMA_S2MM_1_STREAM_STARVATION,
 	  XAIE_EVENT_INVALID,
-      XAIE4_EVENTS_PL_DMA_S2MM_2_STREAM_STARVATION,
       XAIE4_EVENTS_PL_DMA_MM2S_0_STREAM_BACKPRESSURE,
       XAIE4_EVENTS_PL_DMA_MM2S_1_STREAM_BACKPRESSURE,
       XAIE4_EVENTS_PL_DMA_MM2S_2_STREAM_BACKPRESSURE,
       XAIE4_EVENTS_PL_DMA_MM2S_3_STREAM_BACKPRESSURE,
       XAIE4_EVENTS_PL_DMA_S2MM_0_MEMORY_BACKPRESSURE,
+      XAIE4_EVENTS_PL_DMA_S2MM_1_MEMORY_BACKPRESSURE,
 	  XAIE_EVENT_INVALID,
-      XAIE4_EVENTS_PL_DMA_S2MM_2_MEMORY_BACKPRESSURE,
 	  XAIE4_EVENTS_PL_DMA_MM2S_0_MEMORY_STARVATION,
 	  XAIE4_EVENTS_PL_DMA_MM2S_1_MEMORY_STARVATION,
 	  XAIE4_EVENTS_PL_DMA_MM2S_2_MEMORY_STARVATION,
 	  XAIE4_EVENTS_PL_DMA_MM2S_3_MEMORY_STARVATION,
 	  XAIE4_EVENTS_PL_DMA_S2MM_0_RUNNING,
+	  XAIE4_EVENTS_PL_DMA_S2MM_1_RUNNING,
 	  XAIE_EVENT_INVALID,
-	  XAIE4_EVENTS_PL_DMA_S2MM_2_RUNNING,
 	  XAIE4_EVENTS_PL_DMA_MM2S_0_RUNNING,
 	  XAIE4_EVENTS_PL_DMA_MM2S_1_RUNNING,
 	  XAIE4_EVENTS_PL_DMA_MM2S_2_RUNNING,
@@ -5994,7 +6007,7 @@ static const XAie_TraceMod Aie4TileTraceMod[] =
 		.State = {XAIE4GBL_CORE_MODULE_TRACE0_STATUS_STATE_LSB, XAIE4GBL_CORE_MODULE_TRACE0_STATUS_STATE_MASK},
 		.ModeSts = {XAIE4GBL_CORE_MODULE_TRACE0_STATUS_MODE_LSB, XAIE4GBL_CORE_MODULE_TRACE0_STATUS_MODE_MASK},
 		.Event = Aie4CoreTraceEvent
-	}
+	},
 };
 
 /*
@@ -6166,9 +6179,9 @@ static const XAie_MemCtrlMod Aie4MemTileMemIntrLvCtrlMod =
 static const XAie_MemCtrlMod Aie4UcCntrlMod =
 {
   .MemZeroisationCtrlRegOff = XAIE4GBL_PL_MODULE_MEMORY_ZEROIZATION_A_PRIVILEGED,
-  .MemPrivilegeCtrlRegOff = XAIE4GBL_PL_MODULE_MEMORY_PRIVILEGED,
+  .MemPrivilegeCtrlRegOff = XAIE4GBL_PL_MODULE_MEMORY_PRIVILEGED_PRIVILEGED,
   .MemZeroisation  = {XAIE4GBL_PL_MODULE_MEMORY_ZEROIZATION_A_MASK_PRIVILEGED, XAIE4GBL_PL_MODULE_MEMORY_ZEROIZATION_A_MASK_PRIVILEGED},
-  .MemPrivilegeCtrl = {XAIE4GBL_PL_MODULE_MEMORY_PRIVILEGED_MEMORY_LSB_PRIVILEGED, XAIE4GBL_PL_MODULE_MEMORY_PRIVILEGED_MEMORY_MASK_PRIVILEGED},
+  .MemPrivilegeCtrl = {XAIE4GBL_PL_MODULE_MEMORY_PRIVILEGED_MEMORY_PRIVILEGED_LSB_PRIVILEGED, XAIE4GBL_PL_MODULE_MEMORY_PRIVILEGED_MEMORY_PRIVILEGED_MASK_PRIVILEGED},
 };
 
 static const XAie_MemCtrlMod Aie4UcCntrlMod_B =

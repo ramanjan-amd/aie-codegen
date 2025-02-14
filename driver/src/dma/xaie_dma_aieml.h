@@ -58,8 +58,8 @@ AieRC _XAieMl_DmaWaitForBdTaskQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
 AieRC _XAieMl_DmaGetChannelStatus(XAie_DevInst *DevInst, XAie_LocType Loc,
 		const XAie_DmaMod *DmaMod, u8 ChNum, XAie_DmaDirection Dir,
 		u32 *Status);
-AieRC _XAieMl_DmaCheckBdChValidity(u8 BdNum, u8 ChNum);
-AieRC _XAieMl_MemTileDmaCheckBdChValidity(u8 BdNum, u8 ChNum);
+AieRC _XAieMl_DmaCheckBdChValidity(const XAie_DmaMod *DmaMod, XAie_DmaDirection Dir, u16 BdNum, u8 ChNum);
+AieRC _XAieMl_MemTileDmaCheckBdChValidity(const XAie_DmaMod *DmaMod, XAie_DmaDirection Dir, u16 BdNum, u8 ChNum);
 AieRC _XAieMl_DmaUpdateBdLen(XAie_DevInst *DevInst, const XAie_DmaMod *DmaMod,
 		XAie_LocType Loc, u32 Len, u16 BdNum);
 AieRC _XAieMl_ShimDmaUpdateBdLen(XAie_DevInst *DevInst,

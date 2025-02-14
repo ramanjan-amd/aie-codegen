@@ -53,9 +53,31 @@
 #define XAIE_SS_DETERMINISTIC_MERGE_MAX_PKT_CNT (64U - 1U) /* 6 bits */
 
 /************************** Function Definitions *****************************/
-/*
- * This API is to give maximum number of stream switch ports
- * for a given tiletype, based on application mode (dual/single)
+
+static inline const XAie_StrmMod * _GetStreamMod(XAie_DevInst *DevInst, u8 TileType, u8 PortType)
+{
+	if (PortType <= _512B_PORT_END)
+		return DevInst->DevProp.DevMod[TileType].StrmSw;
+	else if ((PortType >= _32B_PORT_START) && (PortType <= _32B_PORT_END))
+		return DevInst->DevProp.DevMod[TileType].StrmSw32b;
+
+	return NULL;
+}
+
+/**
+ * _GetMaxNumSsPorts - Get the maximum number of stream switch ports.
+ * @DevInst: Pointer to the device instance.
+ * @TileType: Type of the tile.
+ * @PortPtr: Pointer to the stream port.
+ * @PortType: Type of the stream switch port.
+ * @MaxNumPorts: Pointer to store the maximum number of ports.
+ *
+ * This function retrieves the maximum number of stream switch ports
+ * based on the provided device instance, tile type, stream port, and
+ * port type. The result is stored in the location pointed to by
+ * MaxNumPorts.
+ *
+ * Return: AieRC status code indicating success or failure.
  */
 static AieRC _GetMaxNumSsPorts(XAie_DevInst *DevInst, u8 TileType,
 		const XAie_StrmPort *PortPtr, StrmSwPortType PortType, u8 *MaxNumPorts)
@@ -69,64 +91,92 @@ static AieRC _GetMaxNumSsPorts(XAie_DevInst *DevInst, u8 TileType,
 				(PortType == _32B_EAST) || (PortType == _32B_WEST)) {
 				return XAIE_ERR_STREAM_PORT;
 			}
-			if (TileType == XAIEGBL_TILE_TYPE_AIETILE) {
-				if ((PortType == NORTH) || (PortType == SOUTH) ||
-					(PortType == _32B_NORTH) || (PortType == _32B_SOUTH)) {
-					/* In Dual app mode for AIE tile, only half of the
-					 * north and south tiles will be available, as the
-					 * remaining will be used for shadow logic to bypass
+			
+			switch(TileType) {
+				case XAIEGBL_TILE_TYPE_AIETILE:
+					/* Only half of the north and south tiles will be available,
+					 * as the remaining will be used for shadow logic to bypass
 					 * the streams to App_B tiles
 					 */
-					*MaxNumPorts = PortPtr->NumPorts / 2;
-				} else {
-					*MaxNumPorts = PortPtr->NumPorts;
-				}
-			} else {
-				*MaxNumPorts = PortPtr->NumPorts;
-			}
-		} else {
-			/* For AIE tile PortPtr will have full number of ports
-			 * For SHIM tiles WEST & EAST port PortPtr will have full number of ports
-			 * Below check verifies the same
-			 */
-			if ((TileType == XAIEGBL_TILE_TYPE_AIETILE) ||
-				((TileType == XAIEGBL_TILE_TYPE_SHIMNOC) &&
-				 ((PortType == EAST) || (PortType == WEST) ||
-				  (PortType == _32B_EAST) || (PortType == _32B_WEST)))){
-				*MaxNumPorts = PortPtr->NumPorts;
-			} else {
-				if((PortPtr->NumPorts * 2 ) > UINT8_MAX){
-					XAIE_ERROR("MaxNumPorts Exceeds U8 MAX value \n");
-					return XAIE_ERR;
-				}else {
-					*MaxNumPorts = PortPtr->NumPorts * 2;
-				}
-			}
-			/* The trace S2MM port is supported only in APP A as oppurtunistic feature.*/
-			if ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) &&
-					(TileType == XAIEGBL_TILE_TYPE_SHIMNOC) &&
-					(PortType == DMA_Trace)) {
-				XAIE_ERROR(" Trace S2MM port is supported only in APP A \n");
-				return XAIE_ERR;
-			}
-		}
-	}
+					if ((PortType == NORTH) || (PortType == SOUTH) ||
+						(PortType == _32B_NORTH) || (PortType == _32B_SOUTH))
+						*MaxNumPorts = PortPtr->NumPorts / 2;
+					else
+						*MaxNumPorts = PortPtr->NumPorts;
+					break;
 
+				case XAIEGBL_TILE_TYPE_MEMTILE:
+					*MaxNumPorts = PortPtr->NumPorts;
+					break;
+
+				case XAIEGBL_TILE_TYPE_SHIMNOC:
+					/* The trace S2MM port is supported only in APP A as oppurtunistic feature.*/
+					if ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) && 
+							(PortType == DMA_Trace)) {
+						XAIE_ERROR(" Trace S2MM port is supported only in APP A \n");
+						return XAIE_ERR;
+					}
+
+					*MaxNumPorts = PortPtr->NumPorts;
+					break;
+
+				default:
+					XAIE_ERROR(" Invalid tiletype \n");
+					return XAIE_ERR;
+			}		
+		} else {
+			switch(TileType) {
+				case XAIEGBL_TILE_TYPE_AIETILE:
+					/* For AIE tile PortPtr will have full number of ports */
+					*MaxNumPorts = PortPtr->NumPorts;
+					break;
+
+				case XAIEGBL_TILE_TYPE_MEMTILE:
+					if((PortPtr->NumPorts * 2 ) > UINT8_MAX){
+						XAIE_ERROR("MaxNumPorts Exceeds U8 MAX value \n");
+						return XAIE_ERR;
+					}else {
+						*MaxNumPorts = PortPtr->NumPorts * 2;
+					}
+					break;
+
+				case XAIEGBL_TILE_TYPE_SHIMNOC:
+					/* For SHIM tiles WEST & EAST port PortPtr will have full number of ports */
+					if ((PortType == EAST) || (PortType == WEST) ||
+						(PortType == _32B_EAST) || (PortType == _32B_WEST)){
+						*MaxNumPorts = PortPtr->NumPorts;
+					} else {
+						if((PortPtr->NumPorts * 2 ) > UINT8_MAX){
+							XAIE_ERROR("MaxNumPorts Exceeds U8 MAX value \n");
+							return XAIE_ERR;
+						}else {
+							*MaxNumPorts = PortPtr->NumPorts * 2;
+						}
+					}
+					break;
+
+				default:
+					XAIE_ERROR(" Invalid tiletype \n");
+					return XAIE_ERR;
+					}
+			}
+	}
 	return XAIE_OK;
 }
 
-static inline const XAie_StrmMod * _GetStreamMod(XAie_DevInst *DevInst, u8 TileType, u8 PortType)
-{
-	if (PortType <= _512B_PORT_END)
-		return DevInst->DevProp.DevMod[TileType].StrmSw;
-	else if ((PortType >= _32B_PORT_START) && (PortType <= _32B_PORT_END))
-		return DevInst->DevProp.DevMod[TileType].StrmSw32b;
-
-	return NULL;
-}
-
-/*
- * This is an internal API
+/**
+ * _XAie_GetPortIdxLegacy - Get the port index for a given stream module.
+ * @StrmMod: Pointer to the stream module.
+ * @PortType: Type of the port (input/output).
+ * @PortNum: Port number.
+ * @PortIdx: Pointer to store the port index.
+ * @Port: Stream port interface.
+ *
+ * This function retrieves the port index for a given stream module based on
+ * the port type, port number, and stream port interface. The port index is
+ * stored in the location pointed to by PortIdx.
+ *
+ * Return: AieRC - Return code indicating success or failure.
  */
 static AieRC _XAie_GetPortIdxLegacy(const XAie_StrmMod *StrmMod,
 		StrmSwPortType PortType, u8 PortNum, u8 *PortIdx,
@@ -158,9 +208,20 @@ static AieRC _XAie_GetPortIdxLegacy(const XAie_StrmMod *StrmMod,
 	return XAIE_OK;
 }
 
-/*
- * This is an internal API, this returns Port ID which should be configured in
- * master port configuration register.
+/**
+ * _XAie_GetPortIdxAie4Plus - Get the port index for AIE4+ devices.
+ * @DevInst: Pointer to the device instance.
+ * @TileType: Type of the tile.
+ * @PortType: Type of the stream switch port.
+ * @PortPtr: Pointer to the stream port structure.
+ * @PortNum: Port number.
+ * @PortIdx: Pointer to store the port index.
+ * @Port: Stream port interface.
+ *
+ * This function retrieves the port index for AIE4+ devices based on the
+ * provided parameters.
+ *
+ * Return: AieRC - Return code indicating success or failure.
  */
 static AieRC _XAie_GetPortIdxAie4Plus(XAie_DevInst *DevInst, u8 TileType,
 	StrmSwPortType PortType, const XAie_StrmPort *PortPtr, u8 PortNum,
@@ -168,6 +229,7 @@ static AieRC _XAie_GetPortIdxAie4Plus(XAie_DevInst *DevInst, u8 TileType,
 {
 	u8 AddPlaceHolderPortPhyIds = 0;
 	u32 TempPortIdx;
+	
 	if (DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE) {
 		if((UINT8_MAX - PortPtr->PortLogicalId) > PortNum){
 			*PortIdx = PortPtr->PortLogicalId + PortNum;
@@ -191,6 +253,13 @@ static AieRC _XAie_GetPortIdxAie4Plus(XAie_DevInst *DevInst, u8 TileType,
 			}
 			break;
 		case XAIEGBL_TILE_TYPE_MEMTILE:
+			/* From AIE4 v1.5spec, For MM2S ports, The MM2SX port with index 5 was introduced in b/w MM2S4 and MM2S5 port names
+			 * for port numbers equal or greater than 5 , the index is added by one additional place holder.*/
+			if ((Port == XAIE_STRMSW_SLAVE) && (PortType == DMA)) {
+				if (PortNum >= (PortPtr->NumPorts))
+					AddPlaceHolderPortPhyIds = 1;
+			}
+				
 			if (((Port == XAIE_STRMSW_SLAVE) && (PortType == NORTH)) ||
 			    ((Port == XAIE_STRMSW_MASTER) && (PortType == SOUTH))) {
 				if (PortNum >= (PortPtr->NumPorts))
@@ -201,6 +270,12 @@ static AieRC _XAie_GetPortIdxAie4Plus(XAie_DevInst *DevInst, u8 TileType,
 			}
 			break;
 		case XAIEGBL_TILE_TYPE_SHIMNOC:
+            /* From AIE4 v1.5spec, For S2MM ports, The Trace S2MM port with index 1 was introduced in b/w S2MM0 and S2MM1 port names
+			 * for port numbers equal or greater than 1, the index is added by one additional place holder.*/
+			if ((Port == XAIE_STRMSW_MASTER) && (PortType == DMA)) {
+				if (PortNum >= (PortPtr->NumPorts))
+					AddPlaceHolderPortPhyIds = 1;
+			}
 			if ((Port == XAIE_STRMSW_MASTER) && (PortType == NORTH)) {
 				if (PortNum >= PortPtr->NumPorts)
 					AddPlaceHolderPortPhyIds = 1;
@@ -221,40 +296,36 @@ static AieRC _XAie_GetPortIdxAie4Plus(XAie_DevInst *DevInst, u8 TileType,
 
 	return XAIE_OK;
 }
-/*
- * This API is to validate Port number.
- * 
- * In V1.2 spec, for memtile (MM2S5 & MM2S11) and shimtile(S2MM1 & S2MM3) are
- * removed. But the port numbers not adjusted sequentially.
- * So this API checks for the same and validates. 
+
+/**
+ * _XAie_ValidatePortNumber - Validates the port number for a given tile type and port type.
+ * @DevInst: Pointer to the device instance.
+ * @TileType: Type of the tile.
+ * @PortType: Type of the stream switch port.
+ * @Port: Stream port interface.
+ * @PortNum: Port number to be validated.
+ * @MaxPorts: Maximum number of ports available.
+ *
+ * Return: AieRC indicating success or failure of the validation.
+ *
+ * This function checks if the provided port number is within the valid range
+ * for the specified tile type and port type. It ensures that the port number
+ * does not exceed the maximum number of ports available.
  */
 static AieRC _XAie_ValidatePortNumber(XAie_DevInst* DevInst, u8 TileType,
 	StrmSwPortType PortType, XAie_StrmPortIntf Port, u8 PortNum, u8 MaxPorts)
 {
+	(void) DevInst;
+	(void) TileType;
+	(void) PortType;
+	(void) Port;
+	
 	if (MaxPorts == 0)
 		return XAIE_ERR_STREAM_PORT;
-
-	if (!_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) {
-		if (PortNum >= MaxPorts)
-			return XAIE_ERR_STREAM_PORT;
-
-		return XAIE_OK;
-	}
-
-	if (DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE) {
-		if ((PortType == DMA) &&
-			(((TileType == XAIEGBL_TILE_TYPE_MEMTILE) && (Port == XAIE_STRMSW_SLAVE)) ||
-			 ((TileType == XAIEGBL_TILE_TYPE_SHIMNOC) && (Port == XAIE_STRMSW_MASTER)))) {
-			if (PortNum == MaxPorts / 2)
-				return XAIE_ERR_STREAM_PORT;
-			if (PortNum > MaxPorts)
-				return XAIE_ERR_STREAM_PORT;
-		}
-	} else {
-		if (PortNum >= MaxPorts)
-			return XAIE_ERR_STREAM_PORT;
-	}
-
+	
+	if (PortNum >= MaxPorts)
+		return XAIE_ERR_STREAM_PORT;
+	
 	return XAIE_OK;
 }
 /*****************************************************************************/
@@ -366,11 +437,10 @@ static AieRC _XAie_StrmConfigSlv(XAie_DevInst *DevInst, const XAie_StrmMod *Strm
 				AddPlaceHolderPort = 1;
 			}
 		} else {
+            /* if device is in single appmode*/
 			if (PortNum >= PortPtr->NumPorts) {
 				*RegOff = XAIE4_MASK_VALUE_APP_B;
 				PortNum -= PortPtr->NumPorts;
-				if ((TileType == XAIEGBL_TILE_TYPE_MEMTILE) && (PortType == DMA))
-					PortNum--;
 			}
 		}
 	}
@@ -454,11 +524,10 @@ static AieRC _StrmConfigMstr(XAie_DevInst *DevInst, const XAie_StrmMod *StrmMod,
 				AddPlaceHolderPort = 1;
 			}
 		} else {
+             /* if device is in single appmode*/
 			if (PortNum >= PortPtr->NumPorts) {
 				*RegOff = XAIE4_MASK_VALUE_APP_B;
-				PortNum -= PortPtr->NumPorts;
-				if ((TileType == XAIEGBL_TILE_TYPE_SHIMNOC) && (PortType == DMA))
-					PortNum--;
+				PortNum -= PortPtr->NumPorts;			
 			}
 		}
 	}
@@ -1030,11 +1099,10 @@ static AieRC _XAie_StrmSlaveSlotConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 				AddPlaceHolderPort = 1;
 			}
 		} else {
+            /* if device is in single appmode */
 			if (SlvPortNum >= PortPtr->NumPorts) {
 				RegAddr = XAIE4_MASK_VALUE_APP_B;
-				SlvPortNum -= PortPtr->NumPorts;
-				if ((TileType == XAIEGBL_TILE_TYPE_MEMTILE) && (Slave == DMA))
-					SlvPortNum--;
+				SlvPortNum -= PortPtr->NumPorts;				
 			}
 		}
 	}

@@ -214,11 +214,11 @@ static const u8 _XAie4_MemTile_PortsConectivityMatrix[MEMTILE_SUBRDNT_MAX][MEMTI
 	/* M2S3 */ {0,     0,    0,    1,    0,    0,    0,    0,   0,  1,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,   1,   0,   1,   0,   1,    1},
 	/* M2S4 */ {0,     0,    0,    0,    0,    0,    0,    0,   1,  1,  1,  1,  1,  0,  0,  0,  0,  0,  0,  0,   1,   0,   1,   0,   1,    1},
 	
-	/* M2S6 */ {0,     0,    0,    0,    1,    0,    0,    0,   0,  0,  1,  0,  1,  1,  1,  1,  1,  1,  1,  1,   0,   0,   0,   0,   1,    1},
-	/* M2S7 */ {0,     0,    0,    0,    0,    1,    0,    0,   0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,   0,   0,   0,   0,   1,    1},
-	/* M2S8 */ {0,     0,    0,    0,    0,    0,    1,    0,   0,  0,  1,  0,  1,  1,  1,  1,  1,  1,  1,  1,   0,   0,   0,   0,   1,    1},
-	/* M2S9 */ {0,     0,    0,    0,    0,    0,    0,    1,   0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,   0,   1,   0,   1,   1,    1},
-	/* M2S10*/ {0,     0,    0,    0,    0,    0,    0,    0,   1,  1,  1,  1,  0,  0,  0,  0,  1,  0,  0,  0,   0,   1,   0,   1,   1,    1},
+	/* M2S5 */ {0,     0,    0,    0,    1,    0,    0,    0,   0,  0,  1,  0,  1,  1,  1,  1,  1,  1,  1,  1,   0,   0,   0,   0,   1,    1},
+	/* M2S6 */ {0,     0,    0,    0,    0,    1,    0,    0,   0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,   0,   0,   0,   0,   1,    1},
+	/* M2S7 */ {0,     0,    0,    0,    0,    0,    1,    0,   0,  0,  1,  0,  1,  1,  1,  1,  1,  1,  1,  1,   0,   0,   0,   0,   1,    1},
+	/* M2S8 */ {0,     0,    0,    0,    0,    0,    0,    1,   0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,   0,   1,   0,   1,   1,    1},
+	/* M2S9 */ {0,     0,    0,    0,    0,    0,    0,    0,   1,  1,  1,  1,  0,  0,  0,  0,  1,  0,  0,  0,   0,   1,   0,   1,   1,    1},
 	
 	/*  S0  */ {1,     0,    1,    1,    0,    0,    0,    0,   1,  0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,   0,   0,   0,   0,   1,    1},
 	/*  S1  */ {0,     1,    1,    1,    0,    0,    0,    0,   0,  1,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,   0,   0,   0,   0,   1,    1},
@@ -435,8 +435,7 @@ AieRC _XAie4_MemTile_StrmSwCheckPortValidity(XAie_DevInst *DevInst,
 {
 	u8 SubrntePortIdx = 0;
 	u8 MngrPortIdx = 0;
-	u8 DualAppMode;
-	u8 HoleInTheMatrixTable = 0;
+	u8 DualAppMode;	
 
 	if (DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE)
 		DualAppMode = 0;
@@ -445,19 +444,7 @@ AieRC _XAie4_MemTile_StrmSwCheckPortValidity(XAie_DevInst *DevInst,
 
 	switch (Slave) {
 	case DMA:
-		if (DualAppMode) {
-			SubrntePortIdx = MEMTILE_DUALAPP_SUBRDNT_MM2S;
-		} else {
-			/* In v1.2 spec, MM2S5 & MM2S11 are removed but ports numbers are not
-			 * adjusted in the spec, below logic is to validate that and calculate
-			 * index based on that
-			 */
-			SubrntePortIdx = MEMTILE_SUBRDNT_MM2S;
-			if (SlvPortNum == MEMTILE_SUBRDNT_SOUTH / 2)
-				return XAIE_ERR_STREAM_PORT;
-			else if (SlvPortNum > MEMTILE_SUBRDNT_SOUTH / 2)
-				HoleInTheMatrixTable = 1;
-		}
+		SubrntePortIdx = DualAppMode ? MEMTILE_DUALAPP_SUBRDNT_MM2S : MEMTILE_SUBRDNT_MM2S;		
 		break;
 	case SOUTH:
 		SubrntePortIdx = DualAppMode ? MEMTILE_DUALAPP_SUBRDNT_SOUTH : MEMTILE_SUBRDNT_SOUTH;
@@ -475,7 +462,7 @@ AieRC _XAie4_MemTile_StrmSwCheckPortValidity(XAie_DevInst *DevInst,
 		/* Any port that is not shown in connectivity matrix is fully connected */
 		return XAIE_OK;
 	}
-	SubrntePortIdx += SlvPortNum - HoleInTheMatrixTable;
+	SubrntePortIdx += SlvPortNum;
 
 	switch (Master) {
 	case DMA:
@@ -552,7 +539,6 @@ AieRC _XAie4_ShimTile_StrmSwCheckPortValidity(XAie_DevInst *DevInst,
 	u8 SubrntePortIdx = 0;
 	u8 MngrPortIdx = 0;
 	u8 DualAppMode;
-	u8 HoleInTheMatrixTable = 0;
 
 	if (DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE)
 		DualAppMode = 0;
@@ -590,18 +576,7 @@ AieRC _XAie4_ShimTile_StrmSwCheckPortValidity(XAie_DevInst *DevInst,
 
 	switch (Master) {
 	case DMA:
-		if (DualAppMode) {
-			MngrPortIdx = SHIMTILE_DUALAPP_MNGR_S2MM;
-		} else {
-			/* In v1.2 spec, S2MM1 & S2MM3 are removed but ports numbers are not
-			 * adjusted in the spec, below logic is to validate that and calculate
-			 * index based on that
-			 */
-			/* After Adding Tarce S2MM inplace of S2MM1 in v1.4 spec, S2MM1 port and index is invalid */
-			MngrPortIdx = SHIMTILE_MNGR_S2MM;
-			if (MstrPortNum == SHIMTILE_MNGR_TS2MM)
-				return XAIE_ERR_STREAM_PORT;			
-		}
+		MngrPortIdx = DualAppMode ? SHIMTILE_DUALAPP_MNGR_S2MM : SHIMTILE_MNGR_S2MM;
 		break;
 	case WEST:
 		if (DualAppMode)
@@ -635,7 +610,7 @@ AieRC _XAie4_ShimTile_StrmSwCheckPortValidity(XAie_DevInst *DevInst,
 		/* Any port that is not shown in connectivity matrix is fully connected */
 		return XAIE_OK;
 	}
-	MngrPortIdx += MstrPortNum - HoleInTheMatrixTable;
+	MngrPortIdx += MstrPortNum;
 
 	if (DualAppMode) {
 		/* Safe check to see if the indexes are out of connectivity matrix bound */

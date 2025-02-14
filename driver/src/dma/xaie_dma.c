@@ -169,23 +169,7 @@ static AieRC _XAie_DmaValidateChannelNumber(XAie_DevInst* DevInst, u8 TileType,
 		return XAIE_INVALID_CHANNEL_NUM;
 
 	if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) {
-		/*  In AIE4, From V1.2 spec, for memtile (MM2S5 & MM2S11) and shimtile(S2MM1 & S2MM3) are
- 			removed. But the port numbers not adjusted sequentially.*/
-		if (((TileType == XAIEGBL_TILE_TYPE_MEMTILE) && (Dir == DMA_MM2S)) ||
-			((TileType == XAIEGBL_TILE_TYPE_SHIMNOC) && (Dir == DMA_S2MM))) {
-			/* if single app, the middle and last channel number*/
-			if (DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE) {
-				if (ChNum == (MaxChannels / 2) - 1)
-					return XAIE_INVALID_CHANNEL_NUM;
-				if (ChNum >= (MaxChannels - 1))
-					return XAIE_INVALID_CHANNEL_NUM;
-			} /* if dual app, the last channel number*/
-			else {
-				if (ChNum >= (MaxChannels - 1))
-					return XAIE_INVALID_CHANNEL_NUM;
-			}
-		}
-		/* Trace S2MM is not suported in application B dual app mode*/
+		/* Trace S2MM is not suppored in DUAL App mode B*/
 		if (((TileType == XAIEGBL_TILE_TYPE_SHIMNOC) && (Dir == DMA_S2MM_TRACE)) &&
 			(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)) {
 				XAIE_ERROR("Trace S2MM is not suported in application B dual app mode\n");
@@ -1594,33 +1578,20 @@ AieRC XAie_DmaChannelResetAll(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	/* Reset MM2S */
 	MaxNumChannels = _XAie_DmaGetMaxNumChannels(DevInst, DmaMod, TileType, DMA_MM2S);
-	for(u8 i = 0U; i < MaxNumChannels; i++) {
-		/* Exclude non existing channles for AIE4 Memtile MM2S */
-		if ((_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) &&
-		    (TileType == XAIEGBL_TILE_TYPE_MEMTILE))
-			if ((i == ((MaxNumChannels / 2) - 1)) ||
-			    (i == (MaxNumChannels - 1)))
-				continue;
+	for(u8 i = 0U; i < MaxNumChannels; i++) {		
 		RC = XAie_DmaChannelReset(DevInst, Loc, i, DMA_MM2S, Reset);
 		if (RC != XAIE_OK) {
 			return RC;
 		}
-
 	}
+	
 	/* Reset S2MM */
 	MaxNumChannels = _XAie_DmaGetMaxNumChannels(DevInst, DmaMod, TileType, DMA_S2MM);
-	for(u8 i = 0U; i < MaxNumChannels; i++) {
-		/* Exclude non existing channles for AIE4 SHIM Tile S2MM */
-		if ((_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) &&
-		    (TileType == XAIEGBL_TILE_TYPE_SHIMNOC))
-			if ((i == ((MaxNumChannels / 2) - 1)) ||
-			    (i == (MaxNumChannels - 1)))
-				continue;
+	for(u8 i = 0U; i < MaxNumChannels; i++) {	
 		RC = XAie_DmaChannelReset(DevInst, Loc, i, DMA_S2MM, Reset);
 		if (RC != XAIE_OK) {
 			return RC;
 		}
-
 	}
 	return  XAIE_OK;
 }
@@ -1836,7 +1807,7 @@ AieRC XAie_DmaChannelPushBdToQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_BD_NUM;
 	}
 
-	RC = DmaMod->BdChValidity(BdNum, ChNum);
+	RC = DmaMod->BdChValidity(DmaMod, Dir, BdNum, ChNum);
 	if (RC != XAIE_OK) {
 		return RC;
 	}
@@ -2465,7 +2436,7 @@ AieRC XAie_DmaChannelSetStartQueueGeneric(XAie_DevInst *DevInst,
 			return XAIE_INVALID_BD_NUM;
 		}
 
-		RC = DmaMod->BdChValidity(StartBd, ChNum);
+		RC = DmaMod->BdChValidity(DmaMod, Dir, StartBd, ChNum);
 		if(RC != XAIE_OK) {
 			return RC;
 		}

@@ -2183,8 +2183,10 @@ AieRC _XAieMl_DmaWaitForBdTaskQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
 *		there is no restriction in AIE tile dma and shim dma.
 *
 ******************************************************************************/
-AieRC _XAieMl_DmaCheckBdChValidity(u8 BdNum, u8 ChNum)
+AieRC _XAieMl_DmaCheckBdChValidity(const XAie_DmaMod *DmaMod, XAie_DmaDirection Dir, u16 BdNum, u8 ChNum)
 {
+	(void)DmaMod;
+	(void)Dir;
 	(void)BdNum;
 	(void)ChNum;
 
@@ -2206,8 +2208,12 @@ AieRC _XAieMl_DmaCheckBdChValidity(u8 BdNum, u8 ChNum)
 * @note		Internal only. For AIEML Mem Tiles only.
 *
 ******************************************************************************/
-AieRC _XAieMl_MemTileDmaCheckBdChValidity(u8 BdNum, u8 ChNum)
+AieRC _XAieMl_MemTileDmaCheckBdChValidity(const XAie_DmaMod *DmaMod, XAie_DmaDirection Dir, u16 BdNum, u8 ChNum)
 {
+	(void)DmaMod;
+	(void)Dir;
+	
+	/* For AIE2 and AIE2P, even indexed channels can access the lower 24 BD and odd indexed channels can access the upper 24 BD */
 	if((BdNum < 24U) && ((ChNum % 2U) == 0U)) {
 		return XAIE_OK;
 	}

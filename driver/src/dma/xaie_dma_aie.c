@@ -1491,8 +1491,10 @@ AieRC _XAie_DmaGetChannelStatus(XAie_DevInst *DevInst, XAie_LocType Loc,
 *		there is no restriction in AIE.
 *
 ******************************************************************************/
-AieRC _XAie_DmaCheckBdChValidity(u8 BdNum, u8 ChNum)
+AieRC _XAie_DmaCheckBdChValidity(const XAie_DmaMod *DmaMod, XAie_DmaDirection Dir, u16 BdNum, u8 ChNum)
 {
+	(void)DmaMod;
+	(void)Dir;
 	(void)BdNum;
 	(void)ChNum;
 
