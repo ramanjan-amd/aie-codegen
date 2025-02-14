@@ -77,7 +77,7 @@ AieRC _XAie4_DmaMemTileCheckPaddingConfig(XAie_DmaDesc *DmaDesc)
 
 			if(PDesc[Dim].After != 0U) {
 				XAIE_ERROR("Padding after for dimension %u must"
-						" be 0 when wrap is 1\n", Dim);
+						" be 0 when wrap is 0\n", Dim);
 				return XAIE_INVALID_DMA_DESC;
 			}
 
@@ -498,7 +498,7 @@ AieRC _XAie4_DmaWaitForDone(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	if (Status != XAIE_OK) {
-		XAIE_DBG("Dma Wait Done Status poll time out\n");
+		XAIE_ERROR("Dma Wait Done Status poll time out\n");
 		return XAIE_ERR;
 	}
 
@@ -549,7 +549,7 @@ AieRC _XAie4_DmaWaitForBdTaskQueue(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	if (Status != XAIE_OK) {
-		XAIE_DBG("Wait for task queue timed out\n");
+		XAIE_ERROR("Wait for task queue timed out\n");
 		return XAIE_ERR;
 	}
 

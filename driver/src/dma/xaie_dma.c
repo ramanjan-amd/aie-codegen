@@ -265,12 +265,7 @@ static AieRC _XAie_DmaLockConfig(XAie_DmaDesc *DmaDesc, XAie_Lock Acq,
 	DmaMod = DmaDesc->DmaMod;
 	LockMod = DmaDesc->LockMod;
 	
-	if(_XAie_IsDeviceGenAIE4(DmaDesc->DevGen) &&
-	   (DmaDesc->AppMode == XAIE_DEVICE_SINGLE_APP_MODE) &&
-	   _XAie_IsTileResourceInSharedAddrSpace(DmaDesc->DevGen, DmaDesc->TileType))
-		NumLocks = DmaMod->NumLocks * 2;
-	else
-		NumLocks = DmaMod->NumLocks;
+	NumLocks = _XAie_GetMaxElementValue(DmaDesc->DevGen, DmaDesc->TileType,  DmaDesc->AppMode, LockMod->NumLocks);
 
 	if((Acq.LockId >= NumLocks) ||
 	   (Acq.LockVal > LockMod->LockValUpperBound) ||

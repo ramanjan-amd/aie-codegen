@@ -1427,7 +1427,7 @@ AieRC _XAie_DmaWaitForDone(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	if (Status != XAIE_OK) {
-		XAIE_DBG("Dma Wait Done Status poll time out\n");
+		XAIE_ERROR("Dma Wait Done Status poll time out\n");
 		return XAIE_ERR;
 	}
 

@@ -174,7 +174,7 @@ AieRC _XAie_CoreWaitForDone(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	if (Status != XAIE_OK) {
-		XAIE_DBG("Core Wait Done poll time out\n");
+		XAIE_ERROR("Core Wait Done poll time out\n");
 		return XAIE_CORE_STATUS_TIMEOUT;
 	}
 

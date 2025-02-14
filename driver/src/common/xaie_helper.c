@@ -3958,9 +3958,10 @@ u8 _XAie_IsDeviceGenSupportDualApp(u8 DevGen)
 * 			It is assumed that all parameters are valid for this.
 *
 *******************************************************************************/
-u8 _XAie_IsTileResourceInSharedAddrSpace(u8 DevGen, u8 TileType)
+u8 _XAie_IsTileResourceInSharedAddrSpace(u8 DevGen, u8 AppMode, u8 TileType)
 {
-	if (_XAie_IsDeviceGenAIE4(DevGen)) {
+	if ((_XAie_IsDeviceGenAIE4(DevGen) &&
+				AppMode == XAIE_DEVICE_SINGLE_APP_MODE)) {
 		switch(TileType) {
 			case XAIEGBL_TILE_TYPE_AIETILE:
 				return false;
@@ -4001,13 +4002,10 @@ u8 _XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode, u8 elementValue)
 		XAIE_ERROR("Invalid elementValue \n");
 		return XAIE_ERR;
 	}
-	if(_XAie_IsDeviceGenAIE4(DevGen) &&
-			(AppMode == XAIE_DEVICE_SINGLE_APP_MODE) && 
-			_XAie_IsTileResourceInSharedAddrSpace(DevGen, TileType)) {
+	if(_XAie_IsTileResourceInSharedAddrSpace(DevGen, AppMode, TileType))
 		return elementValue * 2;
-	} else {
+	else
 		return elementValue;
-	}		
 }
 
 /*****************************************************************************/

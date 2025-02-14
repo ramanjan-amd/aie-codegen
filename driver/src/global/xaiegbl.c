@@ -1229,11 +1229,8 @@ AieRC XAie_GetCtrlPktHndlrStatus(XAie_DevInst *DevInst, XAie_LocType Loc, u32 *S
 		return XAIE_ERR;
 	}
 
+	/* the control-packet handler of application B shall be disabled when in single-application mode */
 	RegAddr = CtrlPktMod->CtrlPktHndlrRegOff;
-	if (_XAie_IsTileResourceInSharedAddrSpace(DevInst->DevProp.DevGen, TileType) &&
-		(DevInst->AppMode == APPLICATION_B))
-		RegAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen,
-						CtrlPktMod->CtrlPktHndlrRegOff);
 
 	RC = XAie_Read32(DevInst, RegAddr, Status);
 	if (RC != XAIE_OK)

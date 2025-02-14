@@ -39,27 +39,6 @@
 
 /************************** Function Definitions *****************************/
 /*****************************************************************************/
-/**
-*
-* This API provides information whether a AIE4 device running in single app or not?
-*
-* @param	DevGen: device generation value.
-* @param	AppMode: current device appmode.
-*
-* @return	TRUE : if the device supports dual application mode
-* 			FALSE : if the device doesn't support dual application mode
-*
-* @note
-*
-*******************************************************************************/
-static inline u8 _XAie4_DeviceInSingleAppMode(u8 DevGen, u8 AppMode)
-{
-	if ((_XAie_IsDeviceGenAIE4(DevGen) && AppMode == XAIE_DEVICE_SINGLE_APP_MODE))
-		return true;
-	else
-		return false;
-}
-/*****************************************************************************/
 /* This API reads the given performance counter for the given tile.
 *
 * @param	DevInst: Device Instance
@@ -140,8 +119,7 @@ AieRC XAie_PerfCounterGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 		}
 		
 		/* when device is in single app mode and tile is mem/shim tile*/
-		if (_XAie_IsTileResourceInSharedAddrSpace(DevInst->DevProp.DevGen, TileType) &&
-					(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode))) {		
+		if (_XAie_IsTileResourceInSharedAddrSpace(DevInst->DevProp.DevGen, DevInst->AppMode, TileType)) {
 			CounterBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterBaseAddr);
 			CounterVal += PerfMod->MaxCounterVal;
 			for (u8 C = 0; C < PerfMod->MaxCounterVal; C++) {
@@ -151,13 +129,11 @@ AieRC XAie_PerfCounterGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 			}
 		}
 	} else {
-		if(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode)) {
-			if(Counter >= PerfMod->MaxCounterVal) {
-				CounterBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterBaseAddr);
-				Counter -= PerfMod->MaxCounterVal;
-			}
+		//For AIE4 device in single app mode, change the register space
+		if(Counter >= PerfMod->MaxCounterVal) {
+			CounterBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterBaseAddr);
+			Counter -= PerfMod->MaxCounterVal;
 		}
-		
 		CounterRegOffset = Counter * (u32)PerfMod->PerfCounterOffsetAdd;
 		
 		RC |= XAie_Read32(DevInst, CounterBaseAddr + CounterRegOffset, CounterVal);
@@ -235,11 +211,10 @@ AieRC XAie_PerfCounterGetOffset(XAie_DevInst *DevInst, XAie_LocType Loc,
 	CounterBaseAddr = XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col) +
 						PerfMod->PerfCounterBaseAddr;	
 	
-	if(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode)) {
-		if(Counter >= PerfMod->MaxCounterVal){
-			CounterBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterBaseAddr);
-			Counter -= PerfMod->MaxCounterVal;
-		}		
+	//For AIE4 device in single app mode, change the register space
+	if(Counter >= PerfMod->MaxCounterVal){
+		CounterBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterBaseAddr);
+		Counter -= PerfMod->MaxCounterVal;
 	}
 	
 	*Offset = CounterBaseAddr + (Counter * (u32)PerfMod->PerfCounterOffsetAdd);
@@ -329,13 +304,13 @@ AieRC XAie_PerfCounterControlSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 						PerfMod->PerfCtrlBaseAddr;		
 
 	/* Get offset address based on Counter */
-	if(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode)) {
-		if(Counter >= PerfMod->MaxCounterVal){
-			CtrlBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CtrlBaseAddr);
-			Counter -= PerfMod->MaxCounterVal;
-		}
-	}
 	
+	//For AIE4 device in single app mode, change the register space
+	if(Counter >= PerfMod->MaxCounterVal){
+		CtrlBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CtrlBaseAddr);
+		Counter -= PerfMod->MaxCounterVal;
+	}
+
 	CtrlRegOffset = (Counter / 2U * PerfMod->PerfCtrlOffsetAdd);
 
 	/* Compute mask for performance control register */
@@ -451,11 +426,10 @@ AieRC XAie_PerfCounterResetControlSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 						PerfMod->PerfCtrlResetBaseAddr;		
 
 	/* Get offset address based on Counter */
-	if(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode)) {
-		if(Counter >= PerfMod->MaxCounterVal){
-			ResetBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, ResetBaseAddr);
-			Counter -= PerfMod->MaxCounterVal;
-		}
+	//For AIE4 device in single app mode, change the register space
+	if(Counter >= PerfMod->MaxCounterVal){
+		ResetBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, ResetBaseAddr);
+		Counter -= PerfMod->MaxCounterVal;
 	}
 	
 	ResetRegOffset = (Counter / 4U * PerfMod->PerfResetOffsetAdd);
@@ -558,11 +532,10 @@ AieRC XAie_PerfCounterSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 						PerfMod->PerfCounterBaseAddr;	
 
 	/* Get offset address based on Counter */
-	if(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode)) {
-		if(Counter >= PerfMod->MaxCounterVal){
-			CounterBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterBaseAddr);
-			Counter -= PerfMod->MaxCounterVal;
-		}
+	//For AIE4 device in single app mode, change the register space
+	if(Counter >= PerfMod->MaxCounterVal){
+		CounterBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterBaseAddr);
+		Counter -= PerfMod->MaxCounterVal;
 	}
 	
 	CounterRegOffset = Counter * (u32)PerfMod->PerfCounterOffsetAdd;
@@ -639,11 +612,10 @@ AieRC XAie_PerfCounterEventValueSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 						PerfMod->PerfCounterEvtValBaseAddr;	
 
 	/* Get offset address based on Counter */
-	if(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode)) {
-		if(Counter >= PerfMod->MaxCounterVal){
-			CounterEvtValBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterEvtValBaseAddr);
-			Counter -= PerfMod->MaxCounterVal;
-		}		
+	//For AIE4 device in single app mode, change the register space
+	if(Counter >= PerfMod->MaxCounterVal){
+		CounterEvtValBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterEvtValBaseAddr);
+		Counter -= PerfMod->MaxCounterVal;
 	}
 	
 	CounterEvtValRegOffset = Counter * (u32)PerfMod->PerfCounterOffsetAdd;
@@ -908,11 +880,10 @@ AieRC XAie_PerfCounterGetControlConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 						PerfMod->PerfCtrlBaseAddr;		
 
 	/* Get offset address based on Counter */
-	if(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode)) {
-		if(Counter >= PerfMod->MaxCounterVal){
-			StartStopRegAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, StartStopRegAddr);
-			Counter -= PerfMod->MaxCounterVal;
-		}
+	//For AIE4 device in single app mode, change the register space
+	if(Counter >= PerfMod->MaxCounterVal){
+		StartStopRegAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, StartStopRegAddr);
+		Counter -= PerfMod->MaxCounterVal;
 	}
 	
 	StartStopRegOffset = (Counter / 2U * PerfMod->PerfCtrlOffsetAdd);
@@ -960,11 +931,10 @@ AieRC XAie_PerfCounterGetControlConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 						PerfMod->PerfCtrlResetBaseAddr;		
 
 	/* Get offset address based on Counter */
-	if(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode)) {
-		if(Counter >= PerfMod->MaxCounterVal){
-			ResetRegAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, ResetRegAddr);
-			Counter -= PerfMod->MaxCounterVal;
-		}
+	//For AIE4 device in single app mode, change the register space
+	if(Counter >= PerfMod->MaxCounterVal){
+		ResetRegAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, ResetRegAddr);
+		Counter -= PerfMod->MaxCounterVal;
 	}
 	
 	ResetRegOffset = (Counter / 4U *  PerfMod->PerfResetOffsetAdd);
@@ -1132,8 +1102,7 @@ AieRC XAie_PerfCounterSnapshotGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 		}
 
 		/* when device is in single app mode and tile is mem/shim tile*/
-		if (_XAie_IsTileResourceInSharedAddrSpace(DevInst->DevProp.DevGen, TileType) &&
-					(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode))) {
+		if (_XAie_IsTileResourceInSharedAddrSpace(DevInst->DevProp.DevGen, DevInst->AppMode, TileType)) {
 			CounterSsBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterSsBaseAddr);
 			CounterVal += PerfMod->MaxCounterVal;
 			for (u8 C = 0; C < PerfMod->MaxCounterVal; C++) {
@@ -1143,13 +1112,12 @@ AieRC XAie_PerfCounterSnapshotGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 			}
 		}
 	} else {
-		if(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode)) {
-			if(Counter >= PerfMod->MaxCounterVal){
-				CounterSsBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterSsBaseAddr);
-				Counter -= PerfMod->MaxCounterVal;
-			}				
-		} 
-			
+		//For AIE4 device in single app mode, change the register space
+		if(Counter >= PerfMod->MaxCounterVal){
+			CounterSsBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterSsBaseAddr);
+			Counter -= PerfMod->MaxCounterVal;
+		}
+
 		CounterSsRegOffset = Counter * (u32)PerfMod->PerfCounterOffsetAdd;
 
 		RC |= XAie_Read32(DevInst, CounterSsBaseAddr + CounterSsRegOffset, CounterVal);
@@ -1235,11 +1203,10 @@ AieRC XAie_PerfCounterSnapshotSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 						PerfMod->PerfCounterSsBaseAddr;	
 
 	/* Get offset address based on Counter */
-	if(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode)) {
-		if(Counter >= PerfMod->MaxCounterVal){
-			CounterSsBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterSsBaseAddr);
-			Counter -= PerfMod->MaxCounterVal;
-		}
+	//For AIE4 device in single app mode, change the register space
+	if(Counter >= PerfMod->MaxCounterVal){
+		CounterSsBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterSsBaseAddr);
+		Counter -= PerfMod->MaxCounterVal;
 	}
 	
 	CounterSsRegOffset = Counter * (u32)PerfMod->PerfCounterOffsetAdd;
@@ -1344,14 +1311,6 @@ AieRC XAie_PerfCounterSnapshotLoadEventSet(XAie_DevInst *DevInst, XAie_LocType L
 						PerfMod->PerfCounterSsLoadEvttBaseAddr;	
 
 	RC |= XAie_Write32(DevInst, CounterSsLoadEvtBaseAddr, IntSSLoadEventVal);
-
-	/* if device in single app and tile is mem/shim tile*/
-	if(_XAie_IsTileResourceInSharedAddrSpace(DevInst->DevProp.DevGen, TileType)  &&
-			(_XAie4_DeviceInSingleAppMode(DevInst->DevProp.DevGen, DevInst->AppMode))) {
-		CounterSsLoadEvtBaseAddr = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, CounterSsLoadEvtBaseAddr);
-
-		RC |= XAie_Write32(DevInst, CounterSsLoadEvtBaseAddr, IntSSLoadEventVal);
-	}
 
 	return RC;
 	

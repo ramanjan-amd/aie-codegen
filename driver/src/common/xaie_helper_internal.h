@@ -47,7 +47,7 @@ u8 _XAie_CountTrailingZeros(u32 value);
 /* Below are aie4 specific internal APIs*/
 u8 _XAie_IsDeviceGenAIE4(u8 DevGen);
 u8 _XAie_IsDeviceGenSupportDualApp(u8 DevGen);
-u8 _XAie_IsTileResourceInSharedAddrSpace(u8 DevGen, u8 TileType);
+u8 _XAie_IsTileResourceInSharedAddrSpace(u8 DevGen, u8 AppMode, u8 TileType);
 u8 _XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode,
 		u8 elementValue);
 u64 _XAie_ChangeRegisterSpace(u8 devGen, u64 regOffset);
