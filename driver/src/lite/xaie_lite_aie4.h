@@ -1416,7 +1416,7 @@ static inline AieRC _XAie_LAiePorConfiguration(XAie_DevInst *DevInst, XAie_PartP
 
 	/* Remove Isolation from all tiles on all sides */
 	for(u32 C=0; C < DevInst->NumCols; C++) {
-		for(u32 R=0; R < DevInst->NumCols; R++) {
+		for(u32 R=0; R < DevInst->NumRows; R++) {
 			if(R == XAIE_SHIM_ROW) {
 				RegAddr = _XAie_LGetTileAddr(R, C) + XAIE_PL_MOD_TILE_CNTR_REGOFF;
 				_XAie_LPartWrite32(DevInst, RegAddr, XAIE_DISABLE);
