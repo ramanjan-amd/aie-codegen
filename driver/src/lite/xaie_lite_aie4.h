@@ -1430,6 +1430,26 @@ static inline AieRC _XAie_LAiePorConfiguration(XAie_DevInst *DevInst, XAie_PartP
 		}
 	}
 
+	/* Toogle Array reset to put uC to Sleep */
+	/* Assert Array Reset */
+	RegVal = XAie_SetBitField(XAIE_ENABLE, XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_LSB,
+		XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_MASK);
+	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_MASK_REG, RegVal);
+
+	RegVal = XAie_SetBitField(XAIE_ENABLE, XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_LSB,
+		XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_MASK);
+	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_CONTROL_REG, RegVal);
+
+	/* Release Array Reset */
+	RegVal = XAie_SetBitField(XAIE_ENABLE, XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_LSB,
+		XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_MASK);
+	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_MASK_REG, RegVal);
+
+	RegVal = XAie_ClearBitField(XAIE_ENABLE, XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_LSB,
+			XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_MASK);
+	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_CONTROL_REG, RegVal);
+
+
 	/* Zeroize All uC modules */
 	/* FW team loads CERT before calling POR API. This results in clearing on uC PM and Simnow crash
 	   during Clear Context. Below Fix is a workaround to enable FW team to continue development

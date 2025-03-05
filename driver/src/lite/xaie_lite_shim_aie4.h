@@ -150,35 +150,15 @@ static inline u8 _XAie_MapColToHWErrIrqId(XAie_DevInst *DevInst,
 * @param        Enable: XAIE_ENABLE to enable shim clock buffer,
 *                       XAIE_DISABLE to disable.
 
-* @note         It is internal function to this file
+* @note         Not Applicable for AIE4 architecture
 *
 ******************************************************************************/
 static inline void _XAie_PrivilegeSetShimClk(XAie_DevInst *DevInst,
 					     XAie_LocType Loc, u8 Enable)
 {
-	u64 RegAddr;
-	u32 FldVal;
-
-	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) +
-		XAIE_SHIM_TILE_MOD_CLOCK_CONTROL_0_REGOFF;
-	FldVal = XAie_SetField(Enable,
-			XAIE_SHIM_TILE_MOD_CLOCK_CONTROL_0_CTE_CLOCK_ENABLE_LSB,
-			XAIE_SHIM_TILE_MOD_CLOCK_CONTROL_0_CTE_CLOCK_ENABLE_MASK);
-	FldVal |= XAie_SetField(Enable,
-			XAIE_SHIM_TILE_MOD_CLOCK_CONTROL_0_PL_INTERFACE_CLOCK_ENABLE_LSB,
-			XAIE_SHIM_TILE_MOD_CLOCK_CONTROL_0_PL_INTERFACE_CLOCK_ENABLE_MASK);
-
-	_XAie_LPartMaskWrite32(DevInst, RegAddr,
-		XAIE_SHIM_TILE_MOD_CLOCK_CONTROL_0_MASK, FldVal);
-
-	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) +
-		XAIE_SHIM_TILE_MOD_CLOCK_CONTROL_1_REGOFF;
-	FldVal = XAie_SetField(Enable,
-			XAIE_SHIM_TILE_NOC_MOD_CLOCK_CONTROL_1_CLOCK_ENABLE_LSB,
-			XAIE_SHIM_TILE_NOC_MOD_CLOCK_CONTROL_1_CLOCK_ENABLE_MASK);
-
-	_XAie_LPartMaskWrite32(DevInst, RegAddr,
-		XAIE_SHIM_TILE_MOD_CLOCK_CONTROL_1_MASK, FldVal);
+	(void)DevInst;
+	(void)Loc;
+	(void)Enable;
 
 }
 

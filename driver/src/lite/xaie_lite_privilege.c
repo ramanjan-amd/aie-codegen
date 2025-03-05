@@ -121,8 +121,11 @@ AieRC XAie_SetColumnClk(XAie_DevInst *DevInst, u8 Enable)
 
 		//This modifies column clk which affects all the aie and mem tile in the column.
 		_XAie_PrivilegeSetColClkBuf(DevInst, Loc, Enable);
-		//This modifies the clk in the shim tile
-		_XAie_PrivilegeSetShimClk(DevInst, Loc, Enable);
+		/* This modifies the clk in the shim tile
+		AIE4 device use XAie_TileClockControl API for modular clock control */
+		if (!(_XAie_LIsDeviceGenAIE4())) {
+			_XAie_PrivilegeSetShimClk(DevInst, Loc, Enable);
+		}
 	}
 	/* The NPI open/close aperture is defeatured in AIE4*/
 	if (!(_XAie_LIsDeviceGenAIE4())) {

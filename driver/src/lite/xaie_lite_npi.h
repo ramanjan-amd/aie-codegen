@@ -198,7 +198,7 @@ static inline void _XAie_LNpiSetMeIporReset(u8 RstEnable)
 
 	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_MASK_REG, RegVal);
 
-	RegVal = XAie_ClearBitField((u32)RstEnable, XAIE_NPI_PCSR_MASK_ME_IPOR_LSB,
+	RegVal = XAie_ClearBitField(RstEnable, XAIE_NPI_PCSR_MASK_ME_IPOR_LSB,
 			XAIE_NPI_PCSR_MASK_ME_IPOR_MASK);
 
 	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_CONTROL_REG, RegVal);
@@ -208,7 +208,7 @@ static inline void _XAie_LNpiSetMeIporReset(u8 RstEnable)
 			XAIE_NPI_PROT_REG_PCSR_INITSTATE_MASK);
 	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_MASK_REG, RegVal);
 
-	RegVal = XAie_ClearBitField((u32)RstEnable,  XAIE_NPI_PROT_REG_PCSR_INITSTATE_LSB,
+	RegVal = XAie_ClearBitField(RstEnable,  XAIE_NPI_PROT_REG_PCSR_INITSTATE_LSB,
 			XAIE_NPI_PROT_REG_PCSR_INITSTATE_MASK);
 	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_CONTROL_REG, RegVal);
 
@@ -217,7 +217,7 @@ static inline void _XAie_LNpiSetMeIporReset(u8 RstEnable)
 			XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_MASK);
 	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_MASK_REG, RegVal);
 
-	RegVal = XAie_ClearBitField((u32)RstEnable, XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_LSB,
+	RegVal = XAie_ClearBitField(RstEnable, XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_LSB,
 			XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_MASK);
 	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_CONTROL_REG, RegVal);
 }
