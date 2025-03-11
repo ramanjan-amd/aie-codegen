@@ -1410,7 +1410,8 @@ AieRC XAie_StrmSwDeterministicMergeConfig(XAie_DevInst *DevInst,
 {
 	AieRC RC;
 	u8 TileType, SlvIdx;
-	u8 MaxNumPorts, MaxArbitors;
+	u8 MaxNumPorts;
+	u16 MaxArbitors;
 	u32 RegVal, Mask;
 	u64 RegAddr = 0;
 	const XAie_StrmMod *StrmMod;
@@ -1542,7 +1543,7 @@ static AieRC _XAie_StrmSwDeterministicMergeCtrl(XAie_DevInst *DevInst,
 		XAie_LocType Loc, u8 Arbitor, u8 Enable)
 {
 	u8 TileType;
-	u8 MaxArbitors;
+	u16 MaxArbitors;
 	u32 RegVal;
 	u64 RegAddr = 0;
 	const XAie_StrmMod *StrmMod;

@@ -3995,10 +3995,9 @@ u8 _XAie_IsTileResourceInSharedAddrSpace(u8 DevGen, u8 AppMode, u8 TileType)
 * 			It is asssumed that all parameters are valid for this function
 *
 *******************************************************************************/
-u8 _XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode, u8 elementValue)
+u16 _XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode, u16 elementValue)
 {
-	if(elementValue > UCHAR_MAX/2 )
-	{
+	if(elementValue > UINT16_MAX/2 ) {
 		XAIE_ERROR("Invalid elementValue \n");
 		return XAIE_ERR;
 	}
@@ -4025,7 +4024,7 @@ u8 _XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode, u8 elementValue)
 * 			It is asssumed that all parameters are valid for this function
 *
 *******************************************************************************/
-u8 XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode, u8 elementValue)
+u16 XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode, u16 elementValue)
 {
 	return _XAie_GetMaxElementValue(DevGen, TileType, AppMode, elementValue);
 }

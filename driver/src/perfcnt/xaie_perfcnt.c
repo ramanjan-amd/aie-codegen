@@ -66,7 +66,7 @@ AieRC XAie_PerfCounterGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u32 CounterRegOffset;
 	u8 TileType;
 	AieRC RC;
-	u8 MaxCounterVal;
+	u16 MaxCounterVal;
 	const XAie_PerfMod *PerfMod;
 
 	if((DevInst == XAIE_NULL) || (CounterVal == XAIE_NULL) ||
@@ -166,7 +166,7 @@ AieRC XAie_PerfCounterGetOffset(XAie_DevInst *DevInst, XAie_LocType Loc,
 {
 	u64 CounterBaseAddr;
 	u8 TileType;
-	u32 MaxCounterVal;
+	u16 MaxCounterVal;
 	AieRC RC;
 	const XAie_PerfMod *PerfMod;
 
@@ -251,7 +251,7 @@ AieRC XAie_PerfCounterControlSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u8 TileType;
 	u16 IntStartEvent, IntStopEvent;
 	AieRC RC;
-	u32 MaxCounterVal;
+	u16 MaxCounterVal;
 	const XAie_PerfMod *PerfMod;
 
 	if((DevInst == XAIE_NULL) ||
@@ -375,7 +375,7 @@ AieRC XAie_PerfCounterResetControlSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u8 TileType;
 	u16 IntResetEvent;
 	AieRC RC;
-	u32 MaxCounterVal;	
+	u16 MaxCounterVal;	
 	const XAie_PerfMod *PerfMod;
 	
 	if((DevInst == XAIE_NULL) ||
@@ -487,7 +487,7 @@ AieRC XAie_PerfCounterSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u64 CounterBaseAddr;
 	u8 TileType;
 	AieRC RC;
-	u32 MaxCounterVal;
+	u16 MaxCounterVal;
 	const XAie_PerfMod *PerfMod;
 
 	if((DevInst == XAIE_NULL) ||
@@ -567,7 +567,7 @@ AieRC XAie_PerfCounterEventValueSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u64 CounterEvtValBaseAddr;
 	u8 TileType;
 	AieRC RC;
-	u32 MaxCounterVal;
+	u16 MaxCounterVal;
 	const XAie_PerfMod *PerfMod;
 
 	if((DevInst == XAIE_NULL) ||
@@ -829,7 +829,7 @@ AieRC XAie_PerfCounterGetControlConfig(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u64 StartStopRegAddr, ResetRegAddr;
 	u8 TileType;
 	AieRC RC;
-	u32 MaxCounterVal;
+	u16 MaxCounterVal;
 	const XAie_PerfMod *PerfMod;
 
 	if((DevInst == XAIE_NULL) ||
@@ -1043,7 +1043,7 @@ AieRC XAie_PerfCounterSnapshotGet(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u32 CounterSsRegOffset;
 	u8 TileType;
 	AieRC RC;
-	u8 MaxCounterVal;
+	u16 MaxCounterVal;
 	const XAie_PerfMod *PerfMod;
 
 	if((DevInst == XAIE_NULL) || (CounterVal == XAIE_NULL) ||
@@ -1153,7 +1153,7 @@ AieRC XAie_PerfCounterSnapshotSet(XAie_DevInst *DevInst, XAie_LocType Loc,
 	u64 CounterSsBaseAddr;
 	u8 TileType;
 	AieRC RC;
-	u32 MaxCounterVal;
+	u16 MaxCounterVal;
 	const XAie_PerfMod *PerfMod;
 
 	if((DevInst == XAIE_NULL) ||

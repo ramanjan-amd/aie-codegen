@@ -191,7 +191,7 @@ XAIE_AIG_EXPORT u64 XAie_GetTileAddr(XAie_DevInst *DevInst, u8 R, u8 C);
 /* AIE4 Specific global APIs*/
 XAIE_AIG_EXPORT u8 XAie_IsTileTypeAndModuleSupportForEvents(XAie_DevInst* DevInst,
 							XAie_LocType Loc, XAie_ModuleType Module);
-XAIE_AIG_EXPORT	u8 XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode, u8 elementValue);
+XAIE_AIG_EXPORT	u16 XAie_GetMaxElementValue(u8 DevGen, u8 TileType, u8 AppMode, u16 elementValue);
 XAIE_AIG_EXPORT u8 XAie_IsDeviceSupportsL1Interrupt(u8 DevGen);
 XAIE_AIG_EXPORT u8 XAie_GetComboEventsNumber(XAie_DevInst* DevInst, u8 TileType, XAie_ModuleType Module);
 XAIE_AIG_EXPORT u8 XAie_IsFeatureSupportCheck(u8 DevGen, u8 Feature);

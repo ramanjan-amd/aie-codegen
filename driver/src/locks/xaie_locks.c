@@ -62,7 +62,7 @@ AieRC XAie_LockAcquire(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lock,
 {
 	u8  TileType;
 	const XAie_LockMod *LockMod;
-	u8 MaxLockId;
+	u16 MaxLockId;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -121,7 +121,7 @@ AieRC XAie_LockAcquireBusy(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lo
 {
 	u8  TileType;
 	const XAie_LockMod *LockMod;
-	u8 MaxLockId;
+	u16 MaxLockId;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -180,7 +180,7 @@ AieRC XAie_LockRelease(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lock,
 {
 	u8  TileType;
 	const XAie_LockMod *LockMod;
-	u8 MaxLockId;
+	u16 MaxLockId;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -240,7 +240,7 @@ AieRC XAie_LockReleaseBusy(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lo
 {
 	u8  TileType;
 	const XAie_LockMod *LockMod;
-	u8 MaxLockId;
+	u16 MaxLockId;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -290,7 +290,7 @@ AieRC XAie_LockSetValue(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lock)
 {
 	u8  TileType;
 	const XAie_LockMod *LockMod;
-    u8 MaxLockId;
+    u16 MaxLockId;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -336,7 +336,7 @@ AieRC XAie_LockGetValue(XAie_DevInst *DevInst, XAie_LocType Loc, XAie_Lock Lock,
 {
 	u8  TileType;
 	const XAie_LockMod *LockMod;
-    u8 MaxLocKId;
+    u16 MaxLocKId;
 
 	if((DevInst == XAIE_NULL) ||
 			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {

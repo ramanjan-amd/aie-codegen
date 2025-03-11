@@ -70,13 +70,19 @@ static inline u8 _XAie_DmaTileAndChannelDirSupportsPvtBuffPoolBds(u8 DevGen,  u8
 }
 static inline u8 _XAie_DmaGetSharedMaxNumBds(const XAie_DmaMod *DmaMod, u8 DevGen, u8 TileType,
 									u8 AppMode)
-{	
-	if (_XAie_IsDeviceGenAIE4(DevGen)) {		
-			return _XAie_GetMaxElementValue(DevGen, TileType, AppMode, DmaMod->NumBds);
+{
+	u16 MaxNumBds = 0;
+	if (_XAie_IsDeviceGenAIE4(DevGen)) {
+		MaxNumBds = _XAie_GetMaxElementValue(DevGen, TileType, AppMode, (u16)DmaMod->NumBds);
+		if(MaxNumBds > UINT8_MAX) {
+			XAIE_ERROR("Invalid MaxNumBds \n");
+			return XAIE_ERR;
+		}
+		return (u8)MaxNumBds;
 	} else {
 		/* For Legacy Specs (<AIE4) */
 		return DmaMod->NumBds;
-	}	
+	}
 }
 
 static inline u8 _XAie_DmaGetPrivateMaxNumBds(const XAie_DmaMod *DmaMod, u8 DevGen, u8 TileType,
@@ -116,6 +122,7 @@ u8 _XAie_DmaGetMaxNumChannels(XAie_DevInst *DevInst, const XAie_DmaMod *DmaMod,
 				    u8 TileType, XAie_DmaDirection Dir)
 {
 	u8 NumChannels = 0;
+	u16 NumChannels_loc = 0;
 
 	if (_XAie_IsDeviceGenAIE4(DevInst->DevProp.DevGen)) {
 		switch (Dir) {
@@ -136,8 +143,14 @@ u8 _XAie_DmaGetMaxNumChannels(XAie_DevInst *DevInst, const XAie_DmaMod *DmaMod,
 				break;
 		}
 		/* Trace S2MM is not suppored in DUAL App mode B*/
-		if(Dir != DMA_S2MM_TRACE)
-			return _XAie_GetMaxElementValue(DevInst->DevProp.DevGen, TileType, DevInst->AppMode, NumChannels);
+		if(Dir != DMA_S2MM_TRACE) {
+			NumChannels_loc = _XAie_GetMaxElementValue(DevInst->DevProp.DevGen, TileType, DevInst->AppMode, NumChannels);
+			if(NumChannels_loc > UINT8_MAX) {
+				XAIE_ERROR("Invalid MaxNumChannels \n");
+				return XAIE_ERR;
+			}
+			return (u8)NumChannels_loc;
+		}	
 		else
 			return NumChannels;
 	} else {
@@ -265,7 +278,7 @@ static AieRC _XAie_DmaLockConfig(XAie_DmaDesc *DmaDesc, XAie_Lock Acq,
 	DmaMod = DmaDesc->DmaMod;
 	LockMod = DmaDesc->LockMod;
 	
-	NumLocks = _XAie_GetMaxElementValue(DmaDesc->DevGen, DmaDesc->TileType,  DmaDesc->AppMode, LockMod->NumLocks);
+	NumLocks = _XAie_GetMaxElementValue(DmaDesc->DevGen, DmaDesc->TileType,  DmaDesc->AppMode, DmaMod->NumLocks);
 
 	if((Acq.LockId >= NumLocks) ||
 	   (Acq.LockVal > LockMod->LockValUpperBound) ||
