@@ -57,7 +57,7 @@ namespace xaiefal {
 		 * group event enabling setting is the same as what's been
 		 * reserved.
 		 */
-		AieRC attachHandle(const XAieGroupEventHandle *Hid, uint32_t Comp) {
+		AieRC attachHandle(const XAieGroupEventHandle *Hid, uint64_t Comp) {
 			AieRC RC;
 
 			_XAIEFAL_MUTEX_ACQUIRE(mLock);
@@ -232,7 +232,7 @@ namespace xaiefal {
 		}
 	private:
 		XAie_Events GroupEvent; /**< group event */
-		uint32_t GroupComposition; /**< group event configuration */
+		uint64_t GroupComposition; /**< group event configuration */
 		_XAIEFAL_MUTEX_DECLARE(mLock); /**< group config mutex lock */
 		std::map<const XAieGroupEventHandle *, bool> Handles; /**< Group events handles */
 
@@ -265,13 +265,19 @@ namespace xaiefal {
 			return RC;
 		}
 		AieRC _start() {
-			uint32_t lConfig = GroupComposition;
+			uint64_t lConfig = GroupComposition;
 
 			if (lConfig == 0) {
 				lConfig = 0xFFFFFFFFU;
 			}
-			return XAie_EventGroupControl(dev(), Loc, Mod, GroupEvent,
-					lConfig);
+
+			if(!(XAie_IsFeatureSupportCheck(dev()->DevProp.DevGen, BITMAP64_GROUPEVENT_SUPPORT))) {
+				return XAie_EventGroupControl(dev(), Loc, Mod, GroupEvent,
+						(u32)(lConfig & 0xFFFFFFFFU));
+			} else {
+				return XAie_EventGroupControl_64BitMap(dev(), Loc, Mod, GroupEvent,
+						lConfig);
+			}
 		}
 		AieRC _stop() {
 			return XAie_EventGroupReset(dev(), Loc, Mod, GroupEvent);
@@ -294,7 +300,7 @@ namespace xaiefal {
 		static AieRC getGroupId(std::shared_ptr<XAieDevHandle> DevHd,
 				XAie_ModuleType Module, XAie_Events Event, uint32_t &RscId) {
 			uint32_t i, *EIds;
-			uint32_t EIdsTotal;
+			uint32_t EIdsTotal = 0;
 			AieRC RC;
 
 			if (Module == XAIE_CORE_MOD) {
@@ -307,9 +313,11 @@ namespace xaiefal {
 					EIdsTotal = sizeof(DevHd->XAieGroupEventMapMemTile)/
 						sizeof(DevHd->XAieGroupEventMapMemTile[0]);
 				} else {
-					EIds = DevHd->XAieGroupEventMapMem;
-					EIdsTotal = sizeof(DevHd->XAieGroupEventMapMem)/
-						sizeof(DevHd->XAieGroupEventMapMem[0]);
+					if(!XAie_IsFeatureSupportCheck(DevHd->dev()->DevProp.DevGen, NO_MEM_MOD_IN_AIE_TILE)) {
+						EIds = DevHd->XAieGroupEventMapMem;
+						EIdsTotal = sizeof(DevHd->XAieGroupEventMapMem)/
+							sizeof(DevHd->XAieGroupEventMapMem[0]);
+					}
 				}
 			} else {
 				EIds = DevHd->XAieGroupEventMapPl;
@@ -356,7 +364,7 @@ namespace xaiefal {
 		 * If the events bits is set, when the corresponding events
 		 * are set, the group event will set.
 		 */
-		void setGroupEvents(uint32_t Comp) {
+		void setGroupEvents(uint64_t Comp) {
 			GroupComposition = Comp;
 		}
 
@@ -391,6 +399,6 @@ namespace xaiefal {
 		}
 	private:
 		std::shared_ptr<XAieGroupEvent> GroupEventPtr; /**< group event reference */
-		uint32_t GroupComposition; /**< group event configuration */
+		uint64_t GroupComposition; /**< group event configuration */
 	};
 }

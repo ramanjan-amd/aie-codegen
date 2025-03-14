@@ -1477,7 +1477,7 @@ AieRC XAie_EventGroupControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 * @note		None.
 *
 ******************************************************************************/
-AieRC XAie4_EventGroupControl(XAie_DevInst* DevInst, XAie_LocType Loc,
+AieRC XAie_EventGroupControl_64BitMap(XAie_DevInst* DevInst, XAie_LocType Loc,
 	XAie_ModuleType Module, XAie_Events GroupEvent, u64 GroupBitMap)
 {
 	u8 TileType;

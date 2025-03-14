@@ -1203,7 +1203,7 @@ XAIE_AIG_EXPORT AieRC XAie_EventBroadcastUnblockDir(XAie_DevInst *DevInst, XAie_
 		u8 Dir);
 XAIE_AIG_EXPORT AieRC XAie_EventGroupControl(XAie_DevInst *DevInst, XAie_LocType Loc,
 		XAie_ModuleType Module, XAie_Events GroupEvent, u32 GroupBitMap);
-XAIE_AIG_EXPORT AieRC XAie4_EventGroupControl(XAie_DevInst* DevInst, XAie_LocType Loc,
+XAIE_AIG_EXPORT AieRC XAie_EventGroupControl_64BitMap(XAie_DevInst* DevInst, XAie_LocType Loc,
 	XAie_ModuleType Module, XAie_Events GroupEvent, u64 GroupBitMap);
 XAIE_AIG_EXPORT AieRC XAie_EventGroupReset(XAie_DevInst *DevInst, XAie_LocType Loc,
 		XAie_ModuleType Module, XAie_Events GroupEvent);
