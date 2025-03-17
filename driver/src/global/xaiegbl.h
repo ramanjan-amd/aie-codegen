@@ -397,8 +397,8 @@ typedef union {
 } XAie_MultiDimDesc;
 
 typedef struct {
-	u8 Before;
-	u8 After;
+	u16 Before;
+	u16 After;
 } XAie_PadDesc;
 
 typedef struct {

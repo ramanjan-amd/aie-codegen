@@ -50,6 +50,7 @@
 #define XAIE_DMA_WAITFORDONE_DEF_WAIT_TIME_US		1000000U
 
 #define XAIE_DMA_PAD_WORDS_MAX				0x3FU /* 6 bits */
+#define XAIE4_DMA_PAD_WORDS_MAX				0xFFU /* 8 bits */
 
 /************************** Function Definitions *****************************/
 static inline u8 _XAie_DmaTileAndChannelDirSupportsPvtBuffPoolBds(u8 DevGen,  u8 TileType,
@@ -2838,20 +2839,31 @@ AieRC XAie_DmaSetPadding(XAie_DmaDesc *DmaDesc, XAie_DmaPadTensor *PadTensor)
 		return XAIE_FEATURE_NOT_SUPPORTED;
 	}
 
-	/*
-	 * Check for before and after padding values overflow.
-	 * The max number of words that can be padded for dimension 0, 1 and 2
-	 * are 6 bits, 5 bits and 4 bits wide, respectively.
-	 */
+	// Check for before and after padding values overflow.
 	for(u8 i = 0U; i < PadTensor->NumDim; i++) {
-		u8 Before = PadTensor->PadDesc[i].Before;
-		u8 After = PadTensor->PadDesc[i].After;
-		if((After > (XAIE_DMA_PAD_WORDS_MAX >> i)) ||
-				(Before > (XAIE_DMA_PAD_WORDS_MAX >> i))) {
-			XAIE_ERROR("Padding for dimension %d must be less "
-					"than %d\n", i,
-					XAIE_DMA_PAD_WORDS_MAX >> i);
-			return XAIE_INVALID_ARGS;
+		u16 Before = PadTensor->PadDesc[i].Before;
+		u16 After = PadTensor->PadDesc[i].After;
+
+		if (!(_XAie_IsDeviceGenAIE4(DmaDesc->DevGen))) {
+			/* The max number of words that can be padded for dimension 0, 1 and 2
+			* are 6 bits, 5 bits and 4 bits wide, respectively for AIE2P devices */
+			if((After > (XAIE_DMA_PAD_WORDS_MAX >> i)) ||
+					(Before > (XAIE_DMA_PAD_WORDS_MAX >> i))) {
+						XAIE_ERROR("Before %d or After %d Padding for dimension %d must be less "
+							"than or equal %d\n", Before, After, i,
+							XAIE_DMA_PAD_WORDS_MAX >> i);
+				return XAIE_INVALID_ARGS;
+			}
+		} else {
+			/* The max number of words that can be padded for dimension 0, 1 and 2
+			* are 8 bits only in AIE4 */
+			if((After > XAIE4_DMA_PAD_WORDS_MAX) ||
+			(Before > XAIE4_DMA_PAD_WORDS_MAX)) {
+				XAIE_ERROR("Before %d or After %d Padding for dimension %d must be less "
+					"than or equal %d\n", Before, After, i,
+					XAIE4_DMA_PAD_WORDS_MAX);
+				return XAIE_INVALID_ARGS;
+			}
 		}
 	}
 
@@ -2890,8 +2902,9 @@ AieRC XAie_DmaSetZeroPadding(XAie_DmaDesc *DmaDesc, u8 Dim,
 		return XAIE_INVALID_ARGS;
 	}
 
+	/* TODO: Raman  zero-padding is not supported in AIE2P and AIE4 */
 	if (_XAie_IsDeviceGenAIE4(DmaDesc->DevGen)) {
-		XAIE_ERROR("DevGen = %d, doesn't support Zeropadding, use SetPadValue\n",DmaDesc->DevGen);
+		XAIE_ERROR("DevGen = %d, doesn't support Zeropadding, use XAie_DmaSetPadValue\n", DmaDesc->DevGen);
 		return XAIE_FEATURE_NOT_SUPPORTED;
 	}
 
