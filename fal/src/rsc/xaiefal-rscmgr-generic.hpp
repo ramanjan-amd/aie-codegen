@@ -97,6 +97,14 @@ namespace xaiefal {
 					" Invalid Location/Module for request" << std::endl;
 				return XAIE_INVALID_ARGS;
 			}
+			/*Check for invalid combination in AIE4 (AIE_TILE, MEM_MOD)*/
+			if ((XAie_IsFeatureSupportCheck(dev()->DevProp.DevGen,
+					NO_MEM_MOD_IN_AIE_TILE)) && (RscReq.Mod == XAIE_MEM_MOD) &&
+					(TileType == XAIEGBL_TILE_TYPE_AIETILE) ) {
+				Logger::log(LogLevel::FAL_ERROR) << __func__ <<
+					" Invalid TileType/Module for request" << std::endl;
+				return XAIE_INVALID_ARGS;
+			}
 
 			StaticOffset = getStaticOff(RscReq.Loc, RscReq.Mod, RscReq.RscType);
 			StartBit = getStartBit(RscReq.Loc, RscReq.Mod, RscReq.RscType);
@@ -141,6 +149,14 @@ namespace xaiefal {
 					TileType >= XAIEGBL_TILE_TYPE_MAX) {
 				Logger::log(LogLevel::FAL_WARN) << __func__ <<
 					" Invalid Location/Module for request" << std::endl;
+				return XAIE_INVALID_ARGS;
+			}
+			/*Check for invalid combination in AIE4 (AIE_TILE, MEM_MOD)*/
+			if ((XAie_IsFeatureSupportCheck(dev()->DevProp.DevGen,
+					NO_MEM_MOD_IN_AIE_TILE)) && (RscReq.Mod == XAIE_MEM_MOD) &&
+					(TileType == XAIEGBL_TILE_TYPE_AIETILE) ) {
+				Logger::log(LogLevel::FAL_ERROR) << __func__ <<
+					" Invalid TileType/Module for request" << std::endl;
 				return XAIE_INVALID_ARGS;
 			}
 
@@ -188,6 +204,14 @@ namespace xaiefal {
 					TileType >= XAIEGBL_TILE_TYPE_MAX) {
 				Logger::log(LogLevel::FAL_WARN) << __func__ <<
 					" Invalid Location/Module for request" << std::endl;
+				return XAIE_INVALID_ARGS;
+			}
+			/*Check for invalid combination in AIE4 (AIE_TILE, MEM_MOD)*/
+			if ((XAie_IsFeatureSupportCheck(dev()->DevProp.DevGen,
+					NO_MEM_MOD_IN_AIE_TILE)) && (RscReq[0].Mod == XAIE_MEM_MOD) &&
+					(TileType == XAIEGBL_TILE_TYPE_AIETILE) ) {
+				Logger::log(LogLevel::FAL_ERROR) << __func__ <<
+					" Invalid TileType/Module for request" << std::endl;
 				return XAIE_INVALID_ARGS;
 			}
 
@@ -275,6 +299,14 @@ namespace xaiefal {
 						" Invalid Tile Type" << std::endl;
 					return XAIE_INVALID_TILE;
 				}
+				/*Check for invalid combination in AIE4 (AIE_TILE, MEM_MOD)*/
+				if ((XAie_IsFeatureSupportCheck(dev()->DevProp.DevGen,
+						NO_MEM_MOD_IN_AIE_TILE)) && (RscReq[i].Mod == XAIE_MEM_MOD) &&
+						(TType == XAIEGBL_TILE_TYPE_AIETILE) ) {
+					Logger::log(LogLevel::FAL_ERROR) << __func__ <<
+						" Invalid TileType/Module for request" << std::endl;
+					return XAIE_INVALID_ARGS;
+				}
 				auto Bitmap = RscMaps[TType].Bitmaps[RscReq[i].RscType];
 				uint32_t StartBit, rBit, rIndex;
 
@@ -305,6 +337,14 @@ namespace xaiefal {
 					TileType >= XAIEGBL_TILE_TYPE_MAX) {
 				Logger::log(LogLevel::FAL_WARN) << __func__ <<
 					" Invalid Location/Module for release" << std::endl;
+				return XAIE_INVALID_ARGS;
+			}
+			/*Check for invalid combination in AIE4 (AIE_TILE, MEM_MOD)*/
+			if ((XAie_IsFeatureSupportCheck(dev()->DevProp.DevGen,
+					NO_MEM_MOD_IN_AIE_TILE)) && (RscRel.Mod == XAIE_MEM_MOD) &&
+					(TileType == XAIEGBL_TILE_TYPE_AIETILE) ) {
+				Logger::log(LogLevel::FAL_ERROR) << __func__ <<
+					" Invalid TileType/Module for request" << std::endl;
 				return XAIE_INVALID_ARGS;
 			}
 
@@ -392,6 +432,14 @@ namespace xaiefal {
 						<< std::endl;
 					return XAIE_INVALID_ARGS;
 				}
+				/*Check for invalid combination in AIE4 (AIE_TILE, MEM_MOD)*/
+				if ((XAie_IsFeatureSupportCheck(dev()->DevProp.DevGen,
+						NO_MEM_MOD_IN_AIE_TILE)) && (Mod == XAIE_MEM_MOD) &&
+						(TileType == XAIEGBL_TILE_TYPE_AIETILE) ) {
+					Logger::log(LogLevel::FAL_ERROR) << __func__ <<
+						" Invalid TileType/Module for request" << std::endl;
+					return XAIE_INVALID_ARGS;
+				}
 
 				MaxRscId = getMaxRsc(Loc, Mod, Type);
 				StartBit = getStartBit(Loc, Mod, Type);
@@ -463,6 +511,7 @@ namespace xaiefal {
 
 						if (MaxRsc->at(i).second == 0U)
 							continue;
+
 
 						Mod = estimateModfromIndex(TType, i);
 						Size = roundUp(NumRows * dev()->NumCols *
@@ -637,10 +686,12 @@ namespace xaiefal {
 						uint32_t numRscs = 0;
 
 						/* Mem Module */
-						numRscs = getTotalRscs(TType, XAIE_MEM_MOD,
-								static_cast<XAieRscType>(RType));
-						MaxRsc->push_back(std::make_pair(XAIE_MEM_MOD, numRscs));
-						TotalRscs += numRscs;
+						if(!XAie_IsFeatureSupportCheck(dev()->DevProp.DevGen, NO_MEM_MOD_IN_AIE_TILE)) {
+							numRscs = getTotalRscs(TType, XAIE_MEM_MOD,
+									static_cast<XAieRscType>(RType));
+							MaxRsc->push_back(std::make_pair(XAIE_MEM_MOD, numRscs));
+							TotalRscs += numRscs;
+						}
 						/* Core Module */
 						numRscs = getTotalRscs(TType, XAIE_CORE_MOD,
 								static_cast<XAieRscType>(RType));
@@ -719,7 +770,6 @@ namespace xaiefal {
 			StartRow = XAie_GetStartRow(dev(), TileType);
 			NumRows = XAie_GetNumRows(dev(), TileType);
 			NumCols = dev()->NumCols;
-
 			if (Mod == XAIE_CORE_MOD)
 				ModOffset = getMaxRsc(Loc, XAIE_MEM_MOD, Type) *
 					NumCols * NumRows * 2U;
@@ -779,6 +829,14 @@ namespace xaiefal {
 						TType >= XAIEGBL_TILE_TYPE_MAX) {
 					Logger::log(LogLevel::FAL_WARN) << __func__ <<
 						" Invalid Location/Module for request" << std::endl;
+					return XAIE_RSC_ID_ANY;
+				}
+				/*Check for invalid combination in AIE4 (AIE_TILE, MEM_MOD)*/
+				if ((XAie_IsFeatureSupportCheck(dev()->DevProp.DevGen,
+						NO_MEM_MOD_IN_AIE_TILE)) && (rsc.Mod == XAIE_MEM_MOD) &&
+						(TType == XAIEGBL_TILE_TYPE_AIETILE) ) {
+					Logger::log(LogLevel::FAL_ERROR) << __func__ <<
+						" Invalid TileType/Module for request" << std::endl;
 					return XAIE_RSC_ID_ANY;
 				}
 
@@ -876,8 +934,10 @@ namespace xaiefal {
 				TType = XAie_GetTileTypefromLoc(dev(), loc);
 				Rsc.Loc = loc;
 				if (TType == XAIEGBL_TILE_TYPE_AIETILE) {
-					Rsc.Mod = XAIE_MEM_MOD;
-					vRscs.push_back(Rsc);
+					if(!XAie_IsFeatureSupportCheck(dev()->DevProp.DevGen, NO_MEM_MOD_IN_AIE_TILE)) {
+						Rsc.Mod = XAIE_MEM_MOD;
+						vRscs.push_back(Rsc);
+					}
 					Rsc.Mod = XAIE_CORE_MOD;
 					vRscs.push_back(Rsc);
 				} else if (TType == XAIEGBL_TILE_TYPE_MEMTILE) {
