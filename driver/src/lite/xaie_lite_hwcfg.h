@@ -32,6 +32,9 @@
 #define XAIE_LITE_AIE4_AIE_TILE_SHIFT_OFFSET 4
 #define XAIE_LITE_AIE4_MEM_TILE_SHIFT_OFFSET 5
 
+#define IPU_AIE_BASEADDR 0x20000000000
+#define IPU_AIE_NPI_ADDR 0xF70A0000
+
 /***************************** Include Files *********************************/
 /************************** Constant Definitions *****************************/
 #if XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE
@@ -276,18 +279,24 @@
 #define XAIE_MEM_TILE_NUM_LOCKS 	32
 #define XAIE_SHIM_NUM_LOCKS     	16
 
-#define XAIE_TILE_DMA_NUM_CH		2U
-#define XAIE_MEM_TILE_DMA_NUM_CH	6U
-#define XAIE_SHIM_DMA_NUM_CH		2U
+#define XAIE_TILE_DMA_NUM_CH		3U
+#define XAIE_TILE_DMA_MM2S_NUM_CH	1U
+#define XAIE_TILE_DMA_S2MM_NUM_CH	2U
+
+#define XAIE_MEM_TILE_DMA_MM2S_NUM_CH	10U
+#define XAIE_MEM_TILE_DMA_S2MM_NUM_CH	8U
+
+#define XAIE_SHIM_DMA_S2MM_NUM_CH	2U
+#define XAIE_SHIM_DMA_MM2S_NUM_CH	4U
 
 #define XAIE_COL_SHIFT			25
 #define XAIE_ROW_SHIFT			20
 #define XAIE_SHIM_ROW			0
-#define XAIE_SHIM_NUM_ROWS          1
+#define XAIE_SHIM_NUM_ROWS          	1
 #define XAIE_MEM_TILE_ROW_START		1
 #define XAIE_MEM_TILE_NUM_ROWS		1
-#define XAIE_AIE_TILE_ROW_START     2
-#define XAIE_AIE_TILE_NUM_ROWS      4
+#define XAIE_AIE_TILE_ROW_START     	2
+#define XAIE_AIE_TILE_NUM_ROWS      	4
 
 #define XAIE_CORE_TILE_NUM_EVENT_STATUS_REGS    8
 #define XAIE_MEM_TILE_NUM_EVENT_STATUS_REGS     7

@@ -63,7 +63,14 @@ typedef struct {
 /* Data structure to capture the mem tile status */
 #if (XAIE_DEV_SINGLE_GEN != XAIE_DEV_GEN_AIE)
 typedef struct {
+#if ((XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE4) || \
+           (XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE4_MEDUSA) || \
+           (XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE4_SOUNDWAVE))
+	u32 DmaMm2sStatus[XAIE_MEM_TILE_DMA_MM2S_NUM_CH];
+	u32 DmaS2mmStatus[XAIE_MEM_TILE_DMA_S2MM_NUM_CH];
+#else
 	XAie_LDmaStatus dma[XAIE_MEM_TILE_DMA_NUM_CH];
+#endif
 	u32 EventStatus[XAIE_MEM_TILE_NUM_EVENT_STATUS_REGS];
 	u8 LockValue[XAIE_MEM_TILE_NUM_LOCKS];
 } XAie_Mem_Tile_Status;
@@ -71,7 +78,14 @@ typedef struct {
 
 /* Data structure to capture the shim tile status */
 typedef struct {
+#if ((XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE4) || \
+           (XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE4_MEDUSA) || \
+           (XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE4_SOUNDWAVE))
+	u32 DmaMm2sStatus[XAIE_SHIM_DMA_MM2S_NUM_CH];
+	u32 DmaS2mmStatus[XAIE_SHIM_DMA_S2MM_NUM_CH];
+#else
 	XAie_LDmaStatus dma[XAIE_SHIM_DMA_NUM_CH];
+#endif
 	u32 EventStatus[XAIE_SHIM_TILE_NUM_EVENT_STATUS_REGS];
 	u8 LockValue[XAIE_SHIM_NUM_LOCKS];
 } XAie_Shim_Tile_Status;
