@@ -44,6 +44,7 @@
 #define XAIE4_DMA_STATUS_CHANNEL_NOT_RUNNING		0x0U
 #define XAIE4_DMA_STATUS_CHNUM_OFFSET			0x4U
 #define XAIE4_DMA_STATUS_TASK_Q_SIZE_MSB	24
+#define XAIE4_LOCK_ACQ_MASK				0x7FU
 
 /*********************** Function Definitions *************************/
 /*****************************************************************************/
@@ -1369,7 +1370,7 @@ AieRC _XAie4_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 
 	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 			LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-			LockAcqVal = LockAcqVal >> 1;
+			LockAcqVal = (LockAcqVal & XAIE4_LOCK_ACQ_MASK);
 	}
 	else {
 			LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
@@ -1377,7 +1378,7 @@ AieRC _XAie4_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 
 	if(DmaDesc->LockDesc.LockRelVal < 0) {
 			LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-			LockRelVal = LockRelVal >> 1;
+			LockRelVal = (LockRelVal & XAIE4_LOCK_ACQ_MASK);
 	}
 	else {
 			LockRelVal = DmaDesc->LockDesc.LockRelVal;
@@ -1486,7 +1487,7 @@ AieRC _XAie4_MemTileDmaWriteBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *
 
 	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-		LockAcqVal = LockAcqVal >> 1;
+		LockAcqVal = (LockAcqVal & XAIE4_LOCK_ACQ_MASK);
 	}
 	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
@@ -1507,8 +1508,10 @@ AieRC _XAie4_MemTileDmaWriteBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *
 			BdProp->BufferLen.Lsb,
 			BdProp->BufferLen.Mask);
 
-	if(DmaDesc->LockDesc.LockRelVal < 0)
+	if(DmaDesc->LockDesc.LockRelVal < 0) {
 		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
+		LockRelVal = (LockRelVal & XAIE4_LOCK_ACQ_MASK);
+	}
 	else
 		LockRelVal = DmaDesc->LockDesc.LockRelVal;
 
@@ -1795,14 +1798,14 @@ AieRC _XAie4_ShimDmaWriteBd_common(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc
 
 		if(DmaDesc->LockDesc.LockAcqVal < 0) {
 			LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-			LockAcqVal = LockAcqVal >> 1;
+			LockAcqVal = (LockAcqVal & XAIE4_LOCK_ACQ_MASK);
 		} else {
 			LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
 		}
 
 		if(DmaDesc->LockDesc.LockRelVal < 0) {
 			LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-			LockRelVal = LockRelVal >> 1;
+			LockRelVal = (LockRelVal & XAIE4_LOCK_ACQ_MASK);
 		} else {
 			LockRelVal = DmaDesc->LockDesc.LockRelVal;
 		}

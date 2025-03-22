@@ -44,6 +44,7 @@
 
 #define XAIE_TILE_DMA_NUM_DIMS_MAX			2U
 #define XAIE_DMA_STATUS_IDLE				0x0U
+#define XAIE_LOCK_ACQ_MASK				0x7FU
 /************************** Function Definitions *****************************/
 /*****************************************************************************/
 /**
@@ -252,7 +253,7 @@ AieRC _XAie_ShimDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 
 	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-		LockAcqVal = LockAcqVal >> 1;
+		LockAcqVal = (LockAcqVal & XAIE_LOCK_ACQ_MASK);
 	}
 	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
@@ -260,7 +261,7 @@ AieRC _XAie_ShimDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 
 	if(DmaDesc->LockDesc.LockRelVal < 0) {
 		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-		LockRelVal = LockRelVal >> 1;
+		LockRelVal = (LockRelVal & XAIE_LOCK_ACQ_MASK);
 	}
 	else {
 		LockRelVal = DmaDesc->LockDesc.LockRelVal;
@@ -672,7 +673,7 @@ AieRC _XAie_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 	
 	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-		LockAcqVal = LockAcqVal >> 1;
+		LockAcqVal = (LockAcqVal & XAIE_LOCK_ACQ_MASK);
 	}
 	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
@@ -680,7 +681,7 @@ AieRC _XAie_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 
 	if(DmaDesc->LockDesc.LockRelVal < 0) {
 		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-		LockRelVal = LockRelVal >> 1;
+		LockRelVal = (LockRelVal & XAIE_LOCK_ACQ_MASK);
 	}
 	else {
 		LockRelVal = DmaDesc->LockDesc.LockRelVal;

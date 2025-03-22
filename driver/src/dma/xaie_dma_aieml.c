@@ -42,6 +42,7 @@
 #define XAIEML_DMA_STATUS_CHANNEL_NOT_RUNNING 		0x0U
 #define XAIEML_DMA_STATUS_CHNUM_OFFSET			0x4U
 #define XAIEML_DMA_STATUS_TASK_Q_SIZE_MSB	22
+#define XAIEML_LOCK_ACQ_MASK				0x7FU
 
 /************************** Function Definitions *****************************/
 /*****************************************************************************/
@@ -462,7 +463,7 @@ AieRC _XAieMl_MemTileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 
 	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-		LockAcqVal = LockAcqVal >> 1;
+		LockAcqVal = (LockAcqVal & XAIEML_LOCK_ACQ_MASK);
 	}
 	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
@@ -470,7 +471,7 @@ AieRC _XAieMl_MemTileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 
 	if(DmaDesc->LockDesc.LockRelVal < 0) {
 		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-		LockRelVal = LockRelVal >> 1;
+		LockRelVal = (LockRelVal & XAIEML_LOCK_ACQ_MASK);
 	}
 	else {
 		LockRelVal = DmaDesc->LockDesc.LockRelVal;
@@ -1025,7 +1026,7 @@ AieRC _XAieMl_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 	
 	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-		LockAcqVal = LockAcqVal >> 1;
+		LockAcqVal = (LockAcqVal & XAIEML_LOCK_ACQ_MASK);
 	}
 	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
@@ -1033,7 +1034,7 @@ AieRC _XAieMl_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 
 	if(DmaDesc->LockDesc.LockRelVal < 0) {
 		LockRelVal = (u8)DmaDesc->LockDesc.LockRelVal;
-		LockRelVal = LockRelVal >> 1;
+		LockRelVal = (LockRelVal & XAIEML_LOCK_ACQ_MASK);
 	}
 	else {
 		LockRelVal = DmaDesc->LockDesc.LockRelVal;
@@ -1554,7 +1555,7 @@ AieRC _XAieMl_ShimDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 
 	if(DmaDesc->LockDesc.LockAcqVal < 0) {
 		LockAcqVal = (u8)DmaDesc->LockDesc.LockAcqVal;
-		LockAcqVal = LockAcqVal >> 1;
+		LockAcqVal = (LockAcqVal & XAIEML_LOCK_ACQ_MASK);
 	}
 	else {
 		LockAcqVal = DmaDesc->LockDesc.LockAcqVal;
