@@ -66,7 +66,10 @@ static void _XAie_PrivilegeSetColClkBuf(XAie_DevInst *DevInst,
 	u64 RegAddr;
 	u32 FldVal;
 
-	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) +
+	/* This Register address in in Shim Tile. So we should always pass
+	   Row Value as 0. If we use Loc.Row and user pass row value other
+	   then shim tile, then it can trigger HW error in AIE array */
+	RegAddr = _XAie_LGetTileAddr(XAIE_SHIM_ROW, Loc.Col) +
 		XAIE_PL_MOD_COL_CLKCNTR_REGOFF;
 	FldVal = XAie_SetField(Enable,
 			XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_LSB,

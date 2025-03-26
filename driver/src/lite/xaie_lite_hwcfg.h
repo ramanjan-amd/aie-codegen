@@ -32,8 +32,6 @@
 #define XAIE_LITE_AIE4_AIE_TILE_SHIFT_OFFSET 4
 #define XAIE_LITE_AIE4_MEM_TILE_SHIFT_OFFSET 5
 
-#define IPU_AIE_BASEADDR 0x20000000000
-#define IPU_AIE_NPI_ADDR 0xF70A0000
 
 /***************************** Include Files *********************************/
 /************************** Constant Definitions *****************************/

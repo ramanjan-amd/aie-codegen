@@ -86,7 +86,9 @@
 	    (Value) &= (Value) - 1, (Index) = first_set_bit((Value)) - 1)
 
 /* Generate value with a set bit at given Index */
+#ifndef BIT
 #define BIT(Index)		(1 << (Index))
+#endif
 
 /*as AIE address space is 32bit , the max valid bit index will be 31*/
 #define MAX_VALID_AIE_REG_BIT_INDEX 32
