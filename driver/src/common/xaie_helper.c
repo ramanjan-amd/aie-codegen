@@ -2870,8 +2870,8 @@ AieRC XAie_WaitTct(XAie_DevInst *DevInst, uint16_t Column, uint16_t Row, uint32_
 	{
 		return Backend->Ops.WaitTaskCompleteToken(DevInst, Column, Row, Channel, NumTokens);
 	}
-	printf("Wait TCT function pointer points to NULL\n");
-	return XAIE_ERR;
+	XAIE_ERROR("Wait TCT function pointer points to NULL\n");
+	return XAIE_NOT_SUPPORTED;
 }
 
 AieRC XAie_AddressPatching(XAie_DevInst *DevInst, u8 Arg_Offset, u8 Num_BDs)
@@ -2881,6 +2881,43 @@ AieRC XAie_AddressPatching(XAie_DevInst *DevInst, u8 Arg_Offset, u8 Num_BDs)
 	if (Backend->Ops.AddressPatching != NULL) {
 		return Backend->Ops.AddressPatching((void *)DevInst->IOInst, Arg_Offset, Num_BDs);
 	} else {
+		XAIE_ERROR("Address Patching function pointer points to NULL\n");
+		return XAIE_NOT_SUPPORTED;
+	}
+}
+
+AieRC XAie_WaitUCDMA(XAie_DevInst *DevInst)
+{
+	const XAie_Backend *Backend = DevInst->Backend;
+	
+	if (Backend->Ops.WaitUcDMA != NULL) {
+		return Backend->Ops.WaitUcDMA((void *)DevInst->IOInst);
+	} else {
+		XAIE_ERROR("WaitUCDMA function pointer points to NULL\n");
+		return XAIE_NOT_SUPPORTED;
+	}
+}
+
+AieRC XAie_ModeConfig(XAie_DevInst *DevInst, XAie_ModeSelect Mode)
+{
+	const XAie_Backend *Backend = DevInst->Backend;
+	
+	if (Backend->Ops.ConfigMode != NULL) {
+		return Backend->Ops.ConfigMode((void *)DevInst->IOInst, Mode);
+	} else {
+		XAIE_ERROR("ConfigMode function pointer points to NULL\n");
+		return XAIE_NOT_SUPPORTED;
+	}
+}
+
+XAie_ModeSelect XAie_GetModeConfig(XAie_DevInst *DevInst)
+{
+	const XAie_Backend *Backend = DevInst->Backend;
+	
+	if (Backend->Ops.GetConfigMode != NULL) {
+		return Backend->Ops.GetConfigMode((void *)DevInst->IOInst);
+	} else {
+		XAIE_ERROR("GetConfigMode function pointer points to NULL\n");
 		return XAIE_NOT_SUPPORTED;
 	}
 }

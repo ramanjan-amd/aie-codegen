@@ -886,6 +886,9 @@ const XAie_Backend SocketBackend =
 	.Ops.WaitTaskCompleteToken = NULL,
 	.Ops.SubmitTxn = NULL,
 	.Ops.AddressPatching = NULL,
+	.Ops.ConfigMode = NULL,
+	.Ops.WaitUcDMA = NULL,
+	.Ops.GetConfigMode = NULL,
 };
 #endif // __SWIGINTERFACE__
 

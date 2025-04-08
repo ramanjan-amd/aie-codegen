@@ -109,6 +109,14 @@ typedef struct XAie_ShimDmaBdArgs {
 	u64 Addr;
 } XAie_ShimDmaBdArgs;
 
+typedef enum {
+	XAIE_SHIM_BD_CHAINING_DISABLE,
+	XAIE_SHIM_BD_CHAINING_ENABLE,
+	XAIE_WRITE_DES_ASYNC_DISABLE,
+	XAIE_WRITE_DES_ASYNC_ENABLE,
+	XAIE_INVALID_MODE
+}XAie_ModeSelect;
+
 /*
  * Typdef to capture all the backend IO operations
  * Init        : Backend specific initialization function. Init should attach
@@ -166,6 +174,9 @@ typedef struct XAie_BackendOps {
 	void* (*GetShimDmaBdConfig)(XAie_ShimDmaBdArgs *Args);
 	u64 (*GetAttr)(void *IOInst, XAie_BackendAttrType Type);
 	AieRC (*SetAttr)(void *IOInst, XAie_BackendAttrType Type, u64 AttrVal);
+	AieRC (*WaitUcDMA) (void *IOInst);
+	AieRC (*ConfigMode)(void *IOInst, XAie_ModeSelect Mode);
+	XAie_ModeSelect (*GetConfigMode) (void *IOInst);
 } XAie_BackendOps;
 
 /* Typedef to capture all backend information */

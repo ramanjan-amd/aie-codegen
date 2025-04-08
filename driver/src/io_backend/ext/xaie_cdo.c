@@ -565,6 +565,9 @@ const XAie_Backend CdoBackend =
 	.Ops.WaitTaskCompleteToken = NULL,
 	.Ops.SubmitTxn = NULL,
 	.Ops.AddressPatching = NULL,
+	.Ops.ConfigMode = NULL,
+	.Ops.WaitUcDMA = NULL,
+	.Ops.GetConfigMode = NULL,
 };
 
 /** @} */

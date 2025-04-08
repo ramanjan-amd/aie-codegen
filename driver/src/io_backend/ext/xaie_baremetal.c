@@ -731,6 +731,9 @@ const XAie_Backend BaremetalBackend =
 	.Ops.WaitTaskCompleteToken = NULL,
 	.Ops.SubmitTxn = NULL,
 	.Ops.AddressPatching = NULL,
+	.Ops.ConfigMode = NULL,
+	.Ops.WaitUcDMA = NULL,
+	.Ops.GetConfigMode = NULL,
 };
 
 /** @} */

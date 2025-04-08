@@ -236,6 +236,9 @@ XAIE_AIG_EXPORT AieRC XAie_Txn_MergeSync(XAie_DevInst *DevInst, u8 num_tokens, u
 
 XAIE_AIG_EXPORT AieRC XAie_AddressPatching(XAie_DevInst *DevInst, u8 Arg_Offset, u8 Num_BDs);
 XAIE_AIG_EXPORT AieRC XAie_WaitTct(XAie_DevInst *DevInst, uint16_t Column, uint16_t Row, uint32_t Channel, uint8_t NumTokens);
+XAIE_AIG_EXPORT AieRC XAie_WaitUCDMA(XAie_DevInst *DevInst);
+XAIE_AIG_EXPORT AieRC XAie_ModeConfig(XAie_DevInst *DevInst, XAie_ModeSelect Mode);
+XAIE_AIG_EXPORT XAie_ModeSelect XAie_GetModeConfig(XAie_DevInst *DevInst);
 
 XAIE_AIG_EXPORT AieRC XAie_Txn_NoOp(XAie_DevInst *DevInst, uint32_t Count);
 XAIE_AIG_EXPORT AieRC XAie_Txn_Preempt(XAie_DevInst *DevInst, XAie_PreemptHdr* Preempt);

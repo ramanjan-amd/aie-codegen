@@ -659,6 +659,9 @@ const XAie_Backend SimBackend =
 	.Ops.SetAttr = XAie_SimIOSetAttr,
 	.Ops.WaitTaskCompleteToken = NULL,
 	.Ops.AddressPatching = NULL,
+	.Ops.ConfigMode = NULL,
+	.Ops.WaitUcDMA = NULL,
+	.Ops.GetConfigMode = NULL,
 };
 
 /** @} */
