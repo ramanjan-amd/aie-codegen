@@ -853,7 +853,6 @@ static AieRC XAie_ControlCodeIO_BlockSet32(void *IOInst, u64 RegOff, u32 Data, u
 	u64 AdjustedOff = 0;
 
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
-	ControlCodeInst->DataAligner;
 
 	CompletedSize = 0;
 	while (Size > CompletedSize) {
