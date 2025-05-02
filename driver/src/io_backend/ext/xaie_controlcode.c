@@ -101,7 +101,7 @@ typedef struct {
 * @note         Internal only.
 *
 *******************************************************************************/
-static AieRC _XAie_Update_Datalength_DmaBd(XAie_ControlCodeIO *ControlCodeInst, u32 Datalength)
+static AieRC _XAie_UpdateDataLengthDmaBd(XAie_ControlCodeIO *ControlCodeInst, u32 Datalength)
 {
         long FileSize = ftell(ControlCodeInst->ControlCodedatafp);
         long Position = FileSize - 1;
@@ -441,7 +441,7 @@ static AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 				ControlCodeInst->IsAdjacentMemWrite = 0;
 			}
 			else {
-				_XAie_Update_Datalength_DmaBd(ControlCodeInst, (ControlCodeInst->CombinedMemWriteSize + 1));
+				_XAie_UpdateDataLengthDmaBd(ControlCodeInst, (ControlCodeInst->CombinedMemWriteSize + 1));
 			}
 		}
 
@@ -680,10 +680,12 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 				_XAie_StartNewJob(ControlCodeInst);
 			}
 
-			ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
-				((ControlCodeInst->UcPageTextSize + OpSize) % DATA_SECTION_ALIGNMENT));
-			if (ControlCodeInst->DataAligner == DATA_SECTION_ALIGNMENT) {
-				ControlCodeInst->DataAligner = 0U;
+			if(PageBreak == 0) {
+				ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
+					((ControlCodeInst->UcPageTextSize + OpSize) % DATA_SECTION_ALIGNMENT));
+				if(ControlCodeInst->DataAligner == DATA_SECTION_ALIGNMENT) {
+					ControlCodeInst->DataAligner = 0U;
+				}
 			}
 
 			if(RegOff == ControlCodeInst->CalculatedNextRegOff) {
@@ -794,7 +796,7 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 			}
 
 			if(ControlCodeInst->IsAdjacentMemWrite == 1) {
-				_XAie_Update_Datalength_DmaBd(ControlCodeInst,
+				_XAie_UpdateDataLengthDmaBd(ControlCodeInst,
 						(ControlCodeInst->CombinedMemWriteSize + IterationSize));
 			}
 			else {
@@ -1300,21 +1302,13 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 		return XAIE_INVALID_BACKEND;
 	}
 
-	ControlCodeInst->UcbdLabelNum 	= 0;
-	ControlCodeInst->UcbdDataNum 	= 0;
-	ControlCodeInst->UcDmaDataNum 	= 0;
-	ControlCodeInst->UcJobNum 	= 0;
-	ControlCodeInst->UcPageSize 	= 0;
-	ControlCodeInst->UcPageTextSize	= 0;
-	ControlCodeInst->IsJobOpen  	= 0;
-	ControlCodeInst->IsPageOpen  	= 0;
-	ControlCodeInst->NumShimBDsChained = 0;
+	memset(ControlCodeInst, 0, sizeof(XAie_ControlCodeIO));
+	ControlCodeInst->ScrachpadName = NULL;
+	ControlCodeInst->Mode = (u8)XAIE_INVALID_MODE;
 	ControlCodeInst->ControlCodefp      = fopen(FileName, "w");
 	ControlCodeInst->ControlCodedatafp  = fopen(TEMP_ASM_FILE1, "w+");
 	ControlCodeInst->ControlCodedata2fp = fopen(TEMP_ASM_FILE2, "w+");
-
 	ControlCodeInst->PageSizeMax = PageSize;
-	ControlCodeInst->CombineCommands = 0;
 
 	if (ControlCodeInst->ControlCodefp == NULL ||
 		ControlCodeInst->ControlCodedatafp == NULL ||
