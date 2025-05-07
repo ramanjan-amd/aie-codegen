@@ -33,6 +33,7 @@
 #define XAIE_RSC_MGR_CONTIG_FLAG	0x1U
 /****************************** Type Definitions *****************************/
 
+//#ifndef __SWIGINTERFACE__
 /*
  * Typedef for enum to capture backend function code
  */
@@ -53,6 +54,7 @@ typedef enum {
 	XAIE_BACKEND_OP_PERFORMANCE_UTILIZATION,
 	XAIE_BACKEND_OP_CONFIG_MEM_INTRLVNG,
 } XAie_BackendOpCode;
+//#endif
 
 /*
  * Typedef for structure for NPI write 32bit structure
@@ -109,6 +111,7 @@ typedef struct XAie_ShimDmaBdArgs {
 	u64 Addr;
 } XAie_ShimDmaBdArgs;
 
+//#ifndef __SWIGINTERFACE__
 typedef enum {
 	XAIE_SHIM_BD_CHAINING_DISABLE,
 	XAIE_SHIM_BD_CHAINING_ENABLE,
@@ -116,6 +119,7 @@ typedef enum {
 	XAIE_WRITE_DES_ASYNC_ENABLE,
 	XAIE_INVALID_MODE
 }XAie_ModeSelect;
+//#endif
 
 /*
  * Typdef to capture all the backend IO operations

@@ -32,6 +32,9 @@
 #include "xaie_io_privilege.h"
 #include "xaie_npi.h"
 #include "isa_stubs.h"
+#ifdef __SWIGINTERFACE__
+#include "swig_controlcode_interface.h"
+#endif
 
 #ifdef __AIECONTROLCODE__
 
@@ -83,6 +86,7 @@ typedef struct {
 	u32  CombinedMemWriteSize;
 	u64  CalculatedNextRegOff;
 	char *ScrachpadName;
+	u8 PageBreak;
 } XAie_ControlCodeIO;
 
 /************************** Function Definitions *****************************/
@@ -655,7 +659,6 @@ static AieRC XAie_ControlCodeIO_MaskPoll(void *IOInst, u64 RegOff, u32 Mask, u32
 static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 		u32 Size)
 {
-	u8 PageBreak = 0;
 	u8 PageBreakOccured = 0;
 	u32 CompletedSize = 0;
 	u32 IterationSize;
@@ -680,7 +683,7 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 				_XAie_StartNewJob(ControlCodeInst);
 			}
 
-			if(PageBreak == 0) {
+			if(ControlCodeInst->PageBreak == 0) {
 				ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
 					((ControlCodeInst->UcPageTextSize + OpSize) % DATA_SECTION_ALIGNMENT));
 				if(ControlCodeInst->DataAligner == DATA_SECTION_ALIGNMENT) {
@@ -688,7 +691,7 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 				}
 			}
 
-			if(RegOff == ControlCodeInst->CalculatedNextRegOff) {
+			if((RegOff == ControlCodeInst->CalculatedNextRegOff) && (ControlCodeInst->PageBreak == 0)) {
 				ControlCodeInst->IsAdjacentMemWrite = 1;
 			}
 			else {
@@ -707,7 +710,7 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 				}
 			}
 
-			if((ControlCodeInst->IsAdjacentMemWrite == 0) || (PageBreak == 1)) {
+			if((ControlCodeInst->IsAdjacentMemWrite == 0) || (ControlCodeInst->PageBreak == 1)) {
 
 				if(ControlCodeInst->Mode == XAIE_WRITE_DES_ASYNC_ENABLE) {
 					if((ControlCodeInst->UcPageSize + OpSize + ISA_OPSIZE_WAIT_UC_DMA +
@@ -765,15 +768,18 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 					}
 					else
 					{
-						ControlCodeInst->CombineCommands = 0;
+						// Setting the flag to one to ensure that SHIM BD
+						// Doesn't get chained with non shim BD's. But non shim
+						// BDs can get chanined with shim BDs
+						ControlCodeInst->CombineCommands = 1;
 					}
 				}
 
 				fprintf(ControlCodeInst->ControlCodedata2fp, "DMAWRITE_data_%d:\n",
 						ControlCodeInst->UcDmaDataNum);
 
-				PageBreak = 0;
-			}
+						ControlCodeInst->PageBreak = 0;
+					}
 
 			ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
 				(ControlCodeInst->UcPageTextSize % DATA_SECTION_ALIGNMENT));
@@ -787,7 +793,7 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 			for (IterationSize = TempItrSize; IterationSize < Size; IterationSize++) {
 				 if( (ControlCodeInst->UcPageSize + UC_DMA_WORD_LEN + ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax )
 				 {
-					PageBreak = 1;
+					ControlCodeInst->PageBreak = 1;
 					PageBreakOccured = 1;
 					break;
 				 }
@@ -827,6 +833,9 @@ static AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32
 	else {
 		ControlCodeInst->CombinedMemWriteSize = Size;
 	}
+
+    // Work Around to use Block Write to submit SHIM BD's
+	ControlCodeInst->IsShimBd = 0;
 
 	return XAIE_OK;
 }
@@ -987,6 +996,9 @@ static AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u32 Arg_Index, u8 
 	if(ControlCodeInst->ScrachpadName)
                 free(ControlCodeInst->ScrachpadName);
         ControlCodeInst->ScrachpadName = NULL;
+
+    // Work Around to use Block Write to submit SHIM BD's
+	ControlCodeInst->IsShimBd = 1;
 
 	return XAIE_OK;
 }
@@ -1190,6 +1202,7 @@ static AieRC _XAie_ControlCodeIO_NpiMaskPoll(void *IOInst, u64 RegOff, u32 Mask,
 	return XAIE_OK;
 }
 
+#ifndef __SWIGINTERFACE__
 /*****************************************************************************/
 /**
 *
@@ -1276,6 +1289,7 @@ static AieRC XAie_ControlCodeIO_RunOp(void *IOInst, XAie_DevInst *DevInst,
 
 	return RC;
 }
+#endif
 
 /*****************************************************************************/
 /**
@@ -1297,10 +1311,19 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 	}
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)DevInst->IOInst;
 
+	/**
+	 * Kotesh TODO: Fix It
+	 * When using swig interface.
+	 * This is causing a segfault.
+	 * As the backend pointer in DevInst stays uninitialized.
+	 * For now disabled the check will look into it later.
+	 */
+	#if 0
 	if(DevInst->Backend->Type != XAIE_IO_BACKEND_CONTROLCODE) {
 		XAIE_ERROR("This is supported only in Controlcode Backend %d \n", DevInst->Backend->Type);
 		return XAIE_INVALID_BACKEND;
 	}
+	#endif
 
 	memset(ControlCodeInst, 0, sizeof(XAie_ControlCodeIO));
 	ControlCodeInst->ScrachpadName = NULL;
@@ -1397,7 +1420,8 @@ AieRC XAie_EndPage(XAie_DevInst *DevInst) {
 
 	if (ControlCodeInst->ControlCodefp != NULL) {
 	        _XAie_EndPage(ControlCodeInst);
-		return XAIE_OK;
+			ControlCodeInst->PageBreak = 1;
+			return XAIE_OK;
 	}
 
 	return XAIE_ERR;
@@ -1517,6 +1541,463 @@ AieRC XAie_ControlCodeSetScrachPad(XAie_DevInst *DevInst, const char *Scrachpad)
                 return XAIE_OK;
         }
 }
+
+#ifdef __SWIGINTERFACE__
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to initialize the
+* global IO instance
+*
+* @param	DevInst: Dev Instance Pointer.
+*
+* @return	None.
+*
+* @note		The global IO instance is a singleton and any further attempt
+* to initialize just increments the reference count. Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_Init(Swig_DevInst *DevInst) {
+	AieRC RC;
+	RC = XAie_ControlCodeIO_Init(DevInst);
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to write 32bit
+* data to the specified address.
+*
+* @param	DevInst: Dev instance pointer
+* @param	RegOff: Register offset to read from.
+* @param	Value: 32-bit data to be written.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_Write32(Swig_DevInst *DevInst, u64 RegOff,
+	u32 Value)
+{
+	AieRC RC;
+	void *IOInst_swig = DevInst->IOInst;
+	RC = XAie_ControlCodeIO_Write32(IOInst_swig,RegOff,Value);
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to read 32bit
+* data from the specified address.
+*
+* @param	DevInst: Dev instance pointer
+* @param	RegOff: Register offset to read from.
+* @param	Data: u32 Data variable
+*
+* @return	Data read from the register
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_Read32(Swig_DevInst *DevInst, u64 RegOff,
+	u32 *Data)
+{
+	AieRC RC;
+	void *IOInst_swig = DevInst->IOInst;
+	RC = XAie_ControlCodeIO_Read32(IOInst_swig,RegOff,&Data);
+	return Data;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to write 32bit
+* data to the specified address.
+*
+* @param	DevInst: Dev instance pointer
+* @param	RegOff: Register offset to read from.
+* @param    Mask: Mask value to be used for reg write.
+* @param	Value: 32-bit data to be written.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_MaskWrite32(Swig_DevInst *DevInst, u64 RegOff,
+	u32 Mask, u32 Value)
+{
+	AieRC RC;
+	void *IOInst_swig = DevInst->IOInst;
+	RC = XAie_ControlCodeIO_MaskWrite32(IOInst_swig,RegOff,Mask,Value);
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to poll on
+* data to the specified address.
+*
+* @param	DevInst: Dev instance pointer
+* @param	RegOff: Register offset to read from.
+* @param    Mask: Mask value to be used for reg write.
+* @param	Value: 32-bit data to be written.
+* @param	TimeOutUs: Timeout in micro seconds.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_MaskPoll(Swig_DevInst *DevInst, u64 RegOff,
+	u32 Mask, u32 Value, u32 TimeOutUs)
+{
+	AieRC RC;
+	void *IOInst_swig = DevInst->IOInst;
+	RC = XAie_ControlCodeIO_MaskPoll(IOInst_swig,RegOff,Mask,Value,TimeOutUs);
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to write multi
+* word data to the specified address.
+*
+* @param	DevInst: Dev instance pointer
+* @param	RegOff: Register offset to read from.
+* @param    Data: Pointer to the multi word data to be written.
+* @param	Size: No of words to be written.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_BlockWrite32(Swig_DevInst *DevInst, u64 RegOff,
+	u32 *Data, u32 DataSize)
+{
+	AieRC RC;
+	void *IOInst_swig = DevInst->IOInst;
+	RC = XAie_ControlCodeIO_BlockWrite32(IOInst_swig,RegOff,Data,DataSize);
+
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to set multi
+* word starting from the specified address to a desired value.
+*
+* @param	DevInst: Dev instance pointer
+* @param	RegOff: Register offset to read from.
+* @param    Data: The data to be written.
+* @param	Size: No of words to be written.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_BlockSet32(Swig_DevInst *DevInst, u64 RegOff,
+	u32 Data, u32 DataSize)
+{
+	AieRC RC;
+	void *IOInst_swig = DevInst->IOInst;
+	RC = XAie_ControlCodeIO_BlockSet32(IOInst_swig,RegOff,Data,DataSize);
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to patch the host
+* buffer address in SHIM DMA BD(s) based on argument index.
+*
+* @param	DevInst: Dev instance pointer
+* @param	Arg_Index: XRT kernel argument index to be used for patching
+*					   host buffer address used in SHIM DMA BD.
+* @param    Num_BDs: No of SHIM DMA BDs to be updated using this argument.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_AddressPatching(Swig_DevInst *DevInst,
+	u32 Arg_Index, u8 Num_BDs)
+{
+	AieRC RC;
+	void *IOInst_swig = DevInst->IOInst;
+	RC = XAie_ControlCodeIO_AddressPatching(IOInst_swig,Arg_Index,Num_BDs);
+
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to insert Wait UC
+* DMA cert command.
+*
+* @param	DevInst: Dev instance pointer
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_WaitUcDMA(Swig_DevInst *DevInst)
+{
+	AieRC RC;
+	void *IOInst_swig = DevInst->IOInst;
+	RC = XAie_ControlCodeIO_WaitUcDMA(IOInst_swig);
+	return RC;
+}
+
+#if 0
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to execute RunOps.
+*
+* @param	DevInst: Dev Instance Pointer.
+* @param	Op: XAie_BackendOpCode opcode.
+* @param	Arg: Pointer to arguments.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_RunOp(Swig_DevInst *DevInst, XAie_BackendOpCode Op, void *Arg)
+{
+	AieRC RC;
+	void *IOInst_swig = DevInst->IOInst;
+	RC = XAie_ControlCodeIO_RunOp(IOInst_swig, DevInst, Op, Arg);
+	return RC;
+}
+#endif
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to add wait for
+* TCT cert opcode.
+*
+* @param	DevInst: Dev Instance pointer
+* @param	Column: Column Number
+* @param	Row: Row Number
+* @param	Channel: Channel Number
+* @param	DevInst: Dev Instance pointer
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_WaitTaskCompleteToken(Swig_DevInst *DevInst,
+	u16 Column, u16 Row, u32 Channel, u8 NumTokens)
+{
+	AieRC RC;
+	RC = XAie_WaitTaskCompleteToken(DevInst, Column, Row,
+		 Channel, NumTokens);
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to add save
+* timestamp cert opcode.
+*
+* @param	DevInst: Device instance pointer
+* @param	Timestamp: Time stamp value
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_SaveTimestamp(Swig_DevInst *DevInst, u32 Timestamp)
+{
+	AieRC RC;
+	RC = XAie_ControlCodeSaveTimestamp(DevInst, Timestamp);
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to open a new ASM
+* file.
+*
+* @param	DevInst: Device instance pointer.
+* @param	FileName: Name of the ASM file to be created.
+* @param	PageSize: Page Size when created ASM file.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_OpenControlCodeFile(Swig_DevInst *DevInst,
+	const char *FileName, u32 PageSize)
+{
+	AieRC RC;
+	RC = XAie_OpenControlCodeFile(DevInst, FileName, PageSize);
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to create new job
+* cert command in ASM file.
+*
+* @param	DevInst: Device instance pointer.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_StartNewJob(Swig_DevInst *DevInst)
+{
+	AieRC RC;
+	RC = XAie_StartNewJob(DevInst);
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to create end job
+* cert command in ASM file.
+*
+* @param	DevInst: Device instance pointer.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_EndJob(Swig_DevInst *DevInst)
+{
+	AieRC RC;
+	RC = XAie_EndJob(DevInst);
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to create end page
+* cert command in ASM file.
+*
+* @param	DevInst: Device instance pointer.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_EndPage(Swig_DevInst *DevInst)
+{
+	AieRC RC;
+	RC = XAie_EndPage(DevInst);
+	return RC;
+}
+
+#if 0
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to create end page
+* cert command in ASM file.
+*
+* @param	DevInst: Device instance pointer.
+*
+* @return	Integer value.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_ControlCodeAddAnnotation(Swig_DevInst *DevInst,
+	u32 Id, const char *Name, const char *Description)
+{
+	AieRC RC;
+	RC = XAie_ControlCodeIO_ControlCodeAddAnnotation(DevInst, Id, Name,
+		 Description);
+	return RC;
+}
+#endif
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to set scratchpad
+* cert command in ASM file.
+*
+* @param	DevInst: Device instance pointer.
+* @param    Scrachpad: Scratchpad.
+*
+* @return	Integer value.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_ControlCodeSetScrachPad(Swig_DevInst *DevInst,
+	const char *Scrachpad)
+{
+	AieRC RC;
+	RC = XAie_ControlCodeSetScrachPad(DevInst, Scrachpad);
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to close ASM file.
+*
+* @param	DevInst: Device instance pointer.
+*
+* @return	None.
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+void XAie_ControlCodeIO_swig_CloseControlCodeFile(Swig_DevInst *DevInst)
+{
+	XAie_CloseControlCodeFile(DevInst);
+}
+
+/*****************************************************************************/
+/**
+*
+* This is the public interface swig controlcode IO function to free the global
+* IO instance
+*
+* @param	IOInst: IO Instance pointer.
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		The global IO instance is a singleton and freed when
+* the reference count reaches a zero. Internal only.
+*
+*******************************************************************************/
+int XAie_ControlCodeIO_swig_Finish(Swig_ControlCodeIO IOInst) {
+	AieRC RC;
+	void *IOInst_swig = &IOInst;
+	RC = XAie_ControlCodeIO_Finish(IOInst_swig);
+	return RC;
+}
+#endif // __SWIGINTERFACE__
 
 #else
 
@@ -1800,6 +2281,7 @@ static AieRC XAie_ControlCodeMemDetach(XAie_MemInst *MemInst)
 	return XAIE_ERR;
 }
 
+#ifndef __SWIGINTERFACE__
 const XAie_Backend ControlCodeBackend =
 {
 	.Type = XAIE_IO_BACKEND_CONTROLCODE,
@@ -1827,5 +2309,6 @@ const XAie_Backend ControlCodeBackend =
 	.Ops.GetConfigMode = XAie_GetConfigMode,
 	.Ops.SubmitTxn = NULL,
 };
+#endif
 
 /** @} */
