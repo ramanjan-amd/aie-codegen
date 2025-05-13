@@ -862,7 +862,6 @@ static AieRC XAie_SocketIO_CmdWrite(void *IOInst, u8 Col, u8 Row, u8 Command,
 	return XAIE_ERR;
 }
 
-#ifndef __SWIGINTERFACE__
 const XAie_Backend SocketBackend =
 {
 	.Type = XAIE_IO_BACKEND_SOCKET,
@@ -890,6 +889,5 @@ const XAie_Backend SocketBackend =
 	.Ops.WaitUcDMA = NULL,
 	.Ops.GetConfigMode = NULL,
 };
-#endif // __SWIGINTERFACE__
 
 /** @} */

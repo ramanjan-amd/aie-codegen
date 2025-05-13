@@ -131,10 +131,10 @@ typedef struct {
 
 int XAie_ControlCodeIO_swig_Finish(Swig_ControlCodeIO IOInst);
 int XAie_ControlCodeIO_swig_Init(Swig_DevInst *DevInst);
-//int XAie_ControlCodeIO_swig_ConfigMode(Swig_DevInst *DevInst, XAie_ModeSelect Mode);
-//XAie_ModeSelect XAie_ControlCodeIO_swig_GetConfigMode(Swig_DevInst *DevInst);
+int XAie_ControlCodeIO_swig_ConfigMode(Swig_DevInst *DevInst, XAie_ModeSelect Mode);
+XAie_ModeSelect XAie_ControlCodeIO_swig_GetConfigMode(Swig_DevInst *DevInst);
 int XAie_ControlCodeIO_swig_Write32(Swig_DevInst *DevInst, u64 RegOff, u32 Value);
-int XAie_ControlCodeIO_swig_Read32(Swig_DevInst *DevInst, u64 RegOff, u32 *Data);
+u32 XAie_ControlCodeIO_swig_Read32(Swig_DevInst *DevInst, u64 RegOff, u32 *Data);
 int XAie_ControlCodeIO_swig_MaskWrite32(Swig_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value);
 int XAie_ControlCodeIO_swig_MaskPoll(Swig_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value, u32 TimeOutUs);
 int XAie_ControlCodeIO_swig_BlockWrite32(Swig_DevInst *DevInst, u64 RegOff, u32 *Data, u32 DataSize);
@@ -150,6 +150,6 @@ int XAie_ControlCodeIO_swig_StartNewJob(Swig_DevInst *DevInst);
 int XAie_ControlCodeIO_swig_EndJob(Swig_DevInst *DevInst);
 int XAie_ControlCodeIO_swig_EndPage(Swig_DevInst *DevInst);
 void XAie_ControlCodeIO_swig_CloseControlCodeFile(Swig_DevInst *DevInst);
-//int XAie_ControlCodeIO_swig_ControlCodeAddAnnotation(Swig_DevInst *DevInst, u32 Id, const char *Name, const char *Description);
+int XAie_ControlCodeIO_swig_ControlCodeAddAnnotation(Swig_DevInst *DevInst, u32 Id, const char *Name, const char *Description);
 int XAie_ControlCodeIO_swig_ControlCodeSetScrachPad(Swig_DevInst *DevInst, const char *Scrachpad);
 #endif
