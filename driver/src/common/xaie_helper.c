@@ -3016,7 +3016,7 @@ AieRC XAie_WaitTct(XAie_DevInst *DevInst, uint16_t Column, uint16_t Row, uint32_
 	return XAIE_NOT_SUPPORTED;
 }
 
-AieRC XAie_AddressPatching(XAie_DevInst *DevInst, u8 Arg_Offset, u8 Num_BDs)
+AieRC XAie_AddressPatching(XAie_DevInst *DevInst, u16 Arg_Offset, u8 Num_BDs)
 {
 	const XAie_Backend *Backend = DevInst->Backend;
 	

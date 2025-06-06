@@ -935,7 +935,8 @@ AieRC XAie_ControlCodeIO_BlockSet32(void *IOInst, u64 RegOff, u32 Data, u32 Size
 *
 * This is the memory IO function to perform Address Patching by CERT
 * @param	IOInst:    IO instance pointer
-* @param	Arg_Index: Index of the argument to be patched coresponding to its index in Kernel Signature.
+* @param	Arg_Index: Index of the argument to be patched coresponding to its index in Kernel Signature/0xFFFF.
+* 					   Note: If the index is 0xFFFF, then shimDMA BD will be patched against control code instead of kernel arg.
 * @param	Num_BDs:   Represents Number of BDs to be patched.
 *
 * @return	None.
@@ -944,7 +945,7 @@ AieRC XAie_ControlCodeIO_BlockSet32(void *IOInst, u64 RegOff, u32 Data, u32 Size
 * @note		Internal only.
 *
 *******************************************************************************/
-AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u32 Arg_Index, u8 Num_BDs)
+AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u16 Arg_Index, u8 Num_BDs)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
 	u32 OpSize;
@@ -983,7 +984,7 @@ AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u32 Arg_Index, u8 Num_BDs
 		}
 		else {
 			fprintf(ControlCodeInst->ControlCodefp,
-                                        "APPLY_OFFSET_57\t @DMAWRITE_data_%d, %d, %d, %s\n",
+                                        "APPLY_OFFSET_57\t @DMAWRITE_data_%d, %d, %d, @%s\n",
                                         ControlCodeInst->UcDmaDataNum,
                                         Num_BDs, Arg_Index, ControlCodeInst->ScrachpadName);
 		}
@@ -1695,7 +1696,7 @@ AieRC XAie_ControlCodeIO_RunOp(void *IOInst, XAie_DevInst *DevInst,
 	return XAIE_FEATURE_NOT_SUPPORTED;
 }
 
-AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u32 Arg_Index, u8 Num_BDs)
+AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u16 Arg_Index, u8 Num_BDs)
 {
 	/* no-op */
 	(void)IOInst;
