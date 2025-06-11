@@ -205,11 +205,11 @@ static inline void _XAie_LNpiSetMeIporReset(u8 RstEnable)
 	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_CONTROL_REG, RegVal);
 
 	/* Release Init State */
-	RegVal = XAie_SetBitField(RstEnable, XAIE_NPI_PCSR_MASK_ME_IPOR_LSB,
+	RegVal = XAie_SetBitField(RstEnable, XAIE_NPI_PROT_REG_PCSR_INITSTATE_LSB,
 			XAIE_NPI_PROT_REG_PCSR_INITSTATE_MASK);
 	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_MASK_REG, RegVal);
 
-	RegVal = XAie_ClearBitField(RstEnable,  XAIE_NPI_PROT_REG_PCSR_INITSTATE_LSB,
+	RegVal = XAie_ClearBitField(RstEnable, XAIE_NPI_PROT_REG_PCSR_INITSTATE_LSB,
 			XAIE_NPI_PROT_REG_PCSR_INITSTATE_MASK);
 	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_CONTROL_REG, RegVal);
 

@@ -63,20 +63,24 @@
 static void _XAie_PrivilegeSetColClkBuf(XAie_DevInst *DevInst,
 		XAie_LocType Loc, u8 Enable)
 {
-	u64 RegAddr;
-	u32 FldVal;
-
 	/* This Register address in in Shim Tile. So we should always pass
-	   Row Value as 0. If we use Loc.Row and user pass row value other
-	   then shim tile, then it can trigger HW error in AIE array */
-	RegAddr = _XAie_LGetTileAddr(XAIE_SHIM_ROW, Loc.Col) +
-		XAIE_PL_MOD_COL_CLKCNTR_REGOFF;
-	FldVal = XAie_SetField(Enable,
-			XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_LSB,
-			XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK);
+           Row Value as 0. If we use Loc.Row and user pass row value other
+           then shim tile, then it can trigger HW error in AIE array */
 
-	_XAie_LPartMaskWrite32(DevInst, RegAddr,
-		XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK, FldVal);
+        if (_XAie_LIsDeviceGenAIE4()) {
+                _XAie_LColumnClkControl(DevInst, Loc, Enable);
+
+        }else {
+                u64 RegAddr;
+                u32 FldVal;
+                RegAddr = _XAie_LGetTileAddr(XAIE_SHIM_ROW, Loc.Col) +
+                        XAIE_PL_MOD_COL_CLKCNTR_REGOFF;
+                FldVal = XAie_SetField(Enable,
+                                XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_LSB,
+                                XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK);
+                _XAie_LPartMaskWrite32(DevInst, RegAddr,
+                                XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK, FldVal);
+        }
 }
 
 /*****************************************************************************/
@@ -591,28 +595,35 @@ AieRC XAie_PartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 	}
 
 	/* Set Single or Dual App mode. In Dual App Mode set App A or App B */
-	if (_XAie_LIsDeviceGenSupportDualApp()) {
-		XAIE_ERROR_RETURN((appMode == XAIE_DEVICE_DUAL_APP_MODE_B) ||
-				  (appMode == XAIE_DEVICE_INVALID_MODE),
-				XAIE_INVALID_ARGS,
-				XAIE_ERROR_MSG("This API should be called only for App A mode or single App Mode\n"));
-		if(DevInst->NumCols == 1) {
+        if (_XAie_LIsDeviceGenSupportDualApp()) {
+                XAIE_ERROR_RETURN((AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ||
+                                  (AppMode == XAIE_DEVICE_INVALID_MODE),
+                                XAIE_INVALID_ARGS,
+                                XAIE_ERROR_MSG("This API should be called only for App A mode or single App Mode\n"));
+                if(DevInst->NumCols == 1 && AppMode == XAIE_DEVICE_DUAL_APP_MODE_A) {
+                        DevInst->AppMode = AppMode;
+                } else if (DevInst->NumCols >= 1 && AppMode == XAIE_DEVICE_SINGLE_APP_MODE) {
 			DevInst->AppMode = AppMode;
 		} else {
-			XAIE_ERROR_RETURN((appMode != XAIE_DEVICE_SINGLE_APP_MODE),
-					XAIE_INVALID_ARGS,
-					XAIE_ERROR_MSG("Partition has more than one column, so dual app is not supported\n"));
-		}
-	} else {
-		DevInst->AppMode = XAIE_DEVICE_SINGLE_APP_MODE;
-	}
+                        XAIE_ERROR_RETURN((AppMode != XAIE_DEVICE_SINGLE_APP_MODE),
+                                        XAIE_INVALID_ARGS,
+                                        XAIE_ERROR_MSG("Partition has more than one column, so dual app is not supported\n"));
+                }
+        } else {
+                DevInst->AppMode = XAIE_DEVICE_SINGLE_APP_MODE;
+        }
 
 	/* The NPI open/close aperture is defeatured in AIE4*/
 	if (!(_XAie_LIsDeviceGenAIE4())) {
 		_XAie_LNpiSetPartProtectedReg(DevInst, XAIE_ENABLE);
 	}
 
+	// Enable Column Clocks
+	_XAie_PrivilegeSetPartColClkBuf(DevInst, XAIE_ENABLE);
+
 	/* Set Dual App Mode Registers */
+	/*TODO: Need to configure all dual app registers into single app mode for
+	  single app partition. */
 	if (_XAie_LIsDeviceGenSupportDualApp()) {
 		if(DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE){
 			if(Opts->Locs != NULL) {
@@ -638,16 +649,17 @@ AieRC XAie_PartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 		_XAie_PrivilegeSetPartColRst(DevInst, XAIE_DISABLE);
 	}
 
+	/* As per AIE4 MAS Application reset is not required in AIE4 device during Partition Init */
 	if((OptFlags & XAIE_PART_INIT_OPT_SHIM_RST) != 0) {
-		_XAie_PrivilegeRstPartShims(DevInst);
+		if (!(_XAie_LIsDeviceGenAIE4())) {
+			_XAie_PrivilegeRstPartShims(DevInst);
+		}
 	}
 
 	if((OptFlags & XAIE_PART_INIT_OPT_BLOCK_NOCAXIMMERR) != 0) {
 		_XAie_PrivilegeSetPartBlockAxiMmNsuErr(DevInst,
 			XAIE_ENABLE, XAIE_ENABLE);
 	}
-
-	_XAie_PrivilegeSetPartColClkBuf(DevInst, XAIE_ENABLE);
 
 	if ((OptFlags & XAIE_PART_INIT_OPT_L2_SPLIT) != 0U) {
 		if(DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE) {
@@ -660,9 +672,19 @@ AieRC XAie_PartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 		_XAie_LSetPartIsolationAfterRst(DevInst);
 	}
 
+	/* As per AIE4 MAS Zeroization is not required in AIE4 device during Partition Init */
 	if ((OptFlags & XAIE_PART_INIT_OPT_ZEROIZEMEM) != 0) {
-		_XAie_LPartMemZeroInit(DevInst);
+		if (!(_XAie_LIsDeviceGenAIE4())) {
+			_XAie_LPartMemZeroInit(DevInst);
+		}
 	}
+
+	if ((OptFlags & XAIE_PART_INIT_OPT_UC_MEM_PRIV)) {
+		if (_XAie_LIsDeviceGenAIE4()) {
+			_XAie_PrivilegeSetUCMemoryPrivileged(DevInst, XAIE_ENABLE);
+                }
+        }
+
 
 	/* Gate all the tiles and ungate the requested tiles*/
 	if(Opts != NULL)
@@ -686,12 +708,6 @@ AieRC XAie_PartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 			* Check if column clock buffer is already enabled and continue
 			*/
 			_XAie_PrivilegeSetColClkBuf(DevInst, Opts->Locs[i], XAIE_ENABLE);
-
-			if ((OptFlags & XAIE_PART_INIT_OPT_UC_MEM_PRIV)) {
-				if (_XAie_LIsDeviceGenAIE4()) {
-					_XAie_PrivilegeSetUCMemoryPrivileged(DevInst, XAIE_ENABLE);
-				}
-			}
 		}
 	} else {
 		XAIE_DBG("XAie_PartInitOpts is NULL. Entire array will be initialized\n");
@@ -762,9 +778,12 @@ AieRC XAie_PartitionTeardown(XAie_DevInst *DevInst)
 		_XAie_PrivilegeSetPartColRst(DevInst, XAIE_DISABLE);
 	}
 
-	_XAie_PrivilegeRstPartShims(DevInst);
+	// AIE4 MAS doesn't mentioned to enable clock before Applicatio reset in Partition Teardown
+	if (!(_XAie_LIsDeviceGenAIE4())) {
+		_XAie_PrivilegeSetPartColClkBuf(DevInst, XAIE_ENABLE);
+	}
 
-	_XAie_PrivilegeSetPartColClkBuf(DevInst, XAIE_ENABLE);
+	_XAie_PrivilegeRstPartShims(DevInst);
 
 	_XAie_LPartMemZeroInit(DevInst);
 

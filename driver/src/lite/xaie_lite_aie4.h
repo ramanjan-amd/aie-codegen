@@ -931,6 +931,7 @@ static inline void _XAie_LSetPartIsolationAfterRst(XAie_DevInst *DevInst)
 	for(u8 C = 0; C < DevInst->NumCols; C++) {
 		u64 RegAddr;
 		u32 RegVal = 0;
+		u32 RegValAxiMM = 0;
 
 		if (DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE) {
 			RegVal |= XAIE_TILE_CNTR_ISOLATE_WEST_MASK | XAIE_TILE_CNTR_ISOLATE_EAST_MASK ;
@@ -947,11 +948,26 @@ static inline void _XAie_LSetPartIsolationAfterRst(XAie_DevInst *DevInst)
 		RegAddr = _XAie_LGetTileAddr(0, C) +
 			XAIE_PL_MOD_TILE_CNTR_REGOFF;
 		_XAie_LPartWrite32(DevInst, RegAddr, RegVal);
+
+		// Block Axi-MM transactions in Shim Tile
+		RegAddr = _XAie_LGetTileAddr(0, C) +
+				XAIE_PL_MOD_TILE_CNTR_AXIMM_REGOFF;
 		if (DevInst->AppMode != XAIE_DEVICE_SINGLE_APP_MODE) {
 			/* Isolate East-West AXI-MM Transactions in Dual App Mode */
-			RegAddr = _XAie_LGetTileAddr(0, C) +
+			RegValAxiMM |= XAIE_TILE_CNTR_ISOLATE_WEST_MASK | XAIE_TILE_CNTR_ISOLATE_EAST_MASK;
+			_XAie_LPartWrite32(DevInst, RegAddr, RegValAxiMM);
+		} else {
+			// Isolate Axi-MM West for first column
+			if(C == 0) {
+				RegValAxiMM |= XAIE_TILE_CNTR_ISOLATE_WEST_MASK;
+				RegAddr = _XAie_LGetTileAddr(0, C) +
 					XAIE_PL_MOD_TILE_CNTR_AXIMM_REGOFF;
-			_XAie_LPartWrite32(DevInst, RegAddr, RegVal);
+				_XAie_LPartWrite32(DevInst, RegAddr, RegValAxiMM);
+			// Isolate Axi-MM East for Last Column
+			}else if(C == (u8)(DevInst->NumCols - 1)) {
+				RegValAxiMM |= XAIE_TILE_CNTR_ISOLATE_EAST_MASK;
+				_XAie_LPartWrite32(DevInst, RegAddr, RegValAxiMM);
+			}
 		}
 
 		/* Isolate boundrary of MEM tiles */
@@ -1504,6 +1520,48 @@ static inline void _XAie_LSetPartL2Split(XAie_DevInst *DevInst)
 
 /*****************************************************************************/
 /**
+ * * This API Enables/Disables column clocks in AIE Columns
+ * *
+ * * @param        DevInst: AI engine partition device instance pointer
+ * * @param        Locs: Locations of Tiles to Enable/Disable Module Clock
+ * * @param        Enable: Enable/Disable Tile Module clock
+ * *
+ * * @return   XAIE_OK on success, error code on failure
+ * *
+ * * @note         Initial support for this API is only for AIE4 devices. It doesn't support
+ * *                       Legacy devices.
+ * *
+ * *******************************************************************************/
+
+static inline AieRC _XAie_LColumnClkControl(XAie_DevInst *DevInst, XAie_LocType Loc, u8 Enable) {
+
+        u64 RegAddr;
+        u32 FldVal;
+
+        RegAddr = _XAie_LGetTileAddr(XAIE_SHIM_ROW, Loc.Col) +
+                XAIE_PL_MOD_COL_CLKCNTR_REGOFF;
+
+        FldVal = XAie_SetField(Enable,
+                        XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_LSB,
+                        XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK);
+
+
+        /* In AIE4 Device, While doing column reset, We need to reset
+ *            Column Clock buffer and Tile Clock Buffer bit */
+        FldVal |= XAie_SetField(Enable,
+                        XAIE_PL_MOD_COL_CLKCNTR_TILE_CLK_CLKBUF_ENABLE_LSB,
+                        XAIE_PL_MOD_COL_CLKCNTR_TILE_CLK_CLKBUF_ENABLE_MASK);
+
+        _XAie_LPartMaskWrite32(DevInst, RegAddr,
+                        (XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK |
+                         XAIE_PL_MOD_COL_CLKCNTR_TILE_CLK_CLKBUF_ENABLE_MASK),
+                        FldVal);
+
+        return XAIE_OK;
+}
+
+/*****************************************************************************/
+/**
  *
  * This API configures the registers following POR sequence. It Unlock ME PCSR,
  * Sets ME_IPOR, Sets top row and Row Offset, Releases ARRAY resets, Configures
@@ -1521,6 +1579,7 @@ static inline AieRC _XAie_LAiePorConfiguration(XAie_DevInst *DevInst, XAie_PartP
 
 	u64 RegAddr;
 	u32 StartCol,EndCol,RegVal, FldVal;
+	XAie_LocType Loc;
 	uint16_t NpiPorValues;
 
 	/* Unlock ME PCSR */
@@ -1533,56 +1592,12 @@ static inline AieRC _XAie_LAiePorConfiguration(XAie_DevInst *DevInst, XAie_PartP
 	NpiPorValues = PorOptions->MeTopRow | (PorOptions->RowOffset << XAIE_NPI_PROT_REG_ROWOFFSET_LSB);
 	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_TOP_ROW, NpiPorValues);
 
-	/* Configure other NPI registers */
-	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_SECURE_REG,XAIE_DISABLE);
-	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_RAM_EMA_CTRL,XAIE_DISABLE);
-	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_RAM_EMA_CTRL,0x7fff);
-	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_RAM_EMA_CTRL,XAIE_DISABLE);
-	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_RAM_EMA_CTRL,XAIE_NPI_PROT_REG_ME_RAM_EMA_RESET_VALUE);
-
-	/* Update Start Col and Last Col of array in NPI register.
-	 * Enable Protection on entire array */
-	StartCol = DevInst->StartCol;
-	EndCol = StartCol + DevInst->NumCols - 1;
-
-	RegVal = XAie_SetField(XAIE_ENABLE, XAIE_NPI_PROT_REG_CNTR_EN_LSB,
-					XAIE_NPI_PROT_REG_CNTR_EN_MSK);
-
-	RegVal |= XAie_SetField(StartCol, XAIE_NPI_PROT_REG_CNTR_FIRSTCOL_LSB,
-					XAIE_NPI_PROT_REG_CNTR_FIRSTCOL_MSK);
-	RegVal |= XAie_SetField(EndCol, XAIE_NPI_PROT_REG_CNTR_LASTCOL_LSB,
-					XAIE_NPI_PROT_REG_CNTR_LASTCOL_MSK);
-	_XAie_LNpiWriteCheck32(XAIE_NPI_PROT_REG_CNTR_REG, RegVal);
-
-	/* Un-gate all Columns */
+	/* Un-gate all Columns post releasing Array reset */
 	for(u32 C = 0; C < DevInst->NumCols; C++) {
-		RegAddr = _XAie_LGetTileAddr(0,C) + XAIE_PL_MOD_COL_CLKCNTR_REGOFF;
-		FldVal = XAie_SetField(XAIE_ENABLE,
-					XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_LSB,
-					XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK);
-		_XAie_LPartMaskWrite32(DevInst, RegAddr,
-				XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK, FldVal);
-	}
-
-	/* To-Do:Check with Architecture team if Application Reset and Zeroization is required in POR sequence
-	 * or can be done during Partition Initialization
-	 */
-
-	/* Remove Isolation from all tiles on all sides */
-	for(u32 C=0; C < DevInst->NumCols; C++) {
-		for(u32 R=0; R < DevInst->NumRows; R++) {
-			if(R == XAIE_SHIM_ROW) {
-				RegAddr = _XAie_LGetTileAddr(R, C) + XAIE_PL_MOD_TILE_CNTR_REGOFF;
-				_XAie_LPartWrite32(DevInst, RegAddr, XAIE_DISABLE);
-			} else if (R >= XAIE_MEM_TILE_ROW_START && R < XAIE_AIE_TILE_ROW_START) {
-				RegAddr = _XAie_LGetTileAddr(R, C) + XAIE_MEM_TILE_MOD_TILE_CNTR_REGOFF;
-				_XAie_LPartWrite32(DevInst, RegAddr, XAIE_DISABLE);
-			} else {
-				RegAddr = _XAie_LGetTileAddr(R, C) + XAIE_CORE_MOD_TILE_CNTR_REGOFF;
-				_XAie_LPartWrite32(DevInst, RegAddr, XAIE_DISABLE);
-			}
-		}
-	}
+                Loc.Row = XAIE_SHIM_ROW;
+                Loc.Col = C;
+                _XAie_LColumnClkControl(DevInst,Loc,XAIE_ENABLE);
+        }
 
 	/* Toogle Array reset to put uC to Sleep */
 	/* Assert Array Reset */
@@ -1603,29 +1618,24 @@ static inline AieRC _XAie_LAiePorConfiguration(XAie_DevInst *DevInst, XAie_PartP
 			XAIE_NPI_PCSR_MASK_ME_ARRAY_RESET_MASK);
 	_XAie_LNpiWriteCheck32(XAIE_NPI_PCSR_CONTROL_REG, RegVal);
 
+	/* Un-gate all Columns post toggeling Array reset */
+	for(u32 C = 0; C < DevInst->NumCols; C++) {
+                Loc.Row = XAIE_SHIM_ROW;
+                Loc.Col = C;
+                _XAie_LColumnClkControl(DevInst,Loc,XAIE_ENABLE);
+        }
 
-	/* Zeroize All uC modules */
-	/* FW team loads CERT before calling POR API. This results in clearing on uC PM and Simnow crash
-	   during Clear Context. Below Fix is a workaround to enable FW team to continue development
-	   till Cert loading is finalized.
-	   Note - Remove Check once CERT sideloading is fixed
-	*/
-	#ifndef __AIESIM__
+	/* Zeroize All Tiles and uC modules */
+	_XAie_LPartMemZeroInit(DevInst);
 	_XAie_LZeroInitUcMemory(DevInst);
-	#endif
 
 	/* Clock Gate all Columns */
 	for(u32 C = 0; C < DevInst->NumCols; C++) {
-		RegAddr = _XAie_LGetTileAddr(0,C) + XAIE_PL_MOD_COL_CLKCNTR_REGOFF;
-		FldVal = XAie_SetField(XAIE_DISABLE,
-					XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_LSB,
-					XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK);
-		_XAie_LPartMaskWrite32(DevInst, RegAddr,
-				XAIE_PL_MOD_COL_CLKCNTR_CLKBUF_ENABLE_MASK, FldVal);
-	}
+                Loc.Row = XAIE_SHIM_ROW;
+                Loc.Col = C;
+                _XAie_LColumnClkControl(DevInst,Loc,XAIE_DISABLE);
+        }
 
-	/* Enable NPI accept only Secure data */
-	_XAie_LNpiWrite32(XAIE_NPI_PROT_REG_ME_SECURE_REG,XAIE_ENABLE);
 	/* Lock NPI PCSR */
 	_XAie_LNpiSetLock(XAIE_ENABLE);
 	return XAIE_OK;

@@ -426,6 +426,29 @@ static inline AieRC _XAie_LTileClockControl(XAie_DevInst *DevInst, XAie_LocType 
 	return XAIE_NOT_SUPPORTED;
 }
 
+
+/*****************************************************************************/
+/**
+* This API Enables/Disables column clocks in AIE Columns
+*
+* @param        DevInst: AI engine partition device instance pointer
+* @param        Locs: Locations of Tiles to Enable/Disable Module Clock
+* @param        Enable: Enable/Disable Tile Module clock
+*
+* @return   XAIE_OK on success, error code on failure
+*
+* @note         Initial support for this API is only for AIE4 devices. It doesn't support
+*                       Legacy devices.
+*
+*******************************************************************************/
+static inline AieRC _XAie_LColumnClkControl(XAie_DevInst *DevInst, XAie_LocType Loc, u8 Enable)
+{
+	(void)DevInst;
+	(void)Loc;
+	(void)Enable;
+	return XAIE_NOT_SUPPORTED;
+}
+
 /*****************************************************************************/
 /**
 * This API Sets SMID, AxUSER_A or B and Trusted_Keys registers in Shim Tile for each
