@@ -1111,11 +1111,6 @@ AieRC XAie_ControlCodeSaveTimestamp(XAie_DevInst *DevInst, u32 Timestamp)
 
         XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)DevInst->IOInst;
 
-		if(ControlCodeInst->NumShimBDsChained != 0) {
-			XAie_ConfigMode(DevInst->IOInst, XAIE_SHIM_BD_CHAINING_DISABLE);
-			XAie_ConfigMode(DevInst->IOInst, XAIE_SHIM_BD_CHAINING_ENABLE);
-		}
-
         ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
                 ((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_SAVE_TIMESTAMPS)% DATA_SECTION_ALIGNMENT));
         if (ControlCodeInst->DataAligner == DATA_SECTION_ALIGNMENT) {

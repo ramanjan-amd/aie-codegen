@@ -3074,7 +3074,7 @@ AieRC XAie_Preempt(XAie_DevInst *DevInst, u16 PreemptId, char* SaveLabel, char* 
 	else
 	{
 		XAIE_ERROR("Preempt function pointer points to NULL, hence returned mode is XAIE_INVALID_MODE\n");
-		return XAIE_INVALID_MODE;
+		return XAIE_NOT_SUPPORTED;
 	}
 }
 
