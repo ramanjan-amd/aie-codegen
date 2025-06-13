@@ -146,6 +146,139 @@ AieRC XAie_SetColumnClk(XAie_DevInst *DevInst, u8 Enable)
 /*****************************************************************************/
 /**
 *
+*  This API reads the register and returns the value of the register to IPU FW
+*
+* @param        RegAddr: Absolute address of the address to be read
+*
+* @return       Register Value
+******************************************************************************/
+u64 XAie_GenRead(u64 RegAddr) {
+	return _XAie_LRawRead32(RegAddr);
+}
+
+/*****************************************************************************/
+/**
+*
+*  This API writes value provided by IPU FW to the register
+*
+* @param        RegAddr: Absolute address of the address to be written
+*
+* @return       None
+******************************************************************************/
+void XAie_GenWrite(u64 RegAddr, u32 Value) {
+	_XAie_LRawWrite32(RegAddr, Value);
+}
+
+/*****************************************************************************/
+/**
+*
+*  This API generated NPI interrupts on the interrupt line provided by IPU FW
+*
+* @param        DevInst: Device Instance
+* @param        IntLine: NPI Interrupt line to be used
+*
+* @return       0 to mark completion of API sequence
+******************************************************************************/
+AieRC XAie_GenNPIInterrupt(XAie_DevInst *DevInst, u8 IntLine) {
+
+    AieRC RC;
+    u64 RegAddr;
+    u32 RegVal;
+
+ #if DEV_GEN_AIE4
+	// (0) Unlock
+	 _XAie_LNpiWrite32(0x0C, 0xF9E8D7C6);
+
+	// (1) LX7 enable AIE4 NPI interrupt (to program NPI register 0x3c)
+	_XAie_LNpiWrite32(0x3C, (1U << IntLine)); // 0001b INTERRUPT1, 0010b INTERRUPT2, 0100b INTERRUPT3, 1000b INTERRUPT4
+
+	RegAddr = _XAie_LGetTileAddr(0, 0) + \
+					XAIE_NOC_MOD_INTR_L2_GLOBAL_ENABLE;
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+		RegVal = XAie_SetField(1, XAIE_NOC_MOD_INTR_L2_APP_B_GE_LSB,
+					XAIE_NOC_MOD_INTR_L2_APP_B_GE_MASK);
+	} else {
+		RegVal = XAie_SetField(1, XAIE_NOC_MOD_INTR_L2_APP_A_GE_LSB,
+					XAIE_NOC_MOD_INTR_L2_APP_A_GE_MASK);
+	}
+
+	// (2) LX7 enable AIE4 Interrupr_controller_global_enable register (0xe8070)
+	_XAie_LPartWrite32(DevInst, RegAddr, RegVal); // 0x1: Enable_App_A, 0x2: Enable_App_B
+
+	RegAddr = _XAie_LGetTileAddr(0, 0) + \
+					XAIE_NOC_MOD_INTR_L2_IRQ;
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+		RegVal = XAie_SetField(IntLine,
+					XAIE_NOC_MOD_INTR_L2_APP_B_IRQ_LSB, XAIE_NOC_MOD_INTR_L2_APP_B_IRQ_MASK);
+    } else {
+		RegVal = XAie_SetField(IntLine,
+				XAIE_NOC_MOD_INTR_L2_IRQ_LSB, XAIE_NOC_MOD_INTR_L2_IRQ_MASK);
+    }
+
+	// (3) LX7 program AIE4 Interrupt_controller_interrupt_line register (0xe8074)
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+		_XAie_LPartWrite32(DevInst, RegAddr, (IntLine << 7U));
+	} else {
+		_XAie_LPartWrite32(DevInst, RegAddr, IntLine);
+	}
+	 // 00b: npi 0, 01b: npi 0 & 1, 10b: npi 0 & 2, 11b: npi 0 & 3
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+		RegAddr = XAIE_NOC_MOD_INTR_L2_APP_B_ENABLE;
+	} else {
+		RegAddr = XAIE_NOC_MOD_INTR_L2_ENABLE;
+	}
+	RegVal = 0x00010000;
+
+	// (4) LX7 to program AIE4 Interrupt_controller_enable_A register (0x1c014) or _B (0x5c014)
+	_XAie_LPartWrite32(DevInst, RegAddr, RegVal);
+
+	// Lock NPI
+	_XAie_LNpiWrite32(0x0C, 0x0);
+#endif
+    return 0;
+}
+
+/*****************************************************************************/
+/**
+*
+*  This API clears NPI interrupts on the interrupt line provided by IPU FW
+*
+* @param        DevInst: Device Instance
+* @param        IntLine: NPI Interrupt line to be used
+*
+* @return       0 to mark completion of API sequence
+******************************************************************************/
+
+AieRC XAie_ClearNPIInterrupt(XAie_DevInst *DevInst, u8 IntLine) {
+	AieRC RC;
+    u64 RegAddr;
+    u32 RegVal;
+
+ #if DEV_GEN_AIE4
+	// (0) Unlock
+	 _XAie_LNpiWrite32(0x0C, 0xF9E8D7C6);
+
+	// (1) LX7 to program AIE4 Interrupt_controller_Status register App A (0x1C01C) or B (0x5C01C)
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
+		RegAddr = XAIE_NOC_MOD_INTR_L2_APP_B_STATUS;
+	} else {
+		RegAddr = XAIE_NOC_MOD_INTR_L2_STATUS;
+	}
+	RegVal = 0x00010000;
+	_XAie_LPartWrite32(DevInst, RegAddr, RegVal);
+
+	// (2) LX7 clear AIE4 NPI interrupt (to program NPI register 0x30)
+	_XAie_LNpiWrite32(0x30, (1U << IntLine)); // 0001b INTERRUPT1, 0010b INTERRUPT2, 0100b INTERRUPT3, 1000b INTERRUPT4
+
+	// Lock NPI
+	_XAie_LNpiWrite32(0x0C, 0x0);
+#endif
+	return 0;
+}
+
+/*****************************************************************************/
+/**
+*
 * This API set the tile column reset
 *
 * @param	DevInst: Device Instance

@@ -106,6 +106,12 @@ XAIE_AIG_EXPORT AieRC XAie_PauseMem(XAie_DevInst *DevInst);
 XAIE_AIG_EXPORT AieRC XAie_CfgPrivilegeHwErrIrq(XAie_DevInst *DevInst, XAie_HwErrCfg HwErrCf);
 XAIE_AIG_EXPORT AieRC XAie_WakeupShimUc(XAie_DevInst *DevInst, u8 ColNum);
 
+/* Custom API for Reading/Writing to registers directly for Self-test from IPU FW*/
+XAIE_AIG_EXPORT u64 XAie_GenRead(u64 RegAddr);
+XAIE_AIG_EXPORT void XAie_GenWrite(u64 RegAddr, u32 Value);
+XAIE_AIG_EXPORT AieRC XAie_GenNPIInterrupt(XAie_DevInst *DevInst, u8 IntLine);
+XAIE_AIG_EXPORT AieRC XAie_ClearNPIInterrupt(XAie_DevInst *DevInst, u8 IntLine);
+
 /************************** Function Definitions *****************************/
 /*****************************************************************************/
 /**
