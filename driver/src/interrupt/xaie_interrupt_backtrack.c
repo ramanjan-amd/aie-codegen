@@ -842,7 +842,7 @@ static AieRC _XAie_LBacktrackIntrCtrlL2(XAie_DevInst *DevInst,
 	u32 Status;
     XAie_AppIndex AppId;
 
-	if((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)) {
+	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
 		AppId = APPLICATION_B;
 	} else{
 		AppId = APPLICATION_A;

@@ -1127,7 +1127,7 @@ static inline void XAie_SetupConfigPartProp(XAie_Config *ConfigPtr, u32 Nid,
 *
 *******************************************************************************/
 #define XAie_ErrorMetadataInit(Mdata, _Buffer, _Size)			\
-	((XAie_ErrorInfo *)(_Buffer))->Payload = (void *)_Buffer + sizeof(XAie_ErrorInfo); \
+	((XAie_ErrorInfo *)(_Buffer))->Payload = (void *)((uintptr_t)_Buffer + sizeof(XAie_ErrorInfo)); \
 	XAie_ErrorMetaData Mdata = {					\
 		.ErrInfo = (XAie_ErrorInfo *) (_Buffer),		\
 		.ArraySize = _Size,					\
