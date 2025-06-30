@@ -1077,15 +1077,15 @@ static inline void  _XAie_LPartMemZeroInit(XAie_DevInst *DevInst)
 * @note		Internal API only.
 *
 ******************************************************************************/
-static inline void _XAie_LZeroInitUcMemory(XAie_DevInst *DevInst)
+static inline void _XAie_LZeroInitUcProgMemory(XAie_DevInst *DevInst)
 {
 	u64 RegAddr;
 	for(u8 C = 0; C < DevInst->NumCols; C++) {
 		for(u8 U = 0; U < XAIE_PL_MOD_UC_MEMORY_COUNT; U++) {
 			RegAddr = _XAie_LGetTileAddr(0, C) + ((U * XAIE_PL_MOD_UC_MEMORY_IDX) + XAIE_PL_MODULE_MEMORY_ZEROIZATION);
 			_XAie_LPartMaskWrite32(DevInst, RegAddr,
-					XAIE_PL_MODULE_MEMORY_ZEROIZATION_MASK,
-					XAIE_PL_MODULE_MEMORY_ZEROIZATION_MASK);
+					XAIE_PL_MODULE_MEMORY_PM_ZEROIZATION_MASK,
+					XAIE_PL_MODULE_MEMORY_PM_ZEROIZATION_MASK);
 		}
 	}
 
@@ -1097,7 +1097,7 @@ static inline void _XAie_LZeroInitUcMemory(XAie_DevInst *DevInst)
 		return ;
 	}
 	RegAddr = _XAie_LGetTileAddr(0, DevInst->NumCols - 1) + XAIE_PL_MODULE_MEMORY_ZEROIZATION_B;
-	_XAie_LPartPoll32(DevInst, RegAddr, XAIE_PL_MODULE_MEMORY_ZEROIZATION_MASK, 0, 1000);
+	_XAie_LPartPoll32(DevInst, RegAddr, XAIE_PL_MODULE_MEMORY_PM_ZEROIZATION_MASK, 0, 1000);
 }
 /*****************************************************************************/
 /**
@@ -1627,7 +1627,9 @@ static inline AieRC _XAie_LAiePorConfiguration(XAie_DevInst *DevInst, XAie_PartP
 
 	/* Zeroize All Tiles and uC modules */
 	_XAie_LPartMemZeroInit(DevInst);
-	_XAie_LZeroInitUcMemory(DevInst);
+	/* Zeroize uC PM or retain based on PmRetain parameter passed by FW*/
+	if(!PorOptions->PmRetain)
+	_XAie_LZeroInitUcProgMemory(DevInst);
 
 	/* Clock Gate all Columns */
 	for(u32 C = 0; C < DevInst->NumCols; C++) {

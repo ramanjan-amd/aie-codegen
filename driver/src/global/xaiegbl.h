@@ -253,6 +253,7 @@ typedef struct XAie_PartInitOpts {
 typedef struct XAie_PartPorOpts {
 	u8 RowOffset; /* Row offset to disable Compute tiles in a column and set them in pass through mode */
 	u8 MeTopRow; /* Top most Compute tile in a Column */
+	u8 PmRetain; /* Parameter to zeroize/retain uC Pm during POR */
 } XAie_PartPorOpts;
 
 /*
