@@ -1451,7 +1451,7 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 		return XAIE_ERR;
 	}
 	printf("Generating: %s\n", FileName);
-
+/*
 	if(DevInst->DevProp.DevGen == XAIE_DEV_GEN_AIE4) {
 		//Medusa case
 		fprintf(ControlCodeInst->ControlCodefp, ".target\t aie4\n");
@@ -1469,7 +1469,7 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 		XAIE_ERROR("Unknown Target Device Generation %d\n", DevInst->DevProp.DevGen);
 		return XAIE_INVALID_DEVICE;
 	}
-
+*/
 	fprintf(ControlCodeInst->ControlCodefp, ".partition\t %dcolumn\n",DevInst->NumCols);
 	fprintf(ControlCodeInst->ControlCodefp, ";\n");
 	fprintf(ControlCodeInst->ControlCodefp, ";text\n");
