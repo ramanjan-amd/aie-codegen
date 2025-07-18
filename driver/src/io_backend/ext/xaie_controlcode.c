@@ -152,8 +152,9 @@ AieRC XAie_ControlCodeIO_Finish(void *IOInst)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
 	XAie_DevInst *DevInst = ControlCodeInst->DevInst;
-	XAie_CloseControlCodeFile(DevInst);
-
+	if(ControlCodeInst->ControlCodefp != NULL) {
+		XAie_CloseControlCodeFile(DevInst);
+	}
 	if(IOInst) {
 		free(IOInst);
 	}
