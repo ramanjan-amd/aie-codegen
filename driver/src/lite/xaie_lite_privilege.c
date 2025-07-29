@@ -46,7 +46,225 @@
 #define XAIE_APP_MODE_SHIFT     8U
 #define XAIE_L2_SPLIT_SHIFT     10U
 
+#define XAIE_CORE_TILE_GROUP_ERRORS0_EVENT_NUM			0x56     // Group_Error0 = 86 ; Page 210 in spec version v1.3
+#define XAIE_CORE_TILE_GROUP_ERRORS1_EVENT_NUM			0x57     // Group_Error0 = 87 ; Page 210 in spec version v1.3
+#define XAIE_CORE_TILE_GROUP_ERRORS2_EVENT_NUM			0x58     // Group_Error0 = 88 ; Page 210 in spec version v1.3
+#define XAIE_MEM_TILE_GROUP_ERRORS_EVENT_NUM			0xA2     // Group_Errors = 162 ; Page 298 in spec version v1.3
+#define XAIE_SHIM_TILE_GROUP_ERRORS_EVENT_NUM			0x98     // Group_Errors = 152 ; Page 338 in spec version v1.3
+
+#define BC_DIR_UNBLOCK		0
+#define BC_DIR_BLOCK		1
+
+/***
+ * Interrupt_controller_enable
+ * BIT-16  Enable_uC_Core	Enable the uC-Core interrupt by setting its mask bit
+ * BIT-15  Enable_BC15	        Enable the Broadcast channel 15 by setting its mask bit
+ * ...
+ * BIT-0   Enable_BC0           Enable the Broadcast channel 15 by setting its mask bit 
+ ***/
+#define XAIE_L2_INTR_ENABLE_ALL_SOURCES                         0x1FFFF
+
+/***
+ * Event_Group_Errors_Enable_A
+ * SHIM Tile Group Error Event Number = 152 (153 to 169)
+ *
+ * [153,154,155,156,157,158,160,161,162,163,164,167,168]
+ *
+ * BIT-00 	153		AXI_MM_Subordinate_Tile_Error   Set
+ * BIT-01 	154		Control_Pkt_Error		Set
+ * BIT-02 	155		Stream_Switch_Parity_Error	Set
+ * BIT-03 	156		NSU_Error			Set
+ * BIT-04 	157	 	DMA_Error			Set
+ * BIT-05 	158	 	Lock_Error			Set
+ * BIT-06 	159		DMA_task_token_stall		XXX-Not-Set-XXX
+ * BIT-07 	160		DMA_HW_Error			Set
+ * BIT-08 	161		uC_Module_A_Error		Set
+ * BIT-09 	162		uC_Module_B_Error		Set
+ * BIT-10 	163		uC_Module_A_AXI_MM_Error	Set
+ * BIT-11 	164		uC_Module_B_AXI_MM_Error	Set
+ * BIT-12 	165		uC_Module_A_ECC_Error_1bit	XXX-Not-Set-XXX
+ * BIT-13 	166		uC_Module_B_ECC_Error_1bit	XXX-Not-Set-XXX
+ * BIT-14 	167		uC_Module_A_ECC_Error_2bit	Set
+ * BIT-15 	168		uC_Module_B_ECC_Error_2bit	Set
+ ****/
+#define XAIE_SHIM_TILE_GROUP_ERROR_VALUE			0xFFFF
+
+/***
+ * Event_Group_Error_Enable_A
+ * Mem Tile Group Error Event Number = 162 (163 to 175)
+ *
+ * [164,166,167,168,169,170,171,172]
+ *
+ * BIT-00 	163		DM_ECC_Error_Scrub_Corrected	XXX-Not-Set-XXX
+ * BIT-01 	164		DM_ECC_Error_Scrub_2bit		Set
+ * BIT-02 	165		DM_ECC_Error_1bit		XXX-Not-Set-XXX
+ * BIT-03 	166		DM_ECC_Error_2bit		Set
+ * BIT-04 	167	 	DMA_S2MM_Error			Set
+ * BIT-05 	168	 	DMA_MM2S_Error			Set
+ * BIT-06 	169		Stream_Switch_Port_Parity_Error	Set
+ * BIT-07 	170		Control_Pkt_Error		Set
+ * BIT-08 	171		AXI_MM_Subordinate_Error	Set
+ * BIT-09 	172		Lock_Error			Set
+ * BIT-10 	173		DMA_Task_Token_Stall		XXX-Not-Set-XXX
+ ****/
+#define XAIE_MEM_TILE_GROUP_ERROR_VALUE                         0x7FF
+
+/***
+ * Event_Group_Errors0_Enable	86
+ * Event_Group_Errors1_Enable	87
+ * Event_Group_Errors2_Enable	88
+ * Core Tile Group Error Event Number = (89 to 120)
+ *
+ * [95,96,97,98,100,102,103,104,105,108,109,110,112,114,115,116]
+ *
+ * BIT-00 	89		SRS_Overflow			XXX-Not-Set-XXX
+ * BIT-01 	90		UPS_Overflow			XXX-Not-Set-XXX
+ * BIT-02 	91		FP_Huge				XXX-Not-Set-XXX
+ * BIT-03 	92		Int_FP_Zero			XXX-Not-Set-XXX
+ * BIT-04 	93	 	FP_Invalid			XXX-Not-Set-XXX
+ * BIT-05 	94	 	FP_INF				XXX-Not-Set-XXX
+ * BIT-06 	95		Control_Pkt_Error		Set
+ * BIT-07 	96		AXI_MM_Subordinate_Error	Set
+ * BIT-08 	97		Core_Fatal_Error		Set
+ * BIT-09 	98		DM_address_out_of_range		Set
+ * BIT-10 	99		PM_ECC_Error_Scrub_Corrected	XXX-Not-Set-XXX
+ * BIT-11 	100		PM_ECC_Error_Scrub_2bit		Set
+ * BIT-12 	101		PM_ECC_Error_1bit		XXX-Not-Set-XXX
+ * BIT-13 	102		PM_ECC_Error_2bit		Set
+ * BIT-14 	103		PM_address_out_of_range		Set
+ * BIT-15 	104		DM_access_to_Unavailable	Set
+ * BIT-16 	105		Lock_Access_to_Unavailable	Set
+ * BIT-17 	106		Instr_Warning			XXX-Not-Set-XXX
+ * BIT-18 	107		Instr_Error			XXX-Not-Set-XXX
+ * BIT-19 	108		Data_Error			Set
+ * BIT-20 	109		Stream_Switch_Port_Parity_Error	Set
+ * BIT-21 	110		Processor_Bus_Error		Set
+ * BIT-22 	111		DM_ECC_Error_Scrub_Corrected	XXX-Not-Set-XXX
+ * BIT-23 	112		DM_ECC_Error_Scrub_2bit		Set
+ * BIT-24 	113		DM_ECC_Error_1bit		XXX-Not-Set-XXX
+ * BIT-25 	114		DM_ECC_Error_2bit		Set
+ * BIT-26 	115		DM_Parity_Error			Set
+ * BIT-27 	116		DMA_Error			Set
+ * BIT-28 	117		Lock_Error			XXX-Not-Set-XXX
+ * BIT-29 	118		DMA_task_token_stall		XXX-Not-Set-XXX
+ ****/
+#define XAIE_CORE_TILE_GROUP_ERROR_VALUE            		0x3FFFFFFF
+
 /************************** Function Definitions *****************************/
+/*****************************************************************************/
+/**
+* This API sets up the error network for the given device partition to be used
+* by MPNPU self test.
+*
+* @param        DevInst: Device Instance
+*
+* @return       AieRC
+*               - XAIE_OK on success
+*
+* @note         It is implemented to support MPNPU self test framework.
+*
+******************************************************************************/
+AieRC XAie_SetupErrorNetwork(XAie_DevInst *DevInst)
+{
+	u64 RegAddr;
+
+#if DEV_GEN_AIE4
+	XAie_SetColumnClk(DevInst, XAIE_ENABLE);
+
+	// Event Broadcast Network Configuration for each column
+	for (int col = 0; col < DevInst->NumCols; col++) {
+		// Row-0 : Shim Tile
+		// Configure Shim-Tile to enable all interrupt line 16 BC and 1 uC
+		RegAddr = _XAie_LGetTileAddr(0, 0) + ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ?
+			XAIE_NOC_MOD_INTR_L2_APP_B_ENABLE : XAIE_NOC_MOD_INTR_L2_ENABLE);
+		_XAie_LPartWrite32(DevInst, RegAddr, XAIE_L2_INTR_ENABLE_ALL_SOURCES);
+
+		// Configure Shim-Tile to Block Events in all directions (North East South and West)
+		RegAddr = _XAie_LGetTileAddr(0, col) + ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ?
+			XAIE_PL_MOD_EVENT_BROADCAST_B_BLOCK_SOUTH_SET : XAIE_PL_MOD_EVENT_BROADCAST_A_BLOCK_SOUTH_SET);
+		_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_UNBLOCK); // UnBlock South
+
+		RegAddr = _XAie_LGetTileAddr(0, col) + ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ?
+			XAIE_PL_MOD_EVENT_BROADCAST_B_BLOCK_NORTH_SET : XAIE_PL_MOD_EVENT_BROADCAST_A_BLOCK_NORTH_SET);
+		_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_BLOCK); // Block North
+
+		if (DevInst->AppMode != XAIE_DEVICE_DUAL_APP_MODE_B) {
+			RegAddr = _XAie_LGetTileAddr(0, col) +  XAIE_PL_MOD_EVENT_BROADCAST_A_BLOCK_WEST_SET;
+			_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_BLOCK); // Block West
+
+			RegAddr = _XAie_LGetTileAddr(0, col) +  XAIE_PL_MOD_EVENT_BROADCAST_A_BLOCK_EAST_SET;
+			_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_BLOCK); // Block East
+		}
+
+		// Row-1 : Mem Tile
+		// Configure Mem-Tile to Block Events in West, North and East
+		RegAddr = _XAie_LGetTileAddr(1, col) + ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ?
+			XAIE_MEM_TILE_EVENT_BROADCAST_B_BLOCK_SOUTH_SET : XAIE_MEM_TILE_EVENT_BROADCAST_A_BLOCK_SOUTH_SET);
+		_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_UNBLOCK); // UnBlock South
+
+		RegAddr = _XAie_LGetTileAddr(1, col) + ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ?
+			XAIE_MEM_TILE_EVENT_BROADCAST_B_BLOCK_NORTH_SET : XAIE_MEM_TILE_EVENT_BROADCAST_A_BLOCK_NORTH_SET);
+		_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_BLOCK); // Block North
+
+		if (DevInst->AppMode != XAIE_DEVICE_DUAL_APP_MODE_B) {
+			RegAddr = _XAie_LGetTileAddr(1, col) + XAIE_MEM_TILE_EVENT_BROADCAST_A_BLOCK_WEST_SET;
+			_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_BLOCK); // Block West
+
+			RegAddr = _XAie_LGetTileAddr(1, col) +  XAIE_MEM_TILE_EVENT_BROADCAST_A_BLOCK_EAST_SET;
+			_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_BLOCK); // Block East
+		}
+
+		// Row-2 and Above : Core Tile
+		// Configure Core-Tile to Block Events in West, North and East
+		for (int row = XAIE_AIE_TILE_ROW_START; row < XAIE_NUM_ROWS; row++) {
+			RegAddr = _XAie_LGetTileAddr(row, col) + XAIE_AIE_TILE_EVENT_BROADCAST_BLOCK_SOUTH_SET;
+			_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_UNBLOCK); // UnBlock South
+
+			RegAddr = _XAie_LGetTileAddr(row, col) + XAIE_AIE_TILE_EVENT_BROADCAST_BLOCK_WEST_SET;
+			_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_BLOCK); // Block West
+
+			RegAddr = _XAie_LGetTileAddr(row, col) + XAIE_AIE_TILE_EVENT_BROADCAST_BLOCK_NORTH_SET;
+			_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_BLOCK); // Block North
+
+			RegAddr = _XAie_LGetTileAddr(row, col) + XAIE_AIE_TILE_EVENT_BROADCAST_BLOCK_EAST_SET;
+			_XAie_LPartWrite32(DevInst, RegAddr, BC_DIR_BLOCK); // Block East
+		}
+	}
+
+	// Enable desired group errors for each tile and configure BC0 to propagate group error0 event.
+	for (int col = 0; col < DevInst->NumCols; col++) {
+		// Row-0 : Shim Tile
+		RegAddr = _XAie_LGetTileAddr(0, col) + ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ?
+			XAIE_PL_MOD_GROUP_ERROR0_ENABLE_B : XAIE_PL_MOD_GROUP_ERROR0_ENABLE);
+		_XAie_LPartWrite32(DevInst, RegAddr, XAIE_SHIM_TILE_GROUP_ERROR_VALUE);
+
+		RegAddr = _XAie_LGetTileAddr(0, col) + ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ?
+			XAIE_PL_MOD_EVENT_BROADCAST_B_0 : XAIE_PL_MOD_EVENT_BROADCAST_A_0);
+		_XAie_LPartWrite32(DevInst, RegAddr, XAIE_SHIM_TILE_GROUP_ERRORS_EVENT_NUM);
+
+		// Row-1 : Mem Tile
+		RegAddr = _XAie_LGetTileAddr(1, col) + ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ?
+			XAIE_MEM_TILE_GROUP_ERROR0_ENABLE_B : XAIE_MEM_TILE_GROUP_ERROR0_ENABLE);
+		_XAie_LPartWrite32(DevInst, RegAddr, XAIE_MEM_TILE_GROUP_ERROR_VALUE);
+
+		RegAddr = _XAie_LGetTileAddr(1, col) + ((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ?
+			XAIE_MEM_TILE_EVENT_BROADCAST_B_0 : XAIE_MEM_TILE_EVENT_BROADCAST_A_0);
+		_XAie_LPartWrite32(DevInst, RegAddr, XAIE_MEM_TILE_GROUP_ERRORS_EVENT_NUM);
+
+		// Row-2 and Above : Core Tile
+		for (int row = XAIE_AIE_TILE_ROW_START; row < XAIE_NUM_ROWS; row++) {
+			RegAddr = _XAie_LGetTileAddr(row, col) + XAIE_CORE_MOD_GROUP_ERROR0_ENABLE;
+			_XAie_LPartWrite32(DevInst, RegAddr, XAIE_CORE_TILE_GROUP_ERROR_VALUE);
+
+			RegAddr = _XAie_LGetTileAddr(row, col) + XAIE_CORE_MOD_BASE_EVENT_BROADCAST;
+			_XAie_LPartWrite32(DevInst, RegAddr, XAIE_CORE_TILE_GROUP_ERRORS0_EVENT_NUM);
+		}
+	}
+#endif
+
+	return XAIE_OK;
+}
+
 /*****************************************************************************/
 /**
 * This API sets the column clock control register. Its configuration affects

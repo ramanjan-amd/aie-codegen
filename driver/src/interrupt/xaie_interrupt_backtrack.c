@@ -198,6 +198,8 @@ static inline u32 _XAie_LEventReadStatus(XAie_DevInst *DevInst,
 {
 	u64 RegAddr;
 	u32 RegOff, RegVal;
+	u8  BitPos = (Event % 32U);
+	u32 BitMask = (1 << BitPos);
 
 	u8 TType = _XAie_LGetTTypefromLoc(DevInst, Loc);
 	if (TType == XAIEGBL_TILE_TYPE_MEMTILE) {
@@ -220,7 +222,7 @@ static inline u32 _XAie_LEventReadStatus(XAie_DevInst *DevInst,
 	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + RegOff +
 			(Event / 32U) * 4U;
 	RegVal = _XAie_LPartRead32(DevInst, RegAddr);
-	return XAie_GetField(RegVal, (Event % 32U), 1U << (Event % 32U));
+	return (XAie_GetField(RegVal, BitPos, BitMask));
 }
 
 /*****************************************************************************/

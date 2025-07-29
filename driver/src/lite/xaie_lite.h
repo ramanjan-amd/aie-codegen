@@ -130,6 +130,7 @@ XAIE_AIG_EXPORT u64 XAie_GenRead(u64 RegAddr);
 XAIE_AIG_EXPORT void XAie_GenWrite(u64 RegAddr, u32 Value);
 XAIE_AIG_EXPORT AieRC XAie_GenNPIInterrupt(XAie_DevInst *DevInst, u8 IntLine);
 XAIE_AIG_EXPORT AieRC XAie_ClearNPIInterrupt(XAie_DevInst *DevInst, u8 IntLine);
+XAIE_AIG_EXPORT AieRC XAie_SetupErrorNetwork(XAie_DevInst *DevInst);
 
 /************************** Function Definitions *****************************/
 /*****************************************************************************/
