@@ -29,6 +29,10 @@
 #include "xaiegbl_defs.h"
 #include "xaiegbl.h"
 
+#ifdef __AIE_REGDUMP__
+void printk(const char *fmt, ...);
+#endif
+
 
 /************************** Constant Definitions *****************************/
 /************************** Variable Definitions *****************************/
@@ -102,6 +106,9 @@ static inline void _XAie_LRawWrite32(u64 RegAddr, u32 Value)
     	return;
     }
 #endif
+	#ifdef __AIE_REGDUMP__
+	printk("_XAie_LRawWrite32 RegAddr - 0x%llx Value - 0x%x \n",RegAddr,Value);
+	#endif
 	*(volatile u32*)(uintptr_t)RegAddr = Value;
 }
 
@@ -116,6 +123,9 @@ static inline void _XAie_LRawMaskWrite32(u64 RegAddr, u32 Mask, u32 Value)
 	u32 RegVal = *(volatile u32*)(uintptr_t) RegAddr;
 
 	RegVal = (RegVal & (~Mask)) | Value;
+	#ifdef __AIE_REGDUMP__
+	printk("_XAie_LRawMaskWrite32 RegAddr - 0x%llx Value - 0x%x \n",RegAddr,RegVal);
+	#endif
 	*(volatile u32*) (uintptr_t)RegAddr = RegVal;
 }
 
@@ -127,6 +137,9 @@ static inline u32 _XAie_LRawRead32(u64 RegAddr)
     	return XAIE_ERR;
     }
 #endif
+	#ifdef __AIE_REGDUMP__
+	printk("_XAie_LRawRead32 RegAddr - 0x%llx \n",RegAddr);
+	#endif
 	return *(volatile u32*)(uintptr_t)RegAddr;
 }
 
@@ -143,6 +156,9 @@ static inline int _XAie_LRawPoll32(u64 RegAddr, u32 Mask, u32 Value, u32 TimeOut
 	}
 	do {
 		RegVal = _XAie_LRawRead32(RegAddr);
+		#ifdef __AIE_REGDUMP__
+		printk("_XAie_LRawPoll32 RegVal - 0x%x \n",RegVal);
+		#endif
 		if((RegVal & Mask) == Value) {
 			return 0;
 		}
