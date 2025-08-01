@@ -37,6 +37,7 @@
 #include "xaie_interrupt.h"
 #include "xaie_lite.h"
 #include "xaie_lite_io.h"
+#include "xaie_lite_internal.h"
 
 #if defined(XAIE_FEATURE_INTR_CTRL_ENABLE) && defined(XAIE_FEATURE_LITE)
 
