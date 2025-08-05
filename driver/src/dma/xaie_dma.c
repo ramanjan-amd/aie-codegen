@@ -50,8 +50,6 @@
 #define XAIE_DMA_CHCTRL_NUM_WORDS			2U
 #define XAIE_DMA_WAITFORDONE_DEF_WAIT_TIME_US		1000000U
 
-#define XAIE_DMA_PAD_WORDS_MAX				0x3FU /* 6 bits */
-#define XAIE4_DMA_PAD_WORDS_MAX				0xFFU /* 8 bits */
 
 /************************** Function Definitions *****************************/
 static inline u8 _XAie_DmaTileAndChannelDirSupportsPvtBuffPoolBds(u8 DevGen,  u8 TileType,
@@ -1091,44 +1089,14 @@ AieRC XAie_DmaSetAxi(XAie_DmaDesc *DmaDesc, u8 Smid, u8 BurstLen, u8 Qos,
 	if (!DmaDesc->DmaMod->AxiBurstLenCheck) {
 		XAIE_ERROR("Invalid AxiBurstLenCheck pointer\n");
 		return XAIE_INVALID_API_POINTER;
-	} else if (DmaDesc->DmaMod->AxiBurstLenCheck(BurstLen)) {
-		XAIE_ERROR("Invalid Burst length\n");
-		return XAIE_INVALID_BURST_LENGTH;
 	}
+        if (DmaDesc->DmaMod->AxiBurstLenCheck(BurstLen,
+                                              &DmaDesc->AxiDesc.BurstLen)) {
+                XAIE_ERROR("Invalid Burst length\n");
+                return XAIE_INVALID_BURST_LENGTH;
+        }
 
 	DmaDesc->AxiDesc.SMID = Smid;
-
-	if (!_XAie_IsDeviceGenAIE4(DmaDesc->DevGen)) {
-		switch(BurstLen) {
-			case 4:
-				DmaDesc->AxiDesc.BurstLen = 0;
-				break;
-			case 8:
-				DmaDesc->AxiDesc.BurstLen = 1;
-				break;
-			case 16:
-				DmaDesc->AxiDesc.BurstLen = 2;
-				break;
-			case 32:
-				DmaDesc->AxiDesc.BurstLen = 3;
-				break;
-		}
-	} else {
-		switch(BurstLen) {
-			case 1:
-				DmaDesc->AxiDesc.BurstLen = 0;
-				break;
-			case 2:
-				DmaDesc->AxiDesc.BurstLen = 1;
-				break;
-			case 4:
-				DmaDesc->AxiDesc.BurstLen = 2;
-				break;
-			case 8:
-				DmaDesc->AxiDesc.BurstLen = 3;
-				break;
-		}
-	}
 	DmaDesc->AxiDesc.AxQos = Qos;
 	DmaDesc->AxiDesc.AxCache = Cache;
 	DmaDesc->AxiDesc.SecureAccess = Secure;
@@ -2840,37 +2808,20 @@ AieRC XAie_DmaSetPadding(XAie_DmaDesc *DmaDesc, XAie_DmaPadTensor *PadTensor)
 		return XAIE_FEATURE_NOT_SUPPORTED;
 	}
 
-	// Check for before and after padding values overflow.
-	for(u8 i = 0U; i < PadTensor->NumDim; i++) {
-		u16 Before = PadTensor->PadDesc[i].Before;
-		u16 After = PadTensor->PadDesc[i].After;
-
-		if (!(_XAie_IsDeviceGenAIE4(DmaDesc->DevGen))) {
-			/* The max number of words that can be padded for dimension 0, 1 and 2
-			* are 6 bits, 5 bits and 4 bits wide, respectively for AIE2P devices */
-			if((After > (XAIE_DMA_PAD_WORDS_MAX >> i)) ||
-					(Before > (XAIE_DMA_PAD_WORDS_MAX >> i))) {
-						XAIE_ERROR("Before %d or After %d Padding for dimension %d must be less "
-							"than or equal %d\n", Before, After, i,
-							XAIE_DMA_PAD_WORDS_MAX >> i);
-				return XAIE_INVALID_ARGS;
-			}
-		} else {
-			/* The max number of words that can be padded for dimension 0, 1 and 2
-			* are 8 bits only in AIE4 */
-			if((After > XAIE4_DMA_PAD_WORDS_MAX) ||
-			(Before > XAIE4_DMA_PAD_WORDS_MAX)) {
-				XAIE_ERROR("Before %d or After %d Padding for dimension %d must be less "
-					"than or equal %d\n", Before, After, i,
-					XAIE4_DMA_PAD_WORDS_MAX);
-				return XAIE_INVALID_ARGS;
-			}
-		}
+	if ( PadTensor->NumDim > (sizeof(DmaDesc->PadDesc)/sizeof(DmaDesc->PadDesc[0])) )
+	{
+		XAIE_ERROR("Max dimension supported %d, but requested %d\n", (sizeof(DmaDesc->PadDesc)/sizeof(DmaDesc->PadDesc[0])), PadTensor->NumDim);
+		return XAIE_INVALID_ARGS;
 	}
 
-	for(u8 i = 0U; i < PadTensor->NumDim; i++) {
-		DmaDesc->PadDesc[i].After = PadTensor->PadDesc[i].After;
-		DmaDesc->PadDesc[i].Before = PadTensor->PadDesc[i].Before;
+	for(u8 i = 0U; i < (sizeof(DmaDesc->PadDesc)/sizeof(DmaDesc->PadDesc[0])); i++) {
+		if (i < PadTensor->NumDim) {
+			DmaDesc->PadDesc[i].After = PadTensor->PadDesc[i].After;
+			DmaDesc->PadDesc[i].Before = PadTensor->PadDesc[i].Before;
+		} else {
+			DmaDesc->PadDesc[i].After = 0;
+			DmaDesc->PadDesc[i].Before = 0;
+		}
 	}
 
 	return XAIE_OK;

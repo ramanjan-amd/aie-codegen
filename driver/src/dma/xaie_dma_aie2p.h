@@ -28,7 +28,7 @@
 #include "xaiegbl.h"
 
 /************************** Function Prototypes  *****************************/
-AieRC _XAie2P_AxiBurstLenCheck(u8 BurstLen);
+AieRC _XAie2P_AxiBurstLenCheck(u8 BurstLen, u8 *AxiBurstLen);
 
 #endif /* XAIE_DMA_AIE2P_H */
 /** @} */

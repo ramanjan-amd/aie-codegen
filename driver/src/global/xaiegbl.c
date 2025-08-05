@@ -42,6 +42,7 @@
 #include "xaiegbl.h"
 #include "xaiegbl_defs.h"
 #include "xaiegbl_regdef.h"
+#include "xaie_io_privilege.h"
 
 /************************** Constant Definitions *****************************/
 
@@ -83,6 +84,9 @@ extern u8 XAieDevType;
 #elif XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE
 #define XAIE_DEV_SINGLE_MOD AieMod
 #define XAIE_DEV_SINGLE_DEVOPS AieDevOps
+#elif XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE2PS
+#define XAIE_DEV_SINGLE_MOD Aie2PSMod
+#define XAIE_DEV_SINGLE_DEVOPS Aie2PSDevOps
 #elif XAIE_DEV_SINGLE_GEN == XAIE_DEV_GEN_AIE4_GENERIC
 #define XAIE_DEV_SINGLE_MOD Aie4GenericMod
 #define XAIE_DEV_SINGLE_DEVOPS Aie4GenericDevOps
@@ -201,7 +205,11 @@ AieRC XAie_CfgInitialize(XAie_DevInst *InstPtr, XAie_Config *ConfigPtr)
 	} else if(ConfigPtr->AieGen == XAIE_DEV_GEN_AIE2P_STRIX_B0){
 		InstPtr->DevProp.DevMod = Aie2PMod;
 		InstPtr->DevProp.DevGen = XAIE_DEV_GEN_AIE2P_STRIX_B0;
-		InstPtr->DevOps = &Aie2PDevOps;	
+		InstPtr->DevOps = &Aie2PDevOps;
+        } else if(ConfigPtr->AieGen == XAIE_DEV_GEN_AIE2PS) {
+                InstPtr->DevProp.DevMod = Aie2PSMod;
+		InstPtr->DevProp.DevGen = XAIE_DEV_GEN_AIE2PS;
+		InstPtr->DevOps = &Aie2PSDevOps;
 	} else if(ConfigPtr->AieGen == XAIE_DEV_GEN_AIE4_GENERIC) {
 		InstPtr->DevProp.DevMod = Aie4GenericMod;
 		InstPtr->DevProp.DevGen = XAIE_DEV_GEN_AIE4_GENERIC;
@@ -266,6 +274,80 @@ AieRC XAie_CfgInitialize(XAie_DevInst *InstPtr, XAie_Config *ConfigPtr)
 }
 
 #if !defined(XAIE_FEATURE_LITE) && defined(XAIE_FEATURE_PRIVILEGED_ENABLE)
+/*****************************************************************************/
+/**
+ *
+ * This is the API to initialize the AI engine soft partition. It will initialize the
+ * AI engine partition hardware. Soft parition is like a subset of a partition.
+ * It is same as the partition but isolation will not be there in the boundary.
+ * Isolation will be there only on device parititon.
+ *
+ * @param        DevInst: Global AIE device instance pointer.
+ * @param        Opts: AI engine partition initialization options.
+ * @param    DevPartInfo: Device Partition Info.
+ *                       If Opts is NULL, it will do the default options without
+ *                       clock gating. The default options will:
+ *                       * reset columns,
+ *                       * reset shims,
+ *                       * set to block NOC AXI MM decode and slave errors
+ *                       * setup isolation
+ *                       If Opts is not NULL, it will follow the set bits of the
+ *                       InitOpts field, the available options are as follows:
+ *                       * XAIE_PART_INIT_OPT_DEFAULT
+ *                       * XAIE_PART_INIT_OPT_COLUMN_RST
+ *                       * XAIE_PART_INIT_OPT_SHIM_RST
+ *                       * XAIE_PART_INIT_OPT_BLOCK_NOCAXIMMERR
+ *                       * XAIE_PART_INIT_OPT_ISOLATE
+ *                       * XAIE_PART_INIT_OPT_ZEROIZEMEM (not on by default)
+ *
+ * @return       XAIE_OK on success and error code on failure.
+ *
+ ******************************************************************************/
+AieRC XAie_SoftPartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts, XAie_DevicePartInfo *DevPartInfo)
+{
+	XAie_PartInitOpts SoftPartOpts;
+	AieRC RC;
+	u32 OptFlags;
+	u8 IsolationFlags = XAIE_CLEAR_ISOLATION;
+	memset(&SoftPartOpts, 0, sizeof(SoftPartOpts));
+
+	if(Opts != NULL) {
+		OptFlags = (Opts->InitOpts & (~XAIE_PART_INIT_OPT_ISOLATE));
+	} else {
+		OptFlags = (XAIE_PART_INIT_OPT_DEFAULT & (~XAIE_PART_INIT_OPT_ISOLATE));
+	}
+
+
+	if (DevPartInfo->StartCol <= DevInst->StartCol &&
+			DevPartInfo->NumCols >= DevInst->NumCols) {
+		/*Isolation for soft Partition is cleared*/
+		SoftPartOpts.InitOpts = OptFlags;
+		RC = XAie_PartitionInitialize(DevInst, &SoftPartOpts);
+		if(RC != XAIE_OK) {
+			XAIE_ERROR("Partition Initialization Failed \n");
+			return RC;
+		}
+		if(DevPartInfo->BaseAddr == DevInst->BaseAddr) {
+			IsolationFlags |= XAIE_INIT_WEST_ISOLATION;
+		}
+		if((DevInst->BaseAddr + XAie_GetTileAddr(DevInst, 0U, (DevInst->NumCols - 1))) ==
+				(DevPartInfo->BaseAddr + XAie_GetTileAddr(DevInst, 0U, (DevPartInfo->NumCols - 1)))) {
+			IsolationFlags |= XAIE_INIT_EAST_ISOLATION;
+		}
+		RC = DevInst->DevOps->SetPartIsolationAfterRst(DevInst);
+		RC = XAie_PrivilegeSetAxiMMIsolation(DevInst, IsolationFlags);
+		if(RC!= XAIE_OK) {
+			XAIE_ERROR("Failed to set the AxiMM Isolation\n");
+			return RC;
+		}
+	}
+	else {
+		return XAIE_INVALID_ARGS;
+	}
+
+	return RC;
+}
+
 /*****************************************************************************/
 /**
 *

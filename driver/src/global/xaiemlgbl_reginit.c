@@ -944,7 +944,7 @@ static const  XAie_DmaMod AieMlShimDmaMod =
 	.UpdateBdLen = &_XAieMl_ShimDmaUpdateBdLen,
 	.UpdateBdAddr = &_XAieMl_ShimDmaUpdateBdAddr,
 	.GetChannelStatus = &_XAieMl_DmaGetChannelStatus,
-	.AxiBurstLenCheck = &_XAie_AxiBurstLenCheck,
+	.AxiBurstLenCheck = &_XAieMl_AxiBurstLenCheck,
 };
 #endif /* XAIE_FEATURE_DMA_ENABLE */
 

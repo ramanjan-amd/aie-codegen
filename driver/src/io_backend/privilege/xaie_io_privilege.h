@@ -27,6 +27,7 @@
 
 /***************************** Include Files *********************************/
 #include "xaiegbl.h"
+#include "xaie_io_privilege.h"
 
 AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts);
 AieRC _XAie_PrivilegeTeardownPart(XAie_DevInst *DevInst);
@@ -36,6 +37,8 @@ AieRC _XAie_PrivilegeSetColumnClk(XAie_DevInst *DevInst,
 		XAie_BackendColumnReq *Args);
 AieRC _XAie_PrivilegeConfigMemInterleavingLoc(XAie_DevInst *DevInst,
 		XAie_BackendTilesEnableArray *Args);
+
+AieRC XAie_PrivilegeSetAxiMMIsolation(XAie_DevInst *DevInst, u8 IsolationFlags);
 #endif /* XAIE_IO_PRIVILEGE_H */
 
 /** @} */

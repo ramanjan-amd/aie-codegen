@@ -938,6 +938,36 @@ AieRC _XAie_PrivilegeConfigMemInterleavingLoc(XAie_DevInst *DevInst,
 
 	return _XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
 }
+
+AieRC XAie_PrivilegeSetAxiMMIsolation(XAie_DevInst *DevInst, u8 IsolationFlags)
+{
+	AieRC RC;
+
+	RC = _XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_ENABLE);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to enable the"
+				"partition protected registers.\n");
+		return RC;
+	}
+
+	if(DevInst->DevProp.DevGen == XAIE_DEV_GEN_AIE2PS) {
+		RC = DevInst->DevOps->SetAxiMMIsolation(DevInst, IsolationFlags);
+		if(RC!= XAIE_OK) {
+			XAIE_ERROR("Failed to set the AxiMM Isolation\n");
+			return RC;
+		}
+	}
+
+	RC = _XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to disable the "
+				"partition protected registers.\n");
+		return RC;
+	}
+
+	return RC;
+}
+
 #else /* XAIE_FEATURE_PRIVILEGED_ENABLE */
 AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 {
@@ -975,6 +1005,13 @@ AieRC _XAie_PrivilegeConfigMemInterleavingLoc(XAie_DevInst *DevInst,
 	(void)DevInst;
 	(void)Args;
 	return XAIE_FEATURE_NOT_SUPPORTED;
+}
+AieRC XAie_PrivilegeSetAxiMMIsolation(XAie_DevInst *DevInst,
+                u8 IsolationFlags)
+{
+        (void)DevInst;
+        (void)IsolationFlags;
+        return XAIE_FEATURE_NOT_SUPPORTED;
 }
 #endif /* XAIE_FEATURE_PRIVILEGED_ENABLE && !XAIE_FEATURE_LITE */
 /** @} */

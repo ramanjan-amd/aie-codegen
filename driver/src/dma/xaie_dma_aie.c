@@ -1713,15 +1713,32 @@ AieRC _XAie_DmaSetBdIteration(XAie_DmaDesc *DmaDesc, u32 StepSize, u16 Wrap,
 	return XAIE_FEATURE_NOT_SUPPORTED;
 }
 
-AieRC _XAie_AxiBurstLenCheck(u8 BurstLen)
+/*****************************************************************************/
+/**
+ *
+ * This API checks for correct Burst length.
+ *
+ * @param        BurstLen: Burst length to check if it has correct value or not.
+ * @param        AxiBurstLen: Based on BurstLen initialize AxiBurstLen Parameter
+ * @return       XAIE_OK on success, Error code on failure.
+ *
+ * @note         Internal only.
+ *
+ ******************************************************************************/
+AieRC _XAie_AxiBurstLenCheck(u8 BurstLen, u8 *AxiBurstLen)
 {
 	switch (BurstLen) {
-	case 4:
-	case 8:
-	case 16:
-		return XAIE_OK;
-	default:
-		return XAIE_INVALID_BURST_LENGTH;
+		case 4:
+			*AxiBurstLen = 0;
+			return XAIE_OK;
+		case 8:
+			*AxiBurstLen = 1;
+			return XAIE_OK;
+		case 16:
+			*AxiBurstLen = 2;
+			return XAIE_OK;
+		default:
+			return XAIE_INVALID_BURST_LENGTH;
 	}
 }
 

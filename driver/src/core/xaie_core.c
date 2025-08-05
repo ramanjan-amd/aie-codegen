@@ -1355,6 +1355,73 @@ AieRC XAie_CoreProcessorBusDisable(XAie_DevInst *DevInst, XAie_LocType Loc)
 	return _XAie_CoreProcessorBusConfig(DevInst, Loc, XAIE_DISABLE);
 }
 
+#ifdef XAIE_FEATURE_UC_ENABLE
+/*****************************************************************************/
+/*
+ *
+ * This API wakes uc core up.
+ *
+ * @param        DevInst: Device Instance
+ * @param        Loc: Location of the shim tile.
+ *
+ * @return       XAIE_OK on success, Error code on failure.
+ *
+ * @note         None.
+ *
+ ******************************************************************************/
+AieRC XAie_CoreUcWakeUp(XAie_DevInst *DevInst, XAie_LocType Loc)
+{
+	u8 TType;
+	const struct XAie_UcMod *UcMod;
+
+	if(DevInst == XAIE_NULL) {
+		XAIE_ERROR("Invalid Device Instance\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	TType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+	if(XAie_IsUcModulePresent(DevInst, TType) == 0U) {
+		XAIE_ERROR("Invalid Tile Type\n");
+		return XAIE_INVALID_TILE;
+	}
+
+	UcMod = DevInst->DevProp.DevMod[TType].UcMod;
+	return UcMod->Wakeup(DevInst, Loc, UcMod);
+}
+
+/*****************************************************************************/
+/*
+ *
+ * This API puts uc core to sleep.
+ *
+ * @param        DevInst: Device Instance
+ * @param        Loc: Location of the shim tile.
+ *
+ * @return       XAIE_OK on success, Error code on failure.
+ *
+ * @note         None.
+ *
+ ******************************************************************************/
+AieRC XAie_CoreUcSleep(XAie_DevInst *DevInst, XAie_LocType Loc)
+{
+	u8 TType;
+	const struct XAie_UcMod *UcMod;
+
+	if(DevInst == XAIE_NULL) {
+		XAIE_ERROR("Invalid Device Instance\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	TType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+	if(XAie_IsUcModulePresent(DevInst, TType) == 0U) {
+		XAIE_ERROR("Invalid Tile Type\n");
+		return XAIE_INVALID_TILE;
+	}
+
+	UcMod = DevInst->DevProp.DevMod[TType].UcMod;
+	return UcMod->Sleep(DevInst, Loc, UcMod);
+}
+#endif /*XAIE_FEATURE_UC_ENABLE*/
 #endif /* XAIE_FEATURE_CORE_ENABLE */
 
 /** @} */

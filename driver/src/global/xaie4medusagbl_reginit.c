@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 /***************************** Include Files *********************************/
+
 #include "xaie_core_aieml.h"
 #include "xaie_device_aieml.h"
 #include "xaie_device_aie4.h"
@@ -3862,26 +3863,6 @@ static const  XAie_RegFldAttr Aie4DownSzrEnable[] =
 	{NOT_AVAILABLE_IN_THE_AIE4, NOT_AVAILABLE_IN_THE_AIE4}
 };
 
-
-/* Register field attributes for SHIMNOC Mux configuration */
-static const  XAie_RegFldAttr AieMlShimMuxConfig[] =
-{
-        {XAIEMLGBL_NOC_MODULE_MUX_CONFIG_SOUTH2_LSB, XAIEMLGBL_NOC_MODULE_MUX_CONFIG_SOUTH2_MASK},
-        {XAIEMLGBL_NOC_MODULE_MUX_CONFIG_SOUTH3_LSB, XAIEMLGBL_NOC_MODULE_MUX_CONFIG_SOUTH3_MASK},
-        {XAIEMLGBL_NOC_MODULE_MUX_CONFIG_SOUTH6_LSB, XAIEMLGBL_NOC_MODULE_MUX_CONFIG_SOUTH6_MASK},
-        {XAIEMLGBL_NOC_MODULE_MUX_CONFIG_SOUTH7_LSB, XAIEMLGBL_NOC_MODULE_MUX_CONFIG_SOUTH7_MASK},
-};
-
-/* Register field attributes for SHIMNOC DeMux configuration */
-static const  XAie_RegFldAttr AieMlShimDeMuxConfig[] =
-{
-        {XAIEMLGBL_NOC_MODULE_DEMUX_CONFIG_SOUTH2_LSB, XAIEMLGBL_NOC_MODULE_DEMUX_CONFIG_SOUTH2_MASK},
-        {XAIEMLGBL_NOC_MODULE_DEMUX_CONFIG_SOUTH3_LSB, XAIEMLGBL_NOC_MODULE_DEMUX_CONFIG_SOUTH3_MASK},
-        {XAIEMLGBL_NOC_MODULE_DEMUX_CONFIG_SOUTH4_LSB, XAIEMLGBL_NOC_MODULE_DEMUX_CONFIG_SOUTH4_MASK},
-        {XAIEMLGBL_NOC_MODULE_DEMUX_CONFIG_SOUTH5_LSB, XAIEMLGBL_NOC_MODULE_DEMUX_CONFIG_SOUTH5_MASK}
-};
-
-
 #ifdef XAIE_FEATURE_PRIVILEGED_ENABLE
 /* Register to set SHIM clock buffer control */
 static const XAie_ShimClkBufCntr Aie4ShimClkBufCntr =
@@ -4039,10 +4020,10 @@ static const  XAie_PlIfMod Aie4ShimTilePlIfMod =
 /* Noc module for SHIMNOC Tiles */
 static const  XAie_NocMod Aie4ShimTileNocMod =
 {
-  .ShimNocMuxOff = XAIEMLGBL_NOC_MODULE_MUX_CONFIG,
-  .ShimNocDeMuxOff = XAIEMLGBL_NOC_MODULE_DEMUX_CONFIG,
-  .ShimNocMux = AieMlShimMuxConfig,
-  .ShimNocDeMux = AieMlShimDeMuxConfig,
+  .ShimNocMuxOff = XAIE_FEATURE_UNAVAILABLE,
+  .ShimNocDeMuxOff = XAIE_FEATURE_UNAVAILABLE,
+  .ShimNocMux = NULL,
+  .ShimNocDeMux = NULL,
 #ifdef XAIE_FEATURE_PRIVILEGED_ENABLE
   .ShimNocAxiMM = &Aie4ShimNocAxiMMConfig, /* To be verified */
 #else
@@ -6047,9 +6028,9 @@ static const XAie_TraceMod Aie4MemTileTraceMod =
  */
 static const XAie_L2IntrMod Aie4NoCL2IntrMod =
 {
-	.EnableRegOff = XAIEMLGBL_NOC_MODULE_INTERRUPT_CONTROLLER_2ND_LEVEL_ENABLE,
-	.DisableRegOff = XAIEMLGBL_NOC_MODULE_INTERRUPT_CONTROLLER_2ND_LEVEL_DISABLE,
-	.IrqRegOff = XAIEMLGBL_NOC_MODULE_INTERRUPT_CONTROLLER_2ND_LEVEL_INTERRUPT,
+	.EnableRegOff = XAIE4GBL_NOC_MODULE_INTERRUPT_CONTROLLER_ENABLE_A,
+	.DisableRegOff = XAIE4GBL_NOC_MODULE_INTERRUPT_CONTROLLER_DISABLE_A,
+	.IrqRegOff = XAIE4GBL_NOC_MODULE_INTERRUPT_CONTROLLER_INTERRUPT_LINE_PRIVILEGED,
 	.NumBroadcastIds = 16U,
 	.NumNoCIntr = 4U,
 	.MaxErrorBcIdsRvd = 4U, //Kotesh(TODO): Fix as per AIE4 requirement after discussion with architect team.

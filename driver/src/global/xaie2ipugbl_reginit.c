@@ -24,12 +24,13 @@
 ******************************************************************************/
 
 /***************************** Include Files *********************************/
+
 #include "xaie_core_aieml.h"
 #include "xaie_device_aie2ipu.h"
 #include "xaie_device_aieml.h"
 #include "xaie_dma_aie.h"
 #include "xaie_dma_aieml.h"
-#include "xaie_events.h"
+//#include "xaie_events.h"
 #include "xaie_events_aieml.h"
 #include "xaie_feature_config.h"
 #include "xaie_interrupt_aie2ipu.h"
@@ -4387,5 +4388,6 @@ XAie_DeviceOps Aie2IpuDevOps =
 	.RequestTiles = NULL,
 #endif
 };
+
 
 /** @} */

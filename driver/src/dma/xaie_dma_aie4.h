@@ -103,7 +103,7 @@ AieRC _XAie4_ShimDmaReadBdPvtBuffPool(XAie_DevInst *DevInst , XAie_DmaDesc *DmaD
 		
 AieRC _XAie4_DmaSetBdIteration(XAie_DmaDesc *DmaDesc, u32 StepSize, u16 Wrap,
 		u8 IterCurr);
-AieRC _XAie4_AxiBurstLenCheck(u8 BurstLen);
+AieRC _XAie4_AxiBurstLenCheck(u8 BurstLen, u8 *AxiBurstLen);
 
 #endif /* XAIE_DMA_AIE4_H */
 /** @} */

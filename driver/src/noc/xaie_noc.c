@@ -17,6 +17,7 @@
 * Ver   Who     Date     Changes
 * ----- ------  -------- -----------------------------------------------------
 * 1.0   Sandip  11/12/2023  Initial creation. Functions are taken from the xaie_plif.c
+* 1.1   Jignesh  7/7/2025  Added support for AIE2PS Shim NoC.
 * </pre>
 *
 ******************************************************************************/
@@ -82,19 +83,28 @@ static AieRC _XAie_ConfigShimNocMux(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_INVALID_TILE;
 	}
 
-	if((PortNum != XAIE_STREAM_SOUTH_PORT_2) &&
-			(PortNum != XAIE_STREAM_SOUTH_PORT_3) &&
-			(PortNum != XAIE_STREAM_SOUTH_PORT_6) &&
-			(PortNum != XAIE_STREAM_SOUTH_PORT_7)) {
-		XAIE_ERROR("Invalid port number for Mux\n");
-		return XAIE_ERR_STREAM_PORT;
-	}
-
-	/* Map the port numbers to 0, 1, 2, 3 */
-	if(PortNum > 3U) {
-		PortNum -= 4U;
+	if(DevInst->DevProp.DevGen == XAIE_DEV_GEN_AIE2PS) {
+		if((PortNum != XAIE_STREAM_SOUTH_PORT_1) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_3) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_5) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_7)) {
+			XAIE_ERROR("Invalid port number for Mux\n");
+			return XAIE_ERR_STREAM_PORT;
+		}
 	} else {
-	PortNum -= 2U;
+		if((PortNum != XAIE_STREAM_SOUTH_PORT_2) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_3) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_6) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_7)) {
+			XAIE_ERROR("Invalid port number for Mux\n");
+			return XAIE_ERR_STREAM_PORT;
+		}
+		/* Map the port numbers to 0, 1, 2, 3 */
+		if(PortNum > 3U) {
+			PortNum -= 4U;
+		} else {
+		PortNum -= 2U;
+		}
 	}
 
 	NocMod = DevInst->DevProp.DevMod[TileType].NocMod;
@@ -152,16 +162,25 @@ static AieRC _XAie_ConfigShimNocDeMux(XAie_DevInst *DevInst, XAie_LocType Loc,
 		XAIE_ERROR("Invalid Tile Type\n");
 		return XAIE_INVALID_TILE;
 	}
-
-	if((PortNum != XAIE_STREAM_SOUTH_PORT_2) &&
-			(PortNum != XAIE_STREAM_SOUTH_PORT_3) &&
-			(PortNum != XAIE_STREAM_SOUTH_PORT_4) &&
-			(PortNum != XAIE_STREAM_SOUTH_PORT_5)) {
-		XAIE_ERROR("Invalid port number\n");
-		return XAIE_ERR_STREAM_PORT;
+	if(DevInst->DevProp.DevGen == XAIE_DEV_GEN_AIE2PS) {
+			if((PortNum != XAIE_STREAM_SOUTH_PORT_1) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_2) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_3) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_5)) {
+			XAIE_ERROR("Invalid port number\n");
+			return XAIE_ERR_STREAM_PORT;
+		}
+	} else {
+		if((PortNum != XAIE_STREAM_SOUTH_PORT_2) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_3) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_4) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_5)) {
+			XAIE_ERROR("Invalid port number\n");
+			return XAIE_ERR_STREAM_PORT;
+		}
+		/* Map the port numbers to 0, 1, 2, 3 */
+		PortNum -= 2U;
 	}
-	/* Map the port numbers to 0, 1, 2, 3 */
-	PortNum -= 2U;
 
 	NocMod = DevInst->DevProp.DevMod[TileType].NocMod;
 	if (_XAie_CheckPrecisionExceeds(NocMod->ShimNocDeMux[PortNum].Lsb,
@@ -240,10 +259,18 @@ AieRC XAie_EnableAieToShimDmaStrmPort(XAie_DevInst *DevInst, XAie_LocType Loc,
 		return XAIE_FEATURE_NOT_SUPPORTED;
 	}
 	
-	if((PortNum != XAIE_STREAM_SOUTH_PORT_2) &&
+	if(DevInst->DevProp.DevGen == XAIE_DEV_GEN_AIE2PS) {
+		if((PortNum != XAIE_STREAM_SOUTH_PORT_1) &&
 			(PortNum != XAIE_STREAM_SOUTH_PORT_3)) {
 				XAIE_ERROR("Invalid port number %d\n", PortNum);
 		return XAIE_ERR_STREAM_PORT;
+		}
+	} else {
+		if((PortNum != XAIE_STREAM_SOUTH_PORT_2) &&
+				(PortNum != XAIE_STREAM_SOUTH_PORT_3)) {
+					XAIE_ERROR("Invalid port number %d\n", PortNum);
+			return XAIE_ERR_STREAM_PORT;
+		}
 	}
 
 	return _XAie_ConfigShimNocDeMux(DevInst, Loc, PortNum,

@@ -70,10 +70,10 @@
 		XAIE_PART_INIT_OPT_BLOCK_NOCAXIMMERR | \
 		XAIE_PART_INIT_OPT_UC_MEM_PRIV | \
 		XAIE_PART_INIT_OPT_ISOLATE)
-		
+
 /**************************** Constant Macros *******************************/
 #define XAIE_PART_INIT_APP_MODE(X)         ((X & 3U) << 8)
-#define XAIE_PART_INIT_L2_SPLIT(X)         ((X & 31U) << 10)		
+#define XAIE_PART_INIT_L2_SPLIT(X)         ((X & 31U) << 10)
 
 /* Migrated from AIE-CONTROLLER */
 #define OP_LIST(OP) \
@@ -84,6 +84,12 @@
         OP(PATCHBD_OP) \
         OP(TRANSACTION_V2_OP)
 #define GENERATE_ENUM(ENUM) e_##ENUM,
+
+#define XAIE_INIT_ISOLATION             0
+#define XAIE_CLEAR_ISOLATION            1
+#define XAIE_INIT_WEST_ISOLATION        2
+#define XAIE_INIT_EAST_ISOLATION        4
+#define XAIE_PERF_CORE_NUM_CYCLES       2U
 /**************************** Type Definitions *******************************/
 typedef struct XAie_TileMod XAie_TileMod;
 typedef struct XAie_DeviceOps XAie_DeviceOps;
@@ -91,6 +97,7 @@ typedef struct XAie_DmaMod XAie_DmaMod;
 typedef struct XAie_LockMod XAie_LockMod;
 typedef struct XAie_Backend XAie_Backend;
 typedef struct XAie_TxnCmd XAie_TxnCmd;
+typedef struct XAie_ResourceManager XAie_ResourceManager;
 
 /*
  * This typedef captures all the properties of a AIE Device
@@ -233,6 +240,17 @@ typedef struct XAie_PartInitOpts {
 	u32 NumUseTiles; /* Number of tiles to use */
 	u32 InitOpts; /* AI engine partition initialization options */
 } XAie_PartInitOpts;
+
+/*
+ *
+ * This typedef contains the attributes for AIE partiton/ device partition
+ *
+ */
+typedef struct XAie_DevicePartInfo {
+	u8 StartCol;  /* Absolute start column of the partition */
+	u8 NumCols;   /* Number of cols allocated to the partition */
+	u64 BaseAddr;
+} XAie_DevicePartInfo;
 
 /*
  * This typedef contains the attributes for an AIE POR initialization
@@ -657,6 +675,7 @@ XAIE_AIG_EXPORT AieRC XAie_SetupPartitionConfig(XAie_DevInst *DevInst,
 		u64 PartBaseAddr, u8 PartStartCol, u8 PartNumCols);
 XAIE_AIG_EXPORT AieRC XAie_CfgInitialize(XAie_DevInst *InstPtr, XAie_Config *ConfigPtr);
 XAIE_AIG_EXPORT AieRC XAie_PartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts);
+XAIE_AIG_EXPORT AieRC XAie_SoftPartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts, XAie_DevicePartInfo *DevPartInfo);
 XAIE_AIG_EXPORT AieRC XAie_PartitionTeardown(XAie_DevInst *DevInst);
 XAIE_AIG_EXPORT AieRC XAie_ClearPartitionContext(XAie_DevInst *DevInst);
 XAIE_AIG_EXPORT AieRC XAie_Finish(XAie_DevInst *DevInst);

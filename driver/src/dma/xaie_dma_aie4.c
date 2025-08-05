@@ -46,6 +46,8 @@
 #define XAIE4_DMA_STATUS_TASK_Q_SIZE_MSB	24
 #define XAIE4_LOCK_ACQ_MASK				0x7FU
 
+#define XAIE4_DMA_PAD_WORDS_MAX				0xFFU /* 8 bits */
+
 /*********************** Function Definitions *************************/
 /*****************************************************************************/
 /**
@@ -74,8 +76,14 @@ AieRC _XAie4_DmaMemTileCheckPaddingConfig(XAie_DmaDesc *DmaDesc)
 	XAie_PadDesc *PDesc = DmaDesc->PadDesc;
 
 	for(u8 Dim = 0U; Dim < XAIE4_DMA_PAD_NUM_DIMS; Dim++) {
-		if(DDesc[Dim].Wrap == 0U) {
+		/* The max number of words that can be padded for dimension 0, 1 and 2 are 8 bits only in AIE4 */
+		if((PDesc[Dim].After > XAIE4_DMA_PAD_WORDS_MAX) || (PDesc[Dim].Before > XAIE4_DMA_PAD_WORDS_MAX)) {
+			XAIE_ERROR("Before %d or After %d Padding for dimension %d must be less than or equal %d\n",
+				PDesc[Dim].Before, PDesc[Dim].After, Dim, XAIE4_DMA_PAD_WORDS_MAX);
+			return XAIE_INVALID_DMA_DESC;
+		}
 
+		if(DDesc[Dim].Wrap == 0U) {
 			if(PDesc[Dim].After != 0U) {
 				XAIE_ERROR("Padding after for dimension %u must"
 						" be 0 when wrap is 0\n", Dim);
@@ -3091,13 +3099,34 @@ AieRC _XAie4_DmaSetBdIteration(XAie_DmaDesc *DmaDesc, u32 StepSize, u16 Wrap,
 * This API checks for correct Burst length.
 *
 * @param	BurstLen: Burst length to check if it has correct value or not.
+* @param	AxiBurstLen: Based on BurstLen initialize AxiBurstLen Parameter
 *
 * @return	XAIE_OK on success, Error code on failure.
 *
 * @note		Internal only.
 *
 ******************************************************************************/
-AieRC _XAie4_AxiBurstLenCheck(u8 BurstLen)
+AieRC _XAie4_AxiBurstLenCheck(u8 BurstLen, u8 *AxiBurstLen)
+{
+        switch (BurstLen) {
+        case 1:
+                *AxiBurstLen = 0;
+                return XAIE_OK;
+        case 2:
+                *AxiBurstLen = 1;
+                return XAIE_OK;
+        case 4:
+                *AxiBurstLen = 2;
+                return XAIE_OK;
+        case 8:
+                *AxiBurstLen = 3;
+                return XAIE_OK;
+        default:
+                return XAIE_INVALID_BURST_LENGTH;
+        }
+}
+
+/*AieRC _XAie4_AxiBurstLenCheck(u8 BurstLen)
 {
 	switch (BurstLen) {
 	case 1:
@@ -3108,7 +3137,7 @@ AieRC _XAie4_AxiBurstLenCheck(u8 BurstLen)
 	default:
 		return XAIE_INVALID_BURST_LENGTH;
 	}
-}
+}*/
 
 #endif /* XAIE_FEATURE_DMA_ENABLE */
 

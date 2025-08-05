@@ -45,6 +45,8 @@
 #define XAIEML_DMA_STATUS_TASK_Q_SIZE_MSB	22
 #define XAIEML_LOCK_ACQ_MASK				0x7FU
 
+#define XAIEML_DMA_PAD_WORDS_MAX			0x3FU /* In AIE2 & AIE2P : D0 6 bits, D1 5 bits, D2 4 bits */
+
 /************************** Function Definitions *****************************/
 /*****************************************************************************/
 /**
@@ -222,6 +224,16 @@ static AieRC _XAieMl_DmaMemTileCheckPaddingConfig(XAie_DmaDesc *DmaDesc)
 	XAie_PadDesc *PDesc = DmaDesc->PadDesc;
 
 	for(u8 Dim = 0U; Dim < XAIEML_DMA_PAD_NUM_DIMS; Dim++) {
+		/* The max number of words that can be padded for dimension 0, 1 and 2
+		* are 6 bits, 5 bits and 4 bits wide, respectively for AIE2 & AIE2P devices */
+		if((PDesc[Dim].After > (XAIEML_DMA_PAD_WORDS_MAX >> Dim)) || (PDesc[Dim].Before > (XAIEML_DMA_PAD_WORDS_MAX >> Dim)))
+		{
+			XAIE_ERROR("Before %d or After %d Padding for dimension %d must be less than or equal %d\n",
+				PDesc[Dim].Before, PDesc[Dim].After, Dim, (XAIEML_DMA_PAD_WORDS_MAX >> Dim));
+
+			return XAIE_INVALID_DMA_DESC;
+		}
+
 		if(DDesc[Dim].Wrap == 0U) {
 
 			if(PDesc[Dim].After != 0U) {
@@ -2450,6 +2462,39 @@ AieRC _XAieMl_DmaSetBdIteration(XAie_DmaDesc *DmaDesc, u32 StepSize, u16 Wrap,
 
 	return XAIE_OK;
 }
+
+/*****************************************************************************/
+/**
+ *
+ * This API checks for correct Burst length.
+ *
+ * @param        BurstLen: Burst length to check if it has correct value or not.
+ * @param        AxiBurstLen: Based on BurstLen initialize AxiBurstLen Parameter
+ * @return       XAIE_OK on success, Error code on failure.
+ *
+ * @note         Internal only.
+ *
+ ******************************************************************************/
+AieRC _XAieMl_AxiBurstLenCheck(u8 BurstLen, u8 *AxiBurstLen)
+{
+	switch (BurstLen) {
+		case 4:
+			*AxiBurstLen = 0;
+			return XAIE_OK;
+		case 8:
+			*AxiBurstLen = 1;
+			return XAIE_OK;
+		case 16:
+			*AxiBurstLen = 2;
+			return XAIE_OK;
+		case 32:
+			*AxiBurstLen = 3;
+			return XAIE_OK;
+		default:
+			return XAIE_INVALID_BURST_LENGTH;
+	}
+}
+
 
 #endif /* XAIE_FEATURE_DMA_ENABLE */
 

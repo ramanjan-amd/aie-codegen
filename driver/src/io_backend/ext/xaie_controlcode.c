@@ -37,7 +37,6 @@
 
 #define TEMP_ASM_FILE1    ".temp_data1.txt"
 #define TEMP_ASM_FILE2    ".temp_data2.txt"
-#define TEMP_ASM_FILE3    ".temp_data3.txt"
 #define PAGE_SIZE_MAX	  8192
 #define SHIM_BD_NUM_REGS  9
 
@@ -152,9 +151,10 @@ AieRC XAie_ControlCodeIO_Finish(void *IOInst)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
 	XAie_DevInst *DevInst = ControlCodeInst->DevInst;
-	if(ControlCodeInst->ControlCodefp != NULL) {
-		XAie_CloseControlCodeFile(DevInst);
-	}
+        if(ControlCodeInst->ControlCodefp != NULL) {
+                XAie_CloseControlCodeFile(DevInst);
+        }
+
 	if(IOInst) {
 		free(IOInst);
 	}
@@ -187,9 +187,13 @@ AieRC XAie_ControlCodeIO_Init(XAie_DevInst *DevInst)
 	IOInst->BaseAddr = DevInst->BaseAddr;
 	IOInst->NpiBaseAddr = XAIE_NPI_BASEADDR;
 	IOInst->ScrachpadName = NULL;
-	DevInst->IOInst = IOInst;
 	IOInst->DevInst = DevInst;
+        IOInst->ControlCodefp = NULL;
+        IOInst->ControlCodedatafp = NULL;
+        IOInst->ControlCodedata2fp = NULL;
+        IOInst->ScrachpadName = NULL;
 
+	DevInst->IOInst = IOInst;
 
 	return XAIE_OK;
 }
@@ -994,9 +998,10 @@ AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u16 Arg_Index, u8 Num_BDs
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_APPLY_OFFSET_57;
 	}
 
-	if(ControlCodeInst->ScrachpadName)
+	if(ControlCodeInst->ScrachpadName != NULL) {
                 free(ControlCodeInst->ScrachpadName);
-        ControlCodeInst->ScrachpadName = NULL;
+                ControlCodeInst->ScrachpadName = NULL;
+        }
 
 	return XAIE_OK;
 }
@@ -1441,12 +1446,15 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 
 		if(ControlCodeInst->ControlCodefp) {
 			fclose(ControlCodeInst->ControlCodefp);
+                        ControlCodeInst->ControlCodefp = NULL;
 		}
 		if (ControlCodeInst->ControlCodedatafp) {
 			fclose(ControlCodeInst->ControlCodedatafp);
+                        ControlCodeInst->ControlCodedatafp = NULL;
 		}
 		if (ControlCodeInst->ControlCodedata2fp) {
 			fclose(ControlCodeInst->ControlCodedata2fp);
+                        ControlCodeInst->ControlCodedata2fp = NULL;
 		}
 		//printf("File could not be opened, fopen Error: %s\n", strerror(errno));
 		return XAIE_ERR;
@@ -1597,7 +1605,6 @@ void XAie_CloseControlCodeFile(XAie_DevInst *DevInst) {
 
 		remove(TEMP_ASM_FILE1);
 		remove(TEMP_ASM_FILE2);
-		remove(TEMP_ASM_FILE3);
 
 		ControlCodeInst->ControlCodefp		= NULL;
 		ControlCodeInst->ControlCodedatafp	= NULL;

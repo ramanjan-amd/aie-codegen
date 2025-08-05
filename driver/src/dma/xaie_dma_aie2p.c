@@ -31,21 +31,28 @@
 * This API checks for correct Burst length.
 *
 * @param	BurstLen: Burst length to check if it has correct value or not.
-*
+* @param        AxiBurstLen: Based on BurstLen initialize AxiBurstLen Parameter
 * @return	XAIE_OK on success, Error code on failure.
 *
 * @note		Internal only.
 *
 ******************************************************************************/
-AieRC _XAie2P_AxiBurstLenCheck(u8 BurstLen)
+AieRC _XAie2P_AxiBurstLenCheck(u8 BurstLen, u8 *AxiBurstLen)
 {
-	switch (BurstLen) {
-	case 4:
-	case 8:
-	case 16:
-	case 32:
-		return XAIE_OK;
-	default:
-		return XAIE_INVALID_BURST_LENGTH;
-	}
+        switch (BurstLen) {
+        case 4:
+                *AxiBurstLen = 0;
+                return XAIE_OK;
+        case 8:
+                *AxiBurstLen = 1;
+                return XAIE_OK;
+        case 16:
+                *AxiBurstLen = 2;
+                return XAIE_OK;
+        case 32:
+                *AxiBurstLen = 3;
+                return XAIE_OK;
+        default:
+                return XAIE_INVALID_BURST_LENGTH;
+        }
 }
