@@ -28,7 +28,7 @@
 u8 _XAie4_GetTTypefromLoc(XAie_DevInst *DevInst, XAie_LocType Loc);
 AieRC _XAie4_PartMemZeroInit(XAie_DevInst *DevInst);
 AieRC _XAie4_RequestTiles(XAie_DevInst *DevInst, XAie_BackendTilesArray *Args);
-AieRC _XAie4_SetPartIsolationAfterRst(XAie_DevInst *DevInst);
+AieRC _XAie4_SetPartIsolationAfterRst(XAie_DevInst *DevInst, u8 IsolationFlags);
 AieRC _XAie4_SetPartApplicationReset(XAie_DevInst *DevInst, u8 Enable);
 AieRC _XAie4_SetUCMemoryPrivileged(XAie_DevInst *DevInst, u8 Enable);
 AieRC _XAie4_ZeroInitUcMemory(XAie_DevInst *DevInst);

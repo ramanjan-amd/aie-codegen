@@ -4711,7 +4711,7 @@ XAie_DeviceOps Aie2PDevOps =
 #ifdef XAIE_FEATURE_PRIVILEGED_ENABLE
 	.SetPartColShimReset = &_XAieMl_SetPartColShimReset,
 	.SetPartColClockAfterRst = &_XAieMl_SetPartColClockAfterRst,
-	.SetPartIsolationAfterRst = &_XAieMl_SetPartIsolationAfterRst,
+	.SetPartIsolationAfterRst = &_XAieML_SetPartIsolationAfterRst,
 	.PartMemZeroInit = &_XAieMl_PartMemZeroInit,
 	.RequestTiles = &_XAieMl_RequestTiles,
 #else

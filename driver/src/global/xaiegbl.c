@@ -334,7 +334,7 @@ AieRC XAie_SoftPartitionInitialize(XAie_DevInst *DevInst, XAie_PartInitOpts *Opt
 				(DevPartInfo->BaseAddr + XAie_GetTileAddr(DevInst, 0U, (DevPartInfo->NumCols - 1)))) {
 			IsolationFlags |= XAIE_INIT_EAST_ISOLATION;
 		}
-		RC = DevInst->DevOps->SetPartIsolationAfterRst(DevInst);
+		RC = DevInst->DevOps->SetPartIsolationAfterRst(DevInst, IsolationFlags);
 		RC = XAie_PrivilegeSetAxiMMIsolation(DevInst, IsolationFlags);
 		if(RC!= XAIE_OK) {
 			XAIE_ERROR("Failed to set the AxiMM Isolation\n");
@@ -479,7 +479,7 @@ AieRC _XAie_PartitionIsolationInitialize(XAie_DevInst *DevInst)
 		return XAIE_INVALID_ARGS;
 	}
 
-	return DevInst->DevOps->SetPartIsolationAfterRst(DevInst);
+	return DevInst->DevOps->SetPartIsolationAfterRst(DevInst,XAIE_INIT_ISOLATION);
 
 }
 

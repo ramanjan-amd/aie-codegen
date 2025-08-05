@@ -285,9 +285,10 @@ AieRC _XAie_SetPartColClockAfterRst(XAie_DevInst *DevInst, u8 Enable)
 *		Internal API only.
 *
 ******************************************************************************/
-AieRC _XAie_SetPartIsolationAfterRst(XAie_DevInst *DevInst)
+AieRC _XAie_SetPartIsolationAfterRst(XAie_DevInst *DevInst, u8 IsolationFlags)
 {
 	AieRC RC = XAIE_OK;
+	(void)IsolationFlags;
 
 	for(u8 C = 0; C < DevInst->NumCols; C++) {
 		u8 Dir = 0;

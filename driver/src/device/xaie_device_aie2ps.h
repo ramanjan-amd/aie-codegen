@@ -27,7 +27,6 @@
 /************************** Function Prototypes  *****************************/
 u8 _XAie2PS_GetTTypefromLoc(XAie_DevInst *DevInst, XAie_LocType Loc);
 AieRC _XAie2PS_SetAxiMMIsolation(XAie_DevInst* DevInst, u8 IsolationFlags);
-AieRC _XAie2PS_SetPartIsolationAfterRst(XAie_DevInst *DevInst);
 
 #endif /* XAIE_DEVICE_AIE2P */
 /** @} */

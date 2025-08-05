@@ -627,12 +627,13 @@ AieRC _XAie4_RequestTiles(XAie_DevInst *DevInst, XAie_BackendTilesArray *Args)
 *		Internal API only.
 *
 ******************************************************************************/
-AieRC _XAie4_SetPartIsolationAfterRst(XAie_DevInst *DevInst)
+AieRC _XAie4_SetPartIsolationAfterRst(XAie_DevInst *DevInst, u8 IsolationFlags)
 {
 	AieRC RC = XAIE_OK;
 	u64 RegAddr;
 	u32 FldVal, Mask;
 	const XAie_TileCtrlMod *TCtrlMod;
+	(void)IsolationFlags;
 
 	for(u8 C = 0; C < DevInst->NumCols; C++) {
 		u8 Dir = 0;

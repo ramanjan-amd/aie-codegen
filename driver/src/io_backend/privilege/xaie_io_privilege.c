@@ -483,6 +483,91 @@ static AieRC _XAie_PrivilegeConfigMemInterleaving(XAie_DevInst *DevInst, u8 Enab
 
 /*****************************************************************************/
 /**
+ *
+ * This API sets the NMU switch configuration for a given SHIM South tile
+ *
+ * @param        DevInst: Device Instance
+ * @param        Loc: Location of SHIM south tile
+ * @param        FwdEastEnable: Configuration of switch for NMU 0. XAIE_ENABLE
+ *                              to forward NOC to east neighbor. XAIE_DISABLE to
+ *                              connect NOC to local NMU 0.
+ * @param        FromWestEnable: Configuration of switch for NMU 1. XAIE_ENABLE
+ *                               to have NOC accept from west neighbor.
+ *                               XAIE_DISABLE to have NOC connected to local NMU
+ *                               1.
+ *
+ * @return       XAIE_OK on success, error code on failure
+ ******************************************************************************/
+static AieRC _XAie_PrivilegeSetNmuSwitch(XAie_DevInst *DevInst,
+		XAie_LocType Loc, u8 FwdEastEnable, u8 FromWestEnable)
+{
+	const XAie_PlIfMod *PlIfMod;
+	u64 RegAddr;
+	u8 TileType;
+	u32 FldVal;
+
+	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+	if (TileType != XAIEGBL_TILE_TYPE_SHIMNOC) {
+		XAIE_ERROR("Invalid Tile Type.");
+		return XAIE_ERR;
+	}
+
+	PlIfMod = DevInst->DevProp.DevMod[TileType].PlIfMod;
+	RegAddr = PlIfMod->ShimNocNmuSwitchOff +
+		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+	FldVal = XAie_SetField(FwdEastEnable,
+			PlIfMod->ShimNocNmuSwitch0.Lsb,
+			PlIfMod->ShimNocNmuSwitch0.Mask);
+	FldVal |= XAie_SetField(FromWestEnable,
+			PlIfMod->ShimNocNmuSwitch1.Lsb,
+			PlIfMod->ShimNocNmuSwitch1.Mask);
+
+	return XAie_Write32(DevInst, RegAddr, FldVal);
+}
+
+
+/*****************************************************************************/
+/**
+ *
+ * This API sets the partitions NMU switch configuration for all SHIM NOCs in
+ * the full partition.
+ *
+ * @param        DevInst: Device Instance
+ *
+ * @return       XAIE_OK on success, error code on failure
+ ******************************************************************************/
+static AieRC _XAie_PrivilegeSetPartNmuSwitch(XAie_DevInst *DevInst)
+{
+	AieRC RC = XAIE_OK;
+
+	if (DevInst->StartCol != 0U) {
+		/*
+		 * The only NMU switches that need to be configured
+		 * are in absoulute column 0 and 1.
+		 */
+		XAIE_DBG("Partition does not have start column 0, not configuring NMU switches");
+		return XAIE_OK;
+	}
+
+	RC = _XAie_PrivilegeSetNmuSwitch(DevInst, XAie_TileLoc(0U, DevInst->ShimRow),
+			XAIE_ENABLE, XAIE_DISABLE);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to set switch configuration for column 0");
+		return RC;
+	}
+	RC = _XAie_PrivilegeSetNmuSwitch(DevInst, XAie_TileLoc(1U, DevInst->ShimRow),
+			XAIE_DISABLE, XAIE_ENABLE);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to set switch configuration for column 1");
+		return RC;
+	}
+
+	return RC;
+}
+
+
+/*****************************************************************************/
+/**
 * This API initializes the AI engine partition
 *
 * @param	DevInst: AI engine partition device instance pointer
@@ -603,6 +688,15 @@ AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 			_XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
 			return RC;
 		}
+		if(DevInst->DevProp.DevGen == XAIE_DEV_GEN_AIE2PS) {
+			RC = _XAie_PrivilegeSetPartNmuSwitch(DevInst);
+			if(RC != XAIE_OK) {
+				_XAie_PrivilegeSetPartProtectedRegs(DevInst,
+						XAIE_DISABLE);
+				return RC;
+			}
+		}
+
 	}
 
 	if((OptFlags & XAIE_PART_INIT_OPT_BLOCK_NOCAXIMMERR) != 0U) {
@@ -632,11 +726,24 @@ AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 	}
 
 	if ((OptFlags & XAIE_PART_INIT_OPT_ISOLATE) != 0U) {
-		RC = DevInst->DevOps->SetPartIsolationAfterRst(DevInst);
+		RC = DevInst->DevOps->SetPartIsolationAfterRst(DevInst, XAIE_INIT_ISOLATION);
+		if(RC != XAIE_OK) {
+			_XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
+		}
+		RC = XAie_PrivilegeSetAxiMMIsolation(DevInst, XAIE_INIT_ISOLATION);
+		if(RC!= XAIE_OK) {
+			_XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
+			return RC;
+		}
+
+	}
+	else {
+		RC = DevInst->DevOps->SetPartIsolationAfterRst(DevInst, XAIE_CLEAR_ISOLATION);
 		if(RC != XAIE_OK) {
 			_XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
 		}
 	}
+
 
 	if ((OptFlags & XAIE_PART_INIT_OPT_ZEROIZEMEM) != 0U) {
 		RC = DevInst->DevOps->PartMemZeroInit(DevInst);
@@ -683,6 +790,16 @@ AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 			_XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
 			return RC;
 		}
+		for(u32 C = 0; C < DevInst->NumCols; C++) {
+			XAie_LocType Loc;
+			u32 ColClockStatus;
+
+			Loc = XAie_TileLoc(C, 1);
+			ColClockStatus = _XAie_GetTileBitPosFromLoc(DevInst, Loc);
+			_XAie_ClrBitInBitmap(DevInst->DevOps->TilesInUse,
+					ColClockStatus, DevInst->NumRows - 1);
+		}
+
 	}
 
 	/* Enable only the tiles requested in Opts parameter */

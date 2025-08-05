@@ -1158,7 +1158,7 @@ struct XAie_DeviceOps {
 	u8 (*GetTTypefromLoc)(XAie_DevInst *DevInst, XAie_LocType Loc);
 	AieRC (*SetPartColShimReset)(XAie_DevInst *DevInst, u8 Enable);
 	AieRC (*SetPartColClockAfterRst)(XAie_DevInst *DevInst, u8 Enable);
-	AieRC (*SetPartIsolationAfterRst)(XAie_DevInst *DevInst);
+	AieRC (*SetPartIsolationAfterRst)(XAie_DevInst *DevInst, u8 IsolationFlags);
 	AieRC (*SetAxiMMIsolation)(XAie_DevInst* DevInst, u8 IsolationFlags);
 	AieRC (*PartMemZeroInit)(XAie_DevInst *DevInst);
 	AieRC (*PartMemL2Split)(XAie_DevInst *DevInst);
