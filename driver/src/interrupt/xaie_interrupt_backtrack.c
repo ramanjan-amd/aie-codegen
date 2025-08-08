@@ -57,10 +57,14 @@
 static inline void _XAie_LIntrCtrlL2Enable(XAie_DevInst *DevInst,
 		XAie_LocType Loc, u32 ChannelBitMap)
 {
-	u64 RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + \
-				((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-				XAIE_NOC_MOD_INTR_L2_APP_B_ENABLE : \
-				XAIE_NOC_MOD_INTR_L2_ENABLE);
+	u64 RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col);
+
+#if DEV_GEN_AIE4
+	if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+		RegAddr += XAIE_NOC_MOD_INTR_L2_APP_B_ENABLE;
+	else
+#endif
+		RegAddr += XAIE_NOC_MOD_INTR_L2_ENABLE;
 
 	_XAie_LPartWrite32(DevInst, RegAddr, ChannelBitMap);
 }
@@ -96,10 +100,14 @@ u32 XAie_L2IntrCtrlStatus(XAie_DevInst *DevInst, u8 StartCol)
 			Loc.Col += 1;
 	}
 
-	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + \
-			((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-			XAIE_NOC_MOD_INTR_L2_APP_B_STATUS : \
-			XAIE_NOC_MOD_INTR_L2_STATUS);
+	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col);
+
+#if DEV_GEN_AIE4
+	if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+		RegAddr += XAIE_NOC_MOD_INTR_L2_APP_B_STATUS;
+	else
+#endif
+		RegAddr += XAIE_NOC_MOD_INTR_L2_STATUS;
 
 	return _XAie_LPartRead32(DevInst, RegAddr);
 }
@@ -124,10 +132,14 @@ u32 XAie_L2IntrCtrlStatus(XAie_DevInst *DevInst, u8 StartCol)
 ******************************************************************************/
 static inline u32 _XAie_LIntrCtrlL2Mask(XAie_DevInst *DevInst, XAie_LocType Loc)
 {
-	u64 RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + \
-			((DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-			XAIE_NOC_MOD_INTR_L2_APP_B_MASK : \
-			XAIE_NOC_MOD_INTR_L2_MASK);
+	u64 RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col);
+
+#if DEV_GEN_AIE4
+	if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+		RegAddr += XAIE_NOC_MOD_INTR_L2_APP_B_MASK;
+	else
+#endif
+		RegAddr += XAIE_NOC_MOD_INTR_L2_MASK;
 
 	return _XAie_LPartRead32(DevInst, RegAddr);
 }
@@ -209,25 +221,33 @@ static inline u32 _XAie_LEventReadStatus(XAie_DevInst *DevInst,
 	u32 BitMask = (1 << BitPos);
 
 	u8 TType = _XAie_LGetTTypefromLoc(DevInst, Loc);
-	if (TType == XAIEGBL_TILE_TYPE_MEMTILE) {
-		RegOff = (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-					XAIE_MEM_TILE_BASE_EVENT_STATUS_B : \
-					XAIE_MEM_TILE_BASE_EVENT_STATUS;
-	} else if (TType == XAIEGBL_TILE_TYPE_AIETILE) {
-#if DEV_GEN_AIE4
-	(void)Module;
-	RegOff = XAIE_CORE_MOD_BASE_EVENT_STATUS;
-#else
-	if (Module == XAIE_CORE_MOD) {
+	if (TType == XAIEGBL_TILE_TYPE_MEMTILE)
+	{
+	#if DEV_GEN_AIE4
+		if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+			RegOff = XAIE_MEM_TILE_BASE_EVENT_STATUS_B;
+		else
+	#endif
+			RegOff = XAIE_MEM_TILE_BASE_EVENT_STATUS;
+	} else if (TType == XAIEGBL_TILE_TYPE_AIETILE)
+	{
+	#if DEV_GEN_AIE4
+		(void)Module;
 		RegOff = XAIE_CORE_MOD_BASE_EVENT_STATUS;
-	} else {
-		RegOff = XAIE_MEM_MOD_BASE_EVENT_STATUS;
+	#else
+		if (Module == XAIE_CORE_MOD) {
+			RegOff = XAIE_CORE_MOD_BASE_EVENT_STATUS;
+		} else {
+			RegOff = XAIE_MEM_MOD_BASE_EVENT_STATUS;
 		}
-#endif
+	#endif
 	} else {
-		RegOff = (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-					XAIE_PL_MOD_BASE_EVENT_STATUS_B : \
-					XAIE_PL_MOD_BASE_EVENT_STATUS;
+	#if DEV_GEN_AIE4
+		if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+			RegOff = XAIE_PL_MOD_BASE_EVENT_STATUS_B;
+		else
+	#endif
+			RegOff = XAIE_PL_MOD_BASE_EVENT_STATUS;
 	}
 
 	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + RegOff +
@@ -262,24 +282,30 @@ static inline void _XAie_LEventClearStatus(XAie_DevInst *DevInst,
 
 	u8 TType = _XAie_LGetTTypefromLoc(DevInst, Loc);
 	if (TType == XAIEGBL_TILE_TYPE_MEMTILE) {
-		RegOff = (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-					XAIE_MEM_TILE_BASE_EVENT_STATUS_B : \
-					XAIE_MEM_TILE_BASE_EVENT_STATUS;
+	#if DEV_GEN_AIE4
+		if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+			RegOff = XAIE_MEM_TILE_BASE_EVENT_STATUS_B;
+		else
+	#endif
+			RegOff = XAIE_MEM_TILE_BASE_EVENT_STATUS;
 	} else if (TType == XAIEGBL_TILE_TYPE_AIETILE) {
-#if DEV_GEN_AIE4
-	(void)Module;
-	RegOff = XAIE_CORE_MOD_BASE_EVENT_STATUS;
-#else
-	if (Module == XAIE_CORE_MOD) {
+	#if DEV_GEN_AIE4
+		(void)Module;
 		RegOff = XAIE_CORE_MOD_BASE_EVENT_STATUS;
+	#else
+		if (Module == XAIE_CORE_MOD) {
+			RegOff = XAIE_CORE_MOD_BASE_EVENT_STATUS;
+		} else {
+			RegOff = XAIE_MEM_MOD_BASE_EVENT_STATUS;
+		}
+	#endif
 	} else {
-		RegOff = XAIE_MEM_MOD_BASE_EVENT_STATUS;
-	}
-#endif
-	} else {
-		RegOff = (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-					XAIE_PL_MOD_BASE_EVENT_STATUS_B : \
-					XAIE_PL_MOD_BASE_EVENT_STATUS;
+	#if DEV_GEN_AIE4
+		if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+			RegOff = XAIE_PL_MOD_BASE_EVENT_STATUS_B;
+		else
+	#endif
+			RegOff = XAIE_PL_MOD_BASE_EVENT_STATUS;
 	}
 
 	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + RegOff +
@@ -313,27 +339,31 @@ static inline u32 _XAie_LReadArrayErrorBroadcastEvent(XAie_DevInst *DevInst,
 	u32 RegOff;
 
 	u8 TType = _XAie_LGetTTypefromLoc(DevInst, Loc);
+
 	if (TType == XAIEGBL_TILE_TYPE_AIETILE) {
-#if DEV_GEN_AIE4
-	(void)Module;
-	RegOff = XAIE_CORE_MOD_BASE_EVENT_BROADCAST;
-#else
-	if (Module == XAIE_CORE_MOD) {
+	#if DEV_GEN_AIE4
+		(void)Module;
 		RegOff = XAIE_CORE_MOD_BASE_EVENT_BROADCAST;
-	} else {
-		RegOff = XAIE_MEM_MOD_BASE_EVENT_BROADCAST;
-	}
-#endif
+	#else
+		if (Module == XAIE_CORE_MOD) {
+			RegOff = XAIE_CORE_MOD_BASE_EVENT_BROADCAST;
+		} else {
+			RegOff = XAIE_MEM_MOD_BASE_EVENT_BROADCAST;
+		}
+	#endif
 	} else if (TType == XAIEGBL_TILE_TYPE_MEMTILE) {
-		RegOff = (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-					XAIE_MEM_TILE_BASE_EVENT_BROADCAST_B : \
-					XAIE_MEM_TILE_BASE_EVENT_BROADCAST;
+	#if DEV_GEN_AIE4
+		if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+			RegOff = XAIE_MEM_TILE_BASE_EVENT_BROADCAST_B;
+		else
+	#endif
+			RegOff = XAIE_MEM_TILE_BASE_EVENT_BROADCAST;
 	}
 #if DEV_GEN_AIE4
 	else {
 		/**
-		 * In AIE4 doesnot have L1 interrupt controller.
-		 * SHIM error info needs to be extracted from event bc.
+		 * AIE4 doesnot have L1 interrupt controller. So this else
+		 * case is needed for SHIM error info extraction from event bc.
 		 */
 		RegOff = (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
 					XAIE_SHIM_TILE_BASE_EVENT_BROADCAST_B : \
@@ -506,24 +536,30 @@ static inline u32 _XAie_LReadGroupErrors(XAie_DevInst *DevInst,
 
 	u8 TType = _XAie_LGetTTypefromLoc(DevInst, Loc);
 	if (TType == XAIEGBL_TILE_TYPE_MEMTILE) {
-		RegOff = (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-					XAIE_MEM_TILE_GROUP_ERROR0_ENABLE_B : \
-					XAIE_MEM_TILE_GROUP_ERROR0_ENABLE;
+	#if DEV_GEN_AIE4
+		if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+			RegOff = XAIE_MEM_TILE_GROUP_ERROR0_ENABLE_B;
+		else
+	#endif
+			RegOff = XAIE_MEM_TILE_GROUP_ERROR0_ENABLE;
 	} else if (TType == XAIEGBL_TILE_TYPE_AIETILE) {
-#if DEV_GEN_AIE4
-	(void)Module;
-	RegOff = XAIE_CORE_MOD_GROUP_ERROR0_ENABLE;
-#else
-	if (Module == XAIE_CORE_MOD) {
+	#if DEV_GEN_AIE4
+		(void)Module;
 		RegOff = XAIE_CORE_MOD_GROUP_ERROR0_ENABLE;
+	#else
+		if (Module == XAIE_CORE_MOD) {
+			RegOff = XAIE_CORE_MOD_GROUP_ERROR0_ENABLE;
+		} else {
+			RegOff = XAIE_MEM_MOD_GROUP_ERROR0_ENABLE;
+		}
+	#endif
 	} else {
-		RegOff = XAIE_MEM_MOD_GROUP_ERROR0_ENABLE;
-	}
-#endif
-	} else {
-		RegOff = (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-					XAIE_PL_MOD_GROUP_ERROR0_ENABLE_B : \
-					XAIE_PL_MOD_GROUP_ERROR0_ENABLE;
+	#if DEV_GEN_AIE4
+		if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+			RegOff = XAIE_PL_MOD_GROUP_ERROR0_ENABLE_B;
+		else
+	#endif
+			RegOff = XAIE_PL_MOD_GROUP_ERROR0_ENABLE;
 	}
 
 	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + RegOff;
@@ -557,24 +593,30 @@ static inline void _XAie_LGroupErrorControl(XAie_DevInst *DevInst,
 
 	u8 TType = _XAie_LGetTTypefromLoc(DevInst, Loc);
 	if (TType == XAIEGBL_TILE_TYPE_MEMTILE) {
-		RegOff = (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-					XAIE_MEM_TILE_GROUP_ERROR0_ENABLE_B : \
-					XAIE_MEM_TILE_GROUP_ERROR0_ENABLE;
+	#if DEV_GEN_AIE4
+		if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+			RegOff = XAIE_MEM_TILE_GROUP_ERROR0_ENABLE_B;
+		else
+	#endif
+			RegOff = XAIE_MEM_TILE_GROUP_ERROR0_ENABLE;
 	} else if (TType == XAIEGBL_TILE_TYPE_AIETILE) {
-#if DEV_GEN_AIE4
-	(void)Module;
-	RegOff = XAIE_CORE_MOD_GROUP_ERROR0_ENABLE;
-#else
-	if (Module == XAIE_CORE_MOD) {
+	#if DEV_GEN_AIE4
+		(void)Module;
 		RegOff = XAIE_CORE_MOD_GROUP_ERROR0_ENABLE;
+	#else
+		if (Module == XAIE_CORE_MOD) {
+			RegOff = XAIE_CORE_MOD_GROUP_ERROR0_ENABLE;
+		} else {
+			RegOff = XAIE_MEM_MOD_GROUP_ERROR0_ENABLE;
+		}
+	#endif
 	} else {
-		RegOff = XAIE_MEM_MOD_GROUP_ERROR0_ENABLE;
-	}
-#endif
-	} else {
-		RegOff = (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) ? \
-					XAIE_PL_MOD_GROUP_ERROR0_ENABLE_B : \
-					XAIE_PL_MOD_GROUP_ERROR0_ENABLE;
+	#if DEV_GEN_AIE4
+		if (DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B)
+			RegOff = XAIE_PL_MOD_GROUP_ERROR0_ENABLE_B;
+		else
+	#endif
+			RegOff = XAIE_PL_MOD_GROUP_ERROR0_ENABLE;
 	}
 
 	RegAddr = _XAie_LGetTileAddr(Loc.Row, Loc.Col) + RegOff;
