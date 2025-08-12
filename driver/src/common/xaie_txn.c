@@ -2395,8 +2395,6 @@ AieRC XAie_Txn_Read32(XAie_DevInst *DevInst, u64 RegOff, u32 *Data) {
 				"when auto flush is disabled\n");
 		return XAIE_ERR;
 	}
-
-	return XAIE_OK;
 }
 
 /*****************************************************************************/
@@ -2506,8 +2504,6 @@ AieRC XAie_Txn_MaskPoll(XAie_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value, 
 
 		return XAIE_OK;
 	}
-
-	return XAIE_OK;
 }
 
 /*****************************************************************************/
@@ -2570,8 +2566,6 @@ AieRC XAie_Txn_MaskPollBusy(XAie_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Val
 
 		return XAIE_OK;
 	}
-
-	return XAIE_OK;
 }
 
 /*****************************************************************************/
@@ -3395,8 +3389,6 @@ AieRC XAie_Txn_RunOp(XAie_DevInst *DevInst, u8 Is_Config_ShimDMABD, void *Arg)
 				"when auto flush is disabled\n");
 		return XAIE_ERR;
 	}
-	
-	return XAIE_OK;
 }
 
 /*****************************************************************************/
