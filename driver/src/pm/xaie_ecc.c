@@ -115,7 +115,7 @@ static AieRC _XAie_EccPerfCntConfig(XAie_DevInst *DevInst, XAie_LocType Loc)
 AieRC _XAie_EccOnDM(XAie_DevInst *DevInst, XAie_LocType Loc)
 {
 	AieRC RC;
-	u8 TileType;
+	u8 Dir, TileType;
 	u32 RegVal, CheckTileEccStatus;
 	u64 RegAddr;
 	const XAie_MemMod *MemMod;
@@ -158,11 +158,23 @@ AieRC _XAie_EccOnDM(XAie_DevInst *DevInst, XAie_LocType Loc)
 	 * Module east broadcast event interface is internally connected to
 	 * memory module west broadcast event interface.
 	 */
+	Dir = (u8)XAIE_EVENT_BROADCAST_SOUTH | (u8)XAIE_EVENT_BROADCAST_WEST |
+	        (u8)XAIE_EVENT_BROADCAST_NORTH;
 	RC = XAie_EventBroadcastBlockDir(DevInst, Loc, XAIE_CORE_MOD,
-		XAIE_EVENT_SWITCH_A, XAIE_BROADCAST_CHANNEL_6, (u8)XAIE_EVENT_BROADCAST_ALL);
+		XAIE_EVENT_SWITCH_A, XAIE_BROADCAST_CHANNEL_6, Dir);
 	if(RC != XAIE_OK) {
 		XAIE_ERROR("Unable to block broadcast from core module\n");
 		return RC;
+	}
+
+       /* Block broadcast of event in all direction from Mem module */
+
+	RC = XAie_EventBroadcastBlockDir(DevInst, Loc, XAIE_MEM_MOD,
+	       XAIE_EVENT_SWITCH_A, XAIE_BROADCAST_CHANNEL_6,
+	       (u8)XAIE_EVENT_BROADCAST_ALL);
+	if(RC != XAIE_OK) {
+	       XAIE_ERROR("Unable to block broadcast from mem module\n");
+	       return RC;
 	}
 
 	/* Broadcast core perf counter 0 event to mem module of that tile */

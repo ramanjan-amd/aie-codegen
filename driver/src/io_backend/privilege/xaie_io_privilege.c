@@ -762,18 +762,19 @@ AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 			}
 		}
 	}
-
-	if (((OptFlags & XAIE_PART_INIT_OPT_CONFIG_MEMINTERLEAVING)) !=
-			XAIE_MEM_INTERLEAVING_MODE_ENABLE) {
-		RC = _XAie_PrivilegeConfigMemInterleaving(DevInst,
-				((u8)(OptFlags & XAIE_PART_INIT_OPT_CONFIG_MEMINTERLEAVING) >>
-				 XAIE_MEMINTERLEAVE_MODE_SHIFT));
-		if(RC != XAIE_OK) {
-			_XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
-			return RC;
+	//use default value for mem interleaving in aie2ps to match with other branch
+	if (DevInst->DevProp.DevGen != XAIE_DEV_GEN_AIE2PS) {
+		if (((OptFlags & XAIE_PART_INIT_OPT_CONFIG_MEMINTERLEAVING)) !=
+				XAIE_MEM_INTERLEAVING_MODE_ENABLE) {
+			RC = _XAie_PrivilegeConfigMemInterleaving(DevInst,
+					((u8)(OptFlags & XAIE_PART_INIT_OPT_CONFIG_MEMINTERLEAVING) >>
+					 XAIE_MEMINTERLEAVE_MODE_SHIFT));
+			if(RC != XAIE_OK) {
+				_XAie_PrivilegeSetPartProtectedRegs(DevInst, XAIE_DISABLE);
+				return RC;
+			}
 		}
 	}
-
 	RC = _XAie_PrivilegeSetL2ErrIrq(DevInst);
 	if(RC != XAIE_OK) {
 		XAIE_ERROR("Failed to configure L2 error IRQ channels\n");
