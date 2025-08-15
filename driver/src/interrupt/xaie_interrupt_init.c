@@ -662,7 +662,31 @@ static AieRC _XAie_GroupErrorInit(XAie_DevInst *DevInst)
 		}
 
 		switch (DevInst->DevProp.DevGen) {
-		
+		case XAIE_DEV_GEN_AIE2PS:
+			RC = XAie_EventBroadcast(DevInst, Loc, XAIE_PL_MOD,
+						 XAIE_ERROR_BROADCAST_ID,
+						 GroupEvent);
+			if (RC != XAIE_OK) {
+				XAIE_ERROR("Failed to setup error broadcast for shim tile: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+				return RC;
+			}
+
+			/* Enable UC MODULE Group Events */
+			RC = XAie_EventBroadcast(DevInst, Loc, XAIE_PL_MOD,
+						 XAIE_ERROR_BROADCAST_ID_UC_EVENT,
+						 XAIE_EVENT_GROUP_ERRORS_UC);
+			if (RC != XAIE_OK) {
+				XAIE_ERROR("Failed to setup UC error group for [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+			}
+
+			/* Enable USER EVENT 1 for boradcast 2 */
+			RC = XAie_EventBroadcast(DevInst, Loc, XAIE_PL_MOD,
+						 XAIE_ERROR_BROADCAST_ID_USER_EVENT1,
+						 XAIE_EVENT_USER_EVENT_1_PL);
+			if (RC != XAIE_OK) {
+				XAIE_ERROR("Failed to setup error broadcast for USER_EVENT1 for [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+			}
+			break;
 		case XAIE_DEV_GEN_AIE4_GENERIC:
 		case XAIE_DEV_GEN_AIE4:
 		case XAIE_DEV_GEN_AIE4_A:
@@ -777,6 +801,572 @@ static AieRC _XAie_FindNextNoCTile(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	return XAIE_ERR;
+}
+/*****************************************************************************/
+/**
+*
+* This API configures broadcast network for AIE tile in AIE2PS.
+*
+* @param	DevInst: Device Instance
+*
+* @Loc		Location of SHIM tile.
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		internal only
+*
+******************************************************************************/
+static AieRC _XAie_ErrorHandlingInitAie2psAieTile(XAie_DevInst *DevInst, XAie_LocType Loc)
+{
+	u8 TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+	u32 BroadcastBitMap, BroadcastBlockDir;
+	AieRC RC;
+
+	if (TileType != XAIEGBL_TILE_TYPE_AIETILE) {
+		XAIE_ERROR("Not a aietile.\n");
+		return XAIE_INVALID_TILE;
+	}
+
+	/* Block broadcast 0 from propagating to north, east and west
+	 */
+	BroadcastBlockDir = (u32)XAIE_EVENT_BROADCAST_NORTH |
+			    (u32)XAIE_EVENT_BROADCAST_EAST |
+			    (u32)XAIE_EVENT_BROADCAST_WEST;
+	RC = XAie_EventBroadcastBlockDir(DevInst, Loc,
+		   XAIE_CORE_MOD, XAIE_EVENT_SWITCH_A,
+		   XAIE_ERROR_BROADCAST_ID, BroadcastBlockDir);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts in core module\n");
+		return RC;
+	}
+
+	RC = XAie_EventBroadcastBlockDir(DevInst, Loc,
+		   XAIE_MEM_MOD, XAIE_EVENT_SWITCH_A,
+		   XAIE_ERROR_BROADCAST_ID, BroadcastBlockDir);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts in memory module\n");
+		return RC;
+	}
+	/* Block broadcast 1 and 2 from propagating to north, west, south, east
+	 */
+	BroadcastBitMap = BIT(XAIE_ERROR_BROADCAST_ID_UC_EVENT) |
+			  BIT(XAIE_ERROR_BROADCAST_ID_USER_EVENT1);
+	RC = XAie_EventBroadcastBlockMapDir(DevInst, Loc,
+		   XAIE_CORE_MOD, XAIE_EVENT_SWITCH_A,
+		   BroadcastBitMap, XAIE_EVENT_BROADCAST_ALL);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts 1, 2  in core module\n");
+		return RC;
+	}
+	RC = XAie_EventBroadcastBlockMapDir(DevInst, Loc,
+		   XAIE_MEM_MOD, XAIE_EVENT_SWITCH_A,
+		   BroadcastBitMap, XAIE_EVENT_BROADCAST_ALL);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts 1, 2  in mem module\n");
+		return RC;
+	}
+
+	return 0;
+}
+
+/*****************************************************************************/
+/**
+*
+* This API configures broadcast network for Mem tile in AIE2PS.
+*
+* @param	DevInst: Device Instance
+*
+* @Loc		Location of SHIM tile.
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		internal only
+*
+******************************************************************************/
+static AieRC _XAie_ErrorHandlingInitAie2psMemTile(XAie_DevInst *DevInst, XAie_LocType Loc)
+{
+	u8 TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+	u32 BroadcastBitMap, BroadcastBlockDir;
+	AieRC RC;
+
+	if (TileType != XAIEGBL_TILE_TYPE_MEMTILE) {
+		XAIE_ERROR("Not a memtile.\n");
+		return XAIE_INVALID_TILE;
+	}
+	/* Block broadcast 0 from propagating to north, east and west
+	 */
+	BroadcastBlockDir = (u32)XAIE_EVENT_BROADCAST_NORTH |
+			    (u32)XAIE_EVENT_BROADCAST_EAST |
+			    (u32)XAIE_EVENT_BROADCAST_WEST;
+	RC = XAie_EventBroadcastBlockDir(DevInst, Loc,
+		   XAIE_MEM_MOD, XAIE_EVENT_SWITCH_A,
+		   XAIE_ERROR_BROADCAST_ID, BroadcastBlockDir);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts in mem tile switch A\n");
+		return RC;
+	}
+
+	RC = XAie_EventBroadcastBlockDir(DevInst, Loc,
+		   XAIE_MEM_MOD, XAIE_EVENT_SWITCH_B,
+		   XAIE_ERROR_BROADCAST_ID, BroadcastBlockDir);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts in mem tile switch B\n");
+		return RC;
+	}
+	/* Block broadcast 1 and 2 from propagating to north, west, south, east
+	 */
+	BroadcastBitMap = XAIE_ERROR_BROADCAST_ID_UC_EVENT |
+			  XAIE_ERROR_BROADCAST_ID_USER_EVENT1;
+	RC = XAie_EventBroadcastBlockMapDir(DevInst, Loc,
+		   XAIE_MEM_MOD, XAIE_EVENT_SWITCH_A,
+		   BroadcastBitMap, XAIE_EVENT_BROADCAST_ALL);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts 1, 2  in core module\n");
+		return RC;
+	}
+	RC = XAie_EventBroadcastBlockMapDir(DevInst, Loc,
+		   XAIE_MEM_MOD, XAIE_EVENT_SWITCH_B,
+		   BroadcastBitMap, XAIE_EVENT_BROADCAST_ALL);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts 1, 2  in mem module\n");
+		return RC;
+	}
+
+	return 0;
+}
+
+/*****************************************************************************/
+/**
+*
+* This API configures broadcast network for SHIM tile for coli 0.
+*
+* @param	DevInst: Device Instance
+*
+* @Loc		Location of SHIM tile.
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		internal only
+*
+******************************************************************************/
+static AieRC _XAie_ErrorHandlingInitAie2psShimTileCol0(XAie_DevInst *DevInst, XAie_LocType Loc)
+{
+	u8 TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+	u32 BroadcastBitMap, BroadcastBlockDir;
+	AieRC RC;
+
+	if ((TileType != XAIEGBL_TILE_TYPE_SHIMNOC) &&
+	    (TileType != XAIEGBL_TILE_TYPE_SHIMPL)) {
+		XAIE_ERROR("Not a shimtile\n");
+		return XAIE_INVALID_TILE;
+	}
+	if (Loc.Col != 0) {
+		XAIE_ERROR("Col shoule be 0.\n");
+		return XAIE_INVALID_TILE;
+	}
+	/* For Col 0, propagate broadcast 2 east only
+	 */
+	BroadcastBlockDir = (u32)XAIE_EVENT_BROADCAST_NORTH |
+			    (u32)XAIE_EVENT_BROADCAST_WEST |
+			    (u32)XAIE_EVENT_BROADCAST_SOUTH;
+	RC = XAie_EventBroadcastBlockDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_A,
+			XAIE_ERROR_BROADCAST_ID_USER_EVENT1,
+			BroadcastBlockDir);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+	RC = XAie_EventBroadcastBlockDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_B,
+			XAIE_ERROR_BROADCAST_ID_USER_EVENT1,
+			BroadcastBlockDir);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+	/* For Col 0, block broadcast 0,1 in all directions
+	 */
+	BroadcastBitMap = BIT(XAIE_ERROR_BROADCAST_ID) |
+			  BIT(XAIE_ERROR_BROADCAST_ID_UC_EVENT);
+	BroadcastBlockDir = (u32)XAIE_EVENT_BROADCAST_NORTH |
+			    (u32)XAIE_EVENT_BROADCAST_WEST |
+			    (u32)XAIE_EVENT_BROADCAST_SOUTH;
+	RC = XAie_EventBroadcastBlockMapDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_A,
+			BroadcastBitMap,
+			BroadcastBlockDir);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+	RC = XAie_EventBroadcastBlockMapDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_B,
+			BroadcastBitMap,
+			XAIE_EVENT_BROADCAST_ALL);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+
+	return 0;
+}
+
+/*****************************************************************************/
+/**
+*
+* This API configures broadcast network for SHIM tile for lead col.
+* Lead column for aie2ps is assumed to be Col 1.
+*
+* @param	DevInst: Device Instance
+*
+* @Loc		Location of SHIM tile.
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		internal only
+*
+******************************************************************************/
+static AieRC _XAie_ErrorHandlingInitAie2psShimTileLeadCol(XAie_DevInst *DevInst, XAie_LocType Loc)
+{
+	u8 TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+	u32 BroadcastBitMap, BroadcastBlockDir;
+	AieRC RC;
+
+	if ((TileType != XAIEGBL_TILE_TYPE_SHIMNOC) &&
+	    (TileType != XAIEGBL_TILE_TYPE_SHIMPL)) {
+		XAIE_ERROR("Not a shimtile\n");
+		return XAIE_INVALID_TILE;
+	}
+	if (Loc.Col != 1) {
+		XAIE_ERROR("Lead col should be 1.\n");
+		return XAIE_INVALID_TILE;
+	}
+	/* For column 1, propagate broadcast for 0,1 to west.
+	 */
+	BroadcastBitMap = BIT(XAIE_ERROR_BROADCAST_ID) |
+			  BIT(XAIE_ERROR_BROADCAST_ID_UC_EVENT);
+	BroadcastBlockDir = (u32)XAIE_EVENT_BROADCAST_NORTH |
+			    (u32)XAIE_EVENT_BROADCAST_EAST |
+			    (u32)XAIE_EVENT_BROADCAST_SOUTH;
+
+	RC = XAie_EventBroadcastBlockMapDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_A,
+			BroadcastBitMap, BroadcastBlockDir);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts in switch A Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+	RC = XAie_EventBroadcastBlockMapDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_B,
+			BroadcastBitMap, BroadcastBlockDir);
+
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts in switch B Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+	/* For column 1, block broadcast for id 2 in all directions
+	 */
+	BroadcastBlockDir = (u32)XAIE_EVENT_BROADCAST_NORTH |
+			    (u32)XAIE_EVENT_BROADCAST_WEST |
+			    (u32)XAIE_EVENT_BROADCAST_SOUTH;
+	RC = XAie_EventBroadcastBlockDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_A,
+			XAIE_ERROR_BROADCAST_ID_USER_EVENT1,
+			BroadcastBlockDir);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+	RC = XAie_EventBroadcastBlockDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_B,
+			XAIE_ERROR_BROADCAST_ID_USER_EVENT1,
+			XAIE_EVENT_BROADCAST_ALL);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+
+	return 0;
+}
+
+/*****************************************************************************/
+/**
+*
+* This API configures broadcast network for SHIM tile for Non-lead, non 0 Col.
+* Lead column for aie2ps is assumed to be Col 1.
+*
+* @param	DevInst: Device Instance
+*
+* @Loc		Location of SHIM tile.
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		internal only
+*
+******************************************************************************/
+static AieRC _XAie_ErrorHandlingInitAie2psShimTile(XAie_DevInst *DevInst, XAie_LocType Loc)
+{
+	u8 TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+	u32 BroadcastBitMap, BroadcastBlockDir;
+	AieRC RC;
+
+	if ((TileType != XAIEGBL_TILE_TYPE_SHIMNOC) &&
+	    (TileType != XAIEGBL_TILE_TYPE_SHIMPL)) {
+		XAIE_ERROR("Not a shimtile\n");
+		return XAIE_INVALID_TILE;
+	}
+	if (Loc.Col < 2) {
+		XAIE_ERROR("Col should be > 1.\n");
+		return XAIE_INVALID_TILE;
+	}
+	/* Block broadcast 0,1 in all directions
+	 */
+	BroadcastBitMap = BIT(XAIE_ERROR_BROADCAST_ID) |
+			  BIT(XAIE_ERROR_BROADCAST_ID_UC_EVENT);
+	BroadcastBlockDir = (u32)XAIE_EVENT_BROADCAST_NORTH |
+			    (u32)XAIE_EVENT_BROADCAST_WEST |
+			    (u32)XAIE_EVENT_BROADCAST_SOUTH;
+	RC = XAie_EventBroadcastBlockMapDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_A,
+			BroadcastBitMap,
+			BroadcastBlockDir);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+	RC = XAie_EventBroadcastBlockMapDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_B,
+			BroadcastBitMap,
+			XAIE_EVENT_BROADCAST_ALL);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+	/* Propagate broadcast 2 west only
+	 */
+	BroadcastBlockDir = (u32)XAIE_EVENT_BROADCAST_NORTH |
+			    (u32)XAIE_EVENT_BROADCAST_EAST |
+			    (u32)XAIE_EVENT_BROADCAST_SOUTH;
+	RC = XAie_EventBroadcastBlockDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_A,
+			XAIE_ERROR_BROADCAST_ID_USER_EVENT1,
+			BroadcastBlockDir);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+	RC = XAie_EventBroadcastBlockDir(DevInst, Loc,
+			XAIE_PL_MOD, XAIE_EVENT_SWITCH_B,
+			XAIE_ERROR_BROADCAST_ID_USER_EVENT1,
+			BroadcastBlockDir);
+	if (RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block broadcasts Loc: [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+		return RC;
+	}
+
+	return 0;
+}
+
+/*****************************************************************************/
+/**
+*
+* This API configures L1 ctrl for AIE2PS.
+*
+* @param	DevInst: Device Instance
+*
+* @Loc		Location of L1 SHIM tile.
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		internal only
+*
+******************************************************************************/
+static AieRC _XAie_ErrorHandlingInitAie2psL1Ctrl(XAie_DevInst *DevInst, XAie_LocType Loc)
+{
+	AieRC RC;
+	u8 TileType;
+	u8 L1IrqA, L1IrqB;
+	u32 BroadcastBitMap;
+	const XAie_L1IntrMod *L1IntrMod;
+
+	/*
+	 * Block direct broadcast from AIE array to the
+	 * broadcast network in shim tiles.
+	 */
+	BroadcastBitMap = BIT(XAIE_ERROR_BROADCAST_ID) |
+			  BIT(XAIE_ERROR_BROADCAST_ID_UC_EVENT) |
+			  BIT(XAIE_ERROR_BROADCAST_ID_USER_EVENT1);
+	RC = XAie_IntrCtrlL1BroadcastBlock(DevInst, Loc,
+			XAIE_EVENT_SWITCH_A, BroadcastBitMap);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block direct broadcasts from AIE array\n");
+		return RC;
+	}
+	RC = XAie_IntrCtrlL1BroadcastBlock(DevInst, Loc,
+			XAIE_EVENT_SWITCH_B, BroadcastBitMap);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to block direct broadcasts from AIE array\n");
+		return RC;
+	}
+
+	if (Loc.Col == 1) {
+		/* Enable l1 ctrl for broadcast 2
+		 */
+		RC = XAie_IntrCtrlL1Enable(DevInst, Loc, XAIE_EVENT_SWITCH_A,
+			XAIE_ERROR_BROADCAST_ID_USER_EVENT1);
+		if(RC != XAIE_OK) {
+			XAIE_ERROR("Failed to enable interrupts to L1\n");
+			return RC;
+		}
+		RC = XAie_IntrCtrlL1Enable(DevInst, Loc, XAIE_EVENT_SWITCH_B,
+			XAIE_ERROR_BROADCAST_ID_USER_EVENT1);
+		if(RC != XAIE_OK) {
+			XAIE_ERROR("Failed to enable interrupts to L1\n");
+			return RC;
+		}
+	} else {
+		/* Enable l1 ctrl for broadcast 0 and 1
+		 */
+		RC = XAie_IntrCtrlL1Enable(DevInst, Loc, XAIE_EVENT_SWITCH_A,
+			XAIE_ERROR_BROADCAST_ID);
+		if(RC != XAIE_OK) {
+			XAIE_ERROR("Failed to enable interrupts to L1\n");
+			return RC;
+		}
+		RC = XAie_IntrCtrlL1Enable(DevInst, Loc, XAIE_EVENT_SWITCH_B,
+			XAIE_ERROR_BROADCAST_ID);
+		if(RC != XAIE_OK) {
+			XAIE_ERROR("Failed to enable interrupts to L1\n");
+			return RC;
+		}
+		RC = XAie_IntrCtrlL1Enable(DevInst, Loc, XAIE_EVENT_SWITCH_A,
+			XAIE_ERROR_BROADCAST_ID_UC_EVENT);
+		if(RC != XAIE_OK) {
+			XAIE_ERROR("Failed to enable interrupts to L1\n");
+			return RC;
+		}
+		RC = XAie_IntrCtrlL1Enable(DevInst, Loc, XAIE_EVENT_SWITCH_B,
+			XAIE_ERROR_BROADCAST_ID_UC_EVENT);
+		if(RC != XAIE_OK) {
+			XAIE_ERROR("Failed to enable interrupts to L1\n");
+			return RC;
+		}
+
+	}
+
+	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+	L1IntrMod = DevInst->DevProp.DevMod[TileType].L1IntrMod;
+	if (L1IntrMod == NULL) {
+		XAIE_ERROR("Invalid module type\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	L1IrqA = L1IntrMod->IntrCtrlL1IrqId(DevInst, Loc, XAIE_EVENT_SWITCH_A);
+	RC = XAie_IntrCtrlL1IrqSet(DevInst, Loc, XAIE_EVENT_SWITCH_A, L1IrqA);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to configure L1 IRQ line\n");
+		return RC;
+	}
+
+	L1IrqB = L1IntrMod->IntrCtrlL1IrqId(DevInst, Loc, XAIE_EVENT_SWITCH_B);
+	RC = XAie_IntrCtrlL1IrqSet(DevInst, Loc, XAIE_EVENT_SWITCH_B, L1IrqB);
+	if(RC != XAIE_OK) {
+		XAIE_ERROR("Failed to configure L1 IRQ line\n");
+		return RC;
+	}
+
+
+	return XAIE_OK;
+}
+
+/*****************************************************************************/
+/**
+*
+* This API configures broadcast network to deliver error events as interrupts in
+* NPI. When error occurs, interrupt is raised on NPI interrupt line #5, 6, 7, 8.
+*
+* @param	DevInst: Device Instance
+*
+* @return	XAIE_OK on success, error code on failure.
+*
+* @note		This API assumes the whole AIE2PS as a single partition and the
+*		following broadcast channels to be available. To avoid conflicts,
+*		it is the user's responsibility to make sure none of the below
+*		channels are being used.
+*			* Broadcast channel #0, 1, 2 in AIE array tiles.
+*			* NPI interrupt line #5, 6, 7, 8.
+*		Currently, this API only supports Linux UIO, CDO, and debug
+*		backends.
+*
+*		This function is internal only
+******************************************************************************/
+static AieRC _XAie_ErrorHandlingInitAie2ps(XAie_DevInst *DevInst)
+{
+	AieRC RC;
+	u8 TileType;
+	XAie_LocType Loc;
+
+	for (Loc.Col = 0; Loc.Col < DevInst->NumCols; Loc.Col++) {
+		for (Loc.Row = 0; Loc.Row < DevInst->NumRows; Loc.Row++) {
+
+			if (_XAie_PmIsTileRequested(DevInst, Loc) == XAIE_DISABLE) {
+				continue;
+			}
+
+			TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+
+			switch (TileType) {
+			case XAIEGBL_TILE_TYPE_SHIMNOC:
+			case XAIEGBL_TILE_TYPE_SHIMPL:
+				RC = _XAie_ErrorHandlingInitAie2psL1Ctrl(DevInst, Loc);
+				if (RC != XAIE_OK) {
+					XAIE_ERROR("Failed to config L1 ctrl [%d, %d]: %d\n", Loc.Col, Loc.Row, RC);
+					return RC;
+				}
+				RC = XAie_IntrCtrlL2Enable(DevInst, Loc,
+						XAIE_ERROR_L2_ENABLE);
+				if(RC != XAIE_OK) {
+					XAIE_ERROR("Failed to enable interrupts to L2\n");
+					return RC;
+				}
+
+
+				switch (Loc.Col) {
+				case 1:
+					RC = _XAie_ErrorHandlingInitAie2psShimTileLeadCol(DevInst, Loc);
+					if (RC != XAIE_OK)
+						return RC;
+					break;
+				case 0:
+					RC = _XAie_ErrorHandlingInitAie2psShimTileCol0(DevInst, Loc);
+					if (RC != XAIE_OK)
+						return RC;
+
+					break;
+				default:
+					RC = _XAie_ErrorHandlingInitAie2psShimTile(DevInst, Loc);
+					if (RC != XAIE_OK)
+						return RC;
+					break;
+				}
+				break;
+			case XAIEGBL_TILE_TYPE_AIETILE:
+				RC = _XAie_ErrorHandlingInitAie2psAieTile(DevInst, Loc);
+				if (RC != XAIE_OK) {
+					return RC;
+				}
+				break;
+			case XAIEGBL_TILE_TYPE_MEMTILE:
+				RC = _XAie_ErrorHandlingInitAie2psMemTile(DevInst, Loc);
+				if (RC != XAIE_OK)
+					return RC;
+				break;
+			}
+		}
+	}
+
+	return XAIE_OK;
 }
 
 /*****************************************************************************/
@@ -1304,7 +1894,10 @@ AieRC XAie_ErrorHandlingInit(XAie_DevInst *DevInst)
 		return XAIE_INVALID_ARGS;
 	}
 
-	switch (DevInst->DevProp.DevGen) {	
+	switch (DevInst->DevProp.DevGen) {
+	case XAIE_DEV_GEN_AIE2PS:
+		RC = _XAie_ErrorHandlingInitAie2ps(DevInst);
+		break;
 	case XAIE_DEV_GEN_AIE4_GENERIC:
 	case XAIE_DEV_GEN_AIE4:
 	case XAIE_DEV_GEN_AIE4_A:
