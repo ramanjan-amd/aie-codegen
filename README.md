@@ -1,5 +1,6 @@
 # AIE Codegen
 
+```bash
 aie-codegen/
 ├── fal
 │   ├── cmake
@@ -37,7 +38,7 @@ aie-codegen/
     ├── trace
     ├── util
     └── xaiengine.h
-
+```
 ## aie-codegen/src
 AIE Codegen for AIE2/AIE2P/AIE2PS/AIE4 generation devices
 
