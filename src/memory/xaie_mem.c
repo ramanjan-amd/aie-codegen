@@ -1,0 +1,446 @@
+/******************************************************************************
+* Copyright (C) 2019-2022 Xilinx, Inc. All rights reserved.
+* Copyright (C) 2022-2024 Advanced Micro Devices, Inc. All rights reserved.
+* SPDX-License-Identifier: MIT
+******************************************************************************/
+
+
+/*****************************************************************************/
+/**
+* @file xaie_mem.c
+* @{
+*
+* This file contains read and write routines for AIE data memory.
+*
+* <pre>
+* MODIFICATION HISTORY:
+*
+* Ver   Who     Date     Changes
+* ----- ------  -------- -----------------------------------------------------
+* 1.0   Tejus   09/24/2019  Initial creation
+* 1.1   Tejus	01/04/2020  Cleanup error messages
+* 1.2   Tejus   03/20/2020  Reorder range apis
+* 1.3   Tejus   03/20/2020  Make internal functions static
+* 1.4   Tejus   04/13/2020  Remove range apis and change to single tile apis
+* 1.5   Tejus   06/10/2020  Switch to new io backend apis.
+* 1.6   Nishad  07/30/2020  Add API to read and write block of data from tile
+*			    data memory.
+* </pre>
+*
+******************************************************************************/
+/***************************** Include Files *********************************/
+#include "xaie_feature_config.h"
+#include "xaie_helper.h"
+#include "xaie_mem.h"
+#include "xaie_helper_internal.h"
+
+#ifdef XAIE_FEATURE_DATAMEM_ENABLE
+
+/************************** Function Definitions *****************************/
+/*****************************************************************************/
+/**
+*
+* This API writes a 32-bit value to the specified data memory location for
+* the selected tile.
+*
+* @param	DevInst: Device Instance
+* @param	Loc: Loc of AIE Tiles
+* @param	Addr: Address in data memory to write.
+* @param	Data: 32-bit value to be written.
+*
+* @return	XAIE_OK on success and error code on failure
+*
+* @note		None.
+*
+*******************************************************************************/
+AieRC XAie_DataMemWrWord(XAie_DevInst *DevInst, XAie_LocType Loc,
+		u32 Addr, u32 Data)
+{
+	u64 RegAddr;
+
+	if((DevInst == XAIE_NULL) ||
+			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
+		XAIE_ERROR("Invalid Device Instance\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	RegAddr = (u64)(Addr) +
+		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+
+	return XAie_Write32(DevInst, RegAddr, Data);
+}
+
+/*****************************************************************************/
+/**
+*
+* This API read a 32-bit value from the specified data memory location for
+* the selected tile.
+*
+* @param	DevInst: Device Instance
+* @param	Loc: Loc of AIE Tiles
+* @param	Addr: Address in data memory to write.
+* @param	Data: Pointer to store 32-bit value read from memory.
+*
+* @return	XAIE_OK on success and error code on failure
+*
+* @note		None.
+*
+*******************************************************************************/
+AieRC XAie_DataMemRdWord(XAie_DevInst *DevInst, XAie_LocType Loc,
+		u32 Addr, u32 *Data)
+{
+	u64 RegAddr;
+
+	if((DevInst == XAIE_NULL) || (Data == XAIE_NULL) ||
+			(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
+		XAIE_ERROR("Invalid Device Instance\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	RegAddr = (u64)(Addr) +
+		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+
+	return XAie_Read32(DevInst, RegAddr, Data);
+}
+
+/*****************************************************************************/
+/**
+*
+* This is a helper API to write a block of data to the specified data memory
+* location of the selected tile. Byte-level writes are supported by this API.
+* For unaligned data memory offsets, this API implements read-modify-write
+* operation.
+*
+* @param	DevInst: Device Instance
+* @param	Loc: Loc of AIE Tiles
+* @param	Offset: Address in data memory to write.
+* @param	Src: Source to write data.
+* @param	Size: Size in bytes to write.
+*
+* @return	XAIE_OK on success and error code on failure
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+static AieRC _XAie_DataMemoryBlockWrite(XAie_DevInst* DevInst, XAie_LocType Loc,
+		u32 Offset, const unsigned char *Src, u32 Size) {
+	AieRC RC = XAIE_OK;
+	u32 BytePtr = 0, RemBytes = Size, TempWord = 0, Mask = 0;
+	u64 DmAddrRoundDown, DmAddrRoundUp;
+	u8 FirstWriteOffset = (u8)(Offset & XAIE_MEM_WORD_ALIGN_MASK);
+
+	/* Absolute 4-byte aligned AXI-MM address to write */
+	DmAddrRoundDown =  (u64)(XAIE_MEM_WORD_ROUND_DOWN(Offset)) +
+			    XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+
+	/* Round-up unaligned Addr */
+	DmAddrRoundUp = (u64)(XAIE_MEM_WORD_ROUND_UP(Offset)) +
+			XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+
+
+	/* Unaligned start bytes */
+	if(FirstWriteOffset) {
+		/*
+		 * Construct 4-byte word along with bit mask to read-modify
+		 * write at unaligned offset
+		 */
+		for(u32 UnalignedByte = FirstWriteOffset;
+				(u8)((UnalignedByte < XAIE_MEM_WORD_ALIGN_SIZE) && (RemBytes != 0U));
+				UnalignedByte++, RemBytes--) {
+			TempWord |= (u32)((u32)Src[BytePtr++] << (UnalignedByte * 8U));
+			Mask |= (u32)(0xFFU << (UnalignedByte * 8U));
+		}
+		RC = XAie_MaskWrite32(DevInst, DmAddrRoundDown, Mask, TempWord);
+		if(RC != XAIE_OK) {
+			return RC;
+		}
+	}
+
+	/* Aligned bytes */
+	if (RemBytes >= XAIE_MEM_WORD_ALIGN_SIZE) {
+		RC = XAie_BlockWrite32(DevInst, DmAddrRoundUp,
+				(const u32 *)(uintptr_t)(Src + BytePtr),
+				(RemBytes / XAIE_MEM_WORD_ALIGN_SIZE));
+		if(RC != XAIE_OK) {
+			return RC;
+		}
+	}
+	/* Remaining unaligned bytes */
+	if(RemBytes % XAIE_MEM_WORD_ALIGN_SIZE) {
+		DmAddrRoundDown = DmAddrRoundUp + (u64)(XAIE_MEM_WORD_ALIGN_SIZE *
+					(RemBytes / XAIE_MEM_WORD_ALIGN_SIZE));
+		BytePtr += XAIE_MEM_WORD_ALIGN_SIZE *
+				(RemBytes / XAIE_MEM_WORD_ALIGN_SIZE);
+		TempWord = 0;
+		Mask = 0;
+		for (u32 UnalignedByte = 0;
+			 UnalignedByte < RemBytes % XAIE_MEM_WORD_ALIGN_SIZE;
+			 UnalignedByte++) {
+			TempWord |= (u32)((u32)Src[BytePtr++] << (UnalignedByte * 8U));
+			Mask |= (u32)(0xFFU << (UnalignedByte * 8U));
+		}
+		RC = XAie_MaskWrite32(DevInst, DmAddrRoundDown, Mask, TempWord);
+		if(RC != XAIE_OK) {
+			return RC;
+		}
+	}
+
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+*
+* This API writes a block of data to the specified data memory location of
+* the selected tile. Byte-level writes are supported by this API. For unaligned
+* data memory offsets, this API implements read-modify-write operation.
+*
+* @param	DevInst: Device Instance
+* @param	Loc: Loc of AIE Tiles
+* @param	Addr: Address in data memory to write.
+* @param	Src - Source to write data.
+* @param	Size - Size in bytes to write.
+*
+* @return	XAIE_OK on success and error code on failure
+*
+* @note		None.
+*
+*******************************************************************************/
+AieRC XAie_DataMemBlockWrite(XAie_DevInst *DevInst, XAie_LocType Loc, u32 Addr,
+		const void *Src, u32 Size)
+{
+	AieRC RC;
+	const unsigned char *CharSrc = (const unsigned char *)Src;
+
+	if((DevInst == XAIE_NULL) ||
+		(DevInst->IsReady != XAIE_COMPONENT_IS_READY) || (Src == NULL))
+	{
+		XAIE_ERROR("Invalid device instance or source pointer\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	RC = _XAie_DataMemoryBlockWrite(DevInst, Loc, Addr, CharSrc,
+					Size);
+
+	return RC;
+}
+
+/*****************************************************************************/
+/**
+ *
+ * This API reads a block of data to the specified uc shared data memory
+ * location of the selected column. Byte-level reads are supported by this API.
+ * For unaligned data memory offsets, this API implements read-modify-write
+ * operation.
+ *
+ * @param        DevInst: Device Instance
+ * @param        Loc:     Loc of AIE Tiles
+ * @param        Addr:    Address in shared data memory to write.
+ * @param        Dst:     Destination to store read data.
+ * @param        Size:    Size in bytes to write.
+ *
+ * @return       XAIE_OK on success and error code on failure
+ *
+ * @note         None.
+ *
+ *******************************************************************************/
+AieRC XAie_SharedDataMemBlockRead(XAie_DevInst *DevInst, XAie_LocType Loc, u32 Addr,
+		void *Dst, u32 Size)
+{
+	AieRC RC;
+	u64 DmAddrRoundDown, DmAddrRoundUp;
+	u32 BytePtr = 0;
+	u32 RemBytes = Size;
+	u32 TempWord;
+	u8 FirstReadOffset = (u8)Addr & XAIE_MEM_WORD_ALIGN_MASK;
+	unsigned char *CharDst = (unsigned char *)Dst;
+
+	if((DevInst == XAIE_NULL) ||
+			(DevInst->IsReady != XAIE_COMPONENT_IS_READY) || (Dst == NULL))
+	{
+		XAIE_ERROR("Invalid device instance or destination pointer\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	/* Absolute 4-byte aligned AXI-MM address to write */
+	DmAddrRoundDown = (u64)(XAIE_MEM_WORD_ROUND_DOWN(Addr)) +
+		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+
+	/* Round-up unaligned Addr */
+	DmAddrRoundUp = (u64)(XAIE_MEM_WORD_ROUND_UP(Addr)) +
+		XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+
+	/* First unaligned byte read into destination block */
+	if(FirstReadOffset) {
+		RC = XAie_Read32(DevInst, DmAddrRoundDown, &TempWord);
+		if(RC != XAIE_OK) {
+			return RC;
+		}
+
+		for(u32 UnalignedByte = FirstReadOffset;
+				(u8)((UnalignedByte < XAIE_MEM_WORD_ALIGN_SIZE) != 0U) && (RemBytes != 0U);
+				UnalignedByte++, RemBytes--) {
+			CharDst[BytePtr++] = (u8)(TempWord >> (UnalignedByte * 8U) &
+					0xFFU);
+		}
+
+	}
+	/* Aligned bytes */
+	for(u32 AlignedWord = 0; AlignedWord < RemBytes / 4U;
+			AlignedWord++, BytePtr += 4U, DmAddrRoundUp += 4U) {
+		RC = XAie_Read32(DevInst, DmAddrRoundUp,
+				(u32 *)(CharDst + BytePtr));
+		if(RC != XAIE_OK) {
+			return RC;
+		}
+	}
+
+	/* Remaining bytes */
+	if(RemBytes % XAIE_MEM_WORD_ALIGN_SIZE) {
+		RC = XAie_Read32(DevInst, DmAddrRoundUp, &TempWord);
+		if(RC != XAIE_OK) {
+			return RC;
+		}
+
+		for(u32 UnalignedByte = 0;
+				UnalignedByte < RemBytes % XAIE_MEM_WORD_ALIGN_SIZE;
+				UnalignedByte++) {
+			CharDst[BytePtr++] = (u8)(TempWord >> (UnalignedByte * 8U) &
+					0xFFU);
+		}
+
+	}
+	return XAIE_OK;
+}
+
+
+/*****************************************************************************/
+/**
+*
+* This API writes a block of data to the specified uc shared data memory
+* location of the selected column. Byte-level writes are supported by this API.
+* For unaligned data memory offsets, this API implements read-modify-write
+* operation.
+*
+* @param        DevInst: Device Instance
+* @param        Loc: Loc of AIE Tiles
+* @param        Addr: Address in shared data memory to write.
+* @param        Src: Source to write data.
+* @param        Size: Size in bytes to write.
+*
+* @return       XAIE_OK on success and error code on failure
+*
+* @note         None.
+*
+*******************************************************************************/
+AieRC XAie_SharedDataMemBlockWrite(XAie_DevInst *DevInst, XAie_LocType Loc,
+                u32 Addr, const void *Src, u32 Size)
+{
+        AieRC RC;
+        unsigned char *CharSrc = (unsigned char *)Src;
+
+        if((DevInst == XAIE_NULL) ||
+                (DevInst->IsReady != XAIE_COMPONENT_IS_READY) || (Src == NULL))
+        {
+                XAIE_ERROR("Invalid device instance or source pointer\n");
+                return XAIE_INVALID_ARGS;
+        }
+
+
+        RC = _XAie_DataMemoryBlockWrite(DevInst, Loc, Addr, CharSrc,
+                                        Size);
+
+        return RC;
+}
+
+
+/*****************************************************************************/
+/**
+*
+* This API reads a block of data from the specified data memory location of
+* the selected tile. Byte-level reads are supported by this API. For unaligned
+* data memory offsets, this API implements read-modify-write operation.
+*
+* @param	DevInst: Device Instance
+* @param	Loc: Loc of AIE Tiles
+* @param	Addr: Address in data memory to write.
+* @param	Dst - Destination to store read data.
+* @param	Size - Size in bytes to read.
+*
+* @return	XAIE_OK on success and error code on failure
+*
+* @note		None.
+*
+*******************************************************************************/
+AieRC XAie_DataMemBlockRead(XAie_DevInst *DevInst, XAie_LocType Loc, u32 Addr,
+		void *Dst, u32 Size)
+{
+	AieRC RC;
+	u64 DmAddrRoundDown, DmAddrRoundUp;
+	u32 BytePtr = 0;
+	u32 RemBytes = Size;
+	u32 TempWord;
+
+	u8 FirstReadOffset = (u8)(Addr & XAIE_MEM_WORD_LAST_BYTE_MASK) & XAIE_MEM_WORD_ALIGN_MASK;
+	unsigned char *CharDst = (unsigned char *)Dst;
+
+	if((DevInst == XAIE_NULL) ||
+		(DevInst->IsReady != XAIE_COMPONENT_IS_READY) || (Dst == NULL))
+	{
+		XAIE_ERROR("Invalid device instance or destination pointer\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	/* Absolute 4-byte aligned AXI-MM address to write */
+	DmAddrRoundDown = (u64)(XAIE_MEM_WORD_ROUND_DOWN(Addr)) +
+			XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+
+	/* Round-up unaligned Addr */
+	DmAddrRoundUp = (u64)(XAIE_MEM_WORD_ROUND_UP(Addr)) +
+				XAie_GetTileAddr(DevInst, Loc.Row, Loc.Col);
+
+	/* First unaligned byte read into destination block */
+	if(FirstReadOffset) {
+		RC = XAie_Read32(DevInst, DmAddrRoundDown, &TempWord);
+		if(RC != XAIE_OK) {
+			return RC;
+		}
+
+		for(u32 UnalignedByte = FirstReadOffset;
+			(u8)((UnalignedByte < XAIE_MEM_WORD_ALIGN_SIZE) != 0U) && (RemBytes != 0U);
+			UnalignedByte++, RemBytes--) {
+			CharDst[BytePtr++] = (u8)(TempWord >> (UnalignedByte * 8U) &
+									0xFFU);
+		}
+
+	}
+	/* Aligned bytes */
+	for(u32 AlignedWord = 0; AlignedWord < RemBytes / 4U;
+		AlignedWord++, BytePtr += 4U, DmAddrRoundUp += 4U) {
+		RC = XAie_Read32(DevInst, DmAddrRoundUp,
+				(u32 *)(uintptr_t)(CharDst + BytePtr));
+		if(RC != XAIE_OK) {
+			return RC;
+		}
+	}
+
+	/* Remaining bytes */
+	if(RemBytes % XAIE_MEM_WORD_ALIGN_SIZE) {
+		RC = XAie_Read32(DevInst, DmAddrRoundUp, &TempWord);
+		if(RC != XAIE_OK) {
+			return RC;
+		}
+
+		for(u32 UnalignedByte = 0;
+			UnalignedByte < RemBytes % XAIE_MEM_WORD_ALIGN_SIZE;
+			UnalignedByte++) {
+			CharDst[BytePtr++] = (u8)(TempWord >> (UnalignedByte * 8U) &
+									0xFFU);
+		}
+
+	}
+	return XAIE_OK;
+}
+
+#endif /* XAIE_FEATURE_DATAMEM_ENABLE */
+/** @} */

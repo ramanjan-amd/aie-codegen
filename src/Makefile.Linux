@@ -1,0 +1,140 @@
+###############################################################################
+# Copyright (C) 2018 - 2021 Xilinx, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+#
+###############################################################################
+
+APP = aiengine
+
+CC ?= gcc
+CP = cp
+LIBSOURCES = $(wildcard ./*/*.c) $(wildcard ./*/*/*.c)
+CFLAGS += -Werror -Wall -Wextra --std=c11
+EXTRA_CFLAGS += -D_POSIX_C_SOURCE=200809 -D_DEFAULT_SOURCE
+DOCS_DIR = ../tmp
+DOXYGEN_CONFIG_FILE = ../docs/aie_driver_docs_config.dox
+
+OUTS = $(LIBSOURCES:.c=.o)
+INCLUDEFILES = ./*/xaie_clock.h ./*/xaie_reset.h ./*/xaie_core.h ./*/xaie_dma.h ./*/xaie_elfloader.h ./*/xaie_events.h ./*/xaie_events_aie.h ./*/xaie_events_aieml.h ./*/xaie_interrupt.h ./*/xaie_locks.h ./*/xaie_mem.h ./*/xaie_perfcnt.h ./*/xaie_plif.h ./*/xaie_ss.h ./*/xaie_timer.h ./*/xaie_trace.h ./*/xaie_util_events.h ./*/xaiegbl.h ./*/xaiegbl_defs.h ./*/xaiegbl_dynlink.h ./*/xaiegbl_regdef.h ./*/xaie_io.h ./*/xaie_feature_config.h ./*/xaie_helper.h ./*/xaie_helper_internal.h ./*/xaiegbl_params.h ./xaiengine.h ./*/xaie_txn.h ./*/xaie_noc.h
+INTERNALFILES = ./*/*.h ./*/*/*.h
+INCLUDEDIR = ../include
+INTERNALDIR = ../internal
+
+EXTERNAL_INCLUDEFILES = ./*/xaie_clock.h ./*/xaie_reset.h ./*/xaie_core.h ./*/xaie_dma.h ./*/xaie_elfloader.h ./*/xaie_events.h ./*/xaie_events_aie.h ./*/xaie_events_aieml.h ./*/xaie_interrupt.h ./*/xaie_locks.h ./*/xaie_mem.h ./*/xaie_perfcnt.h ./*/xaie_plif.h ./*/xaie_ss.h ./*/xaie_timer.h ./*/xaie_trace.h ./*/xaie_util_events.h ./*/xaiegbl.h ./*/xaiegbl_dynlink.h ./*/xaiegbl_defs.h ./*/xaiegbl_regdef.h ./*/xaie_io.h ./*/xaie_feature_config.h ./*/xaie_helper.h ./*/xaie_txn.h ./*/xaie_noc.h
+EXTERNAL_INCLUDEDIR = ../externalInclude
+
+SWIG_SOCKET_INCLUDEFILES = ./io_backend/swig/swig_socket_interface.h ./*/xaiegbl.h ./io_backend/ext/isa_stubs.h ./io_backend/ext/xaie_socket.c ./io_backend/swig/swig_socket.c ./io_backend/ext/main_rts.h ./*/xaie_clock.h ./*/xaie_dma.h ./*/xaie_events.h ./*/xaie_feature_config.h ./*/xaie_helper.h ./*/xaie_io.h  ./io_backend/xaie_io_internal.h  ./io_backend/privilege/xaie_io_privilege.h ./io_backend/swig/swig_socket_backend_interface.i ./global/xaiegbl.c ./*/xaiegbl_defs.h ./*/xaiegbl_dynlink.h ./*/xaiegbl_regdef.h ./*/xaie_locks.h ./io_backend/ext/xaie_io_common.h ./*/xaie_helper_internal.h ./npi/xaie_npi.h
+SWIG_CONTROLCODE_INCLUDEFILES = ./io_backend/swig/swig_controlcode_interface.h ./*/xaiegbl.h ./io_backend/ext/isa_stubs.h ./io_backend/ext/xaie_controlcode.c ./io_backend/swig/swig_controlcode.c ./io_backend/ext/main_rts.h ./*/xaie_clock.h ./*/xaie_dma.h ./*/xaie_events.h ./*/xaie_feature_config.h ./*/xaie_helper.h ./*/xaie_io.h  ./io_backend/xaie_io_internal.h  ./io_backend/privilege/xaie_io_privilege.h ./io_backend/swig/swig_controlcode_backend_interface.i ./global/xaiegbl.c ./*/xaiegbl_defs.h ./*/xaiegbl_dynlink.h ./*/xaiegbl_regdef.h ./*/xaie_locks.h ./io_backend/ext/xaie_io_common.h ./*/xaie_helper_internal.h ./npi/xaie_npi.h
+SWIG_INCLUDEDIR = ../swigInclude
+
+NAME := xaiengine
+MAJOR = 3
+MINOR = 5
+VERSION = $(MAJOR).$(MINOR)
+
+ifdef D__SWIGINTERFACE__
+  BACKEND_TARGET = swig
+  EXTRA_CFLAGS += -D__SWIGINTERFACE__
+  INCLUDEFILES += $(SWIG_SOCKET_INCLUDEFILES)
+  INCLUDEFILES += $(SWIG_CONTROLCODE_INCLUDEFILES)
+endif
+
+all: include lib$(NAME).so $(BACKEND_TARGET)
+swig_socket: include lib$(NAME).so $(BACKEND_TARGET) swigSocketInclude
+swig_controlcode: include lib$(NAME).so $(BACKEND_TARGET) swigControlCodeInclude
+
+swigSocketInclude:
+	mkdir $(SWIG_INCLUDEDIR)/ -p
+	$(CP) $(SWIG_SOCKET_INCLUDEFILES) $(SWIG_INCLUDEDIR)/
+
+swigControlCodeInclude:
+	mkdir $(SWIG_INCLUDEDIR)/ -p
+	$(CP) $(SWIG_CONTROLCODE_INCLUDEFILES) $(SWIG_INCLUDEDIR)/
+
+externalInclude:
+	mkdir $(EXTERNAL_INCLUDEDIR)/xaiengine -p
+	$(CP) xaiengine.h $(EXTERNAL_INCLUDEDIR)
+	$(CP) $(EXTERNAL_INCLUDEFILES) $(EXTERNAL_INCLUDEDIR)/xaiengine
+	
+include:
+	mkdir $(INCLUDEDIR)/xaiengine -p
+	mkdir $(INTERNALDIR)/xaiengine -p
+	$(CP) xaiengine.h $(INCLUDEDIR)
+	$(CP) $(INCLUDEFILES) $(INCLUDEDIR)/xaiengine
+	$(CP) xaiengine.h $(INTERNALDIR)
+	$(CP) $(INTERNALFILES) $(INTERNALDIR)/xaiengine
+
+lib$(NAME).so.$(VERSION): $(OUTS)
+	$(CC) $(LDFLAGS) $^ -shared -Wl,-soname,lib$(NAME).so.$(MAJOR) -o lib$(NAME).so.$(VERSION)
+
+lib$(NAME).so: lib$(NAME).so.$(VERSION)
+	rm -f lib$(NAME).so.$(MAJOR) lib$(NAME).so
+	ln -s lib$(NAME).so.$(VERSION) lib$(NAME).so.$(MAJOR)
+	ln -s lib$(NAME).so.$(MAJOR) lib$(NAME).so
+
+%.o: %.c include
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -I$(INTERNALDIR) -I$(INTERNALDIR)/xaiengine -c -fPIC $< -o $@
+
+swig_socket: include lib$(NAME).so
+CFLAGS_swig_socket += -Wall -Wextra --std=c11 -D__SWIGINTERFACE__ -D__SOCKET__
+ifeq ($(MAKECMDGOALS) ,swig_socket)
+%.o: %.c include
+	$(CC) $(CFLAGS_swig_socket) -I$(SWIG_INCLUDEDIR) -I$(INTERNALDIR) -I$(INTERNALDIR)/xaiengine -c -fPIC $< -o $@
+endif
+
+swig_controlcode: include lib$(NAME).so
+CFLAGS_swig_controlcode += -Wall -Wextra --std=c11 -D__SWIGINTERFACE__ -D__CONTROLCODE__
+ifeq ($(MAKECMDGOALS) ,swig_controlcode)
+%.o: %.c include
+	$(CC) $(CFLAGS_swig_controlcode) -I$(SWIG_INCLUDEDIR) -I$(INTERNALDIR) -I$(INTERNALDIR)/xaiengine -c -fPIC $< -o $@
+endif
+
+baremetal: include lib$(NAME).so
+CFLAGS_bare += -Wall -Wextra -Werror --std=c11 -D__AIEBAREMETAL__
+ifeq ($(MAKECMDGOALS) ,baremetal)
+%.o: %.c include
+	$(CC) $(CFLAGS_bare) -I$(INTERNALDIR) -I$(INTERNALDIR)/xaiengine -c -fPIC $< -o $@
+endif
+
+simulation: include lib$(NAME).so
+CFLAGS_simulation += -Wall -Wextra -Werror --std=c11 -D__AIESIM__
+ifeq ($(MAKECMDGOALS),simulation)
+%.o: %.c include
+	$(CC) $(CFLAGS_simulation) -I$(INTERNALDIR) -I$(INTERNALDIR)/xaiengine -c -fPIC $< -o $@
+endif
+
+cdo: include lib$(NAME).so
+CFLAGS_cdo += -Wall -Wextra -Werror --std=c11 -D__AIECDO__
+ifeq ($(MAKECMDGOALS) ,cdo)
+%.o: %.c include
+	$(CC) $(CFLAGS_cdo) -I$(INTERNALDIR) -I$(INTERNALDIR)/xaiengine -c -fPIC $< -o $@
+endif
+
+controlcode: include lib$(NAME).so
+CFLAGS_controlcode += -Wall -Wextra -Werror --std=c11 -D__AIECONTROLCODE__
+ifeq ($(MAKECMDGOALS) ,controlcode)
+%.o: %.c include
+	$(CC) $(CFLAGS_controlcode) -I$(INTERNALDIR) -I$(INTERNALDIR)/xaiengine -c -fPIC $< -o $@
+endif
+
+compileraiengine: include lib$(NAME).so
+CFLAGS_compileraiengine += -Wall -Wextra -Werror --std=c11 -D__AIECONTROLCODE__ -D__AIECDO__ -D__AIESIM__ -D_AIDEBUG
+ifeq ($(MAKECMDGOALS) ,compileraiengine)
+%.o: %.c include
+	$(CC) $(CFLAGS_compileraiengine) -I$(INTERNALDIR) -I$(INTERNALDIR)/xaiengine -c -fPIC $< -o $@
+endif
+
+doc-generate:
+	mkdir -p $(DOCS_DIR)
+	doxygen $(DOXYGEN_CONFIG_FILE)
+	cd $(DOCS_DIR)/latex; make; cd ..
+
+doc-clean:
+	rm -rf $(DOCS_DIR)
+
+clean:
+	rm -rf $(OUTS) *.so *.so.*
+	rm -rf $(INCLUDEDIR)
+	rm -rf $(INTERNALDIR)
+	rm -rf $(EXTERNAL_INCLUDEDIR)
+	rm -rf $(SWIG_INCLUDEDIR)
