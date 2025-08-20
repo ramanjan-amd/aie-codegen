@@ -132,6 +132,7 @@ AieRC XAie_SetupPartitionConfig(XAie_DevInst *DevInst,
 	DevInst->BaseAddr = PartBaseAddr;
 	DevInst->StartCol = PartStartCol;
 	DevInst->NumCols = PartNumCols;
+	DevInst->InitialTxnCmdArraySize = _XAie_Txn_GetDefTxnInitialCmdArraySize();
 
 	return XAIE_OK;
 }
@@ -255,6 +256,9 @@ AieRC XAie_CfgInitialize(XAie_DevInst *InstPtr, XAie_Config *ConfigPtr)
 	} else {
 		InstPtr->EccStatus = XAIE_ENABLE;
 	}
+
+	// Set default initial TXN command array size
+	InstPtr->InitialTxnCmdArraySize = _XAie_Txn_GetDefTxnInitialCmdArraySize();
 
 	memcpy(&InstPtr->PartProp, &ConfigPtr->PartProp,
 		sizeof(ConfigPtr->PartProp));

@@ -176,6 +176,7 @@ typedef struct {
 	XAie_DeviceOps *DevOps; /* Device level operations */
 	XAie_PartitionProp PartProp; /* Partition property */
 	XAie_List TxnList; /* Head of the list of txn buffers */
+	u32 InitialTxnCmdArraySize; /* TXN command array max size to begin with */
 } XAie_DevInst;
 
 /* enum to capture cache property of allocate memory */

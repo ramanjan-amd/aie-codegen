@@ -77,8 +77,9 @@ struct XAie_TxnCmd {
 typedef struct {
 	u64 Tid;
 	u32 Flags;
-	u32 NumCmds;
-	u32 MaxCmds;
+	u32 NumCmds;	// Actual no of command available in TXN Cmd Array
+	u32 MaxCmds;	// Current allocated size of TXN Cmd Array
+	u32 InitCmds;	// Initial allocated size of TXN Cmd Array
 	u8  NextCustomOp;
 	XAie_TxnCmd *CmdBuf;
 	XAie_List Node;
@@ -326,6 +327,7 @@ typedef struct {
     uint32_t id;
 } record_timer_op_opt_t;
 
+XAIE_AIG_EXPORT AieRC XAie_CfgInitialTxnCmdArraySize(XAie_DevInst *DevInst, u32 CmdCount);
 XAIE_AIG_EXPORT AieRC XAie_StartTransaction(XAie_DevInst *DevInst, u32 Flags);
 XAIE_AIG_EXPORT AieRC XAie_SubmitTransaction(XAie_DevInst *DevInst, XAie_TxnInst *TxnInst);
 XAie_TxnInst* XAie_ExportTransactionInstance(XAie_DevInst *DevInst);
