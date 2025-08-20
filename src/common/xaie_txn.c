@@ -34,7 +34,6 @@ const u8 TransactionHeaderVersion_Minor = 1;
 const u8 TransactionHeaderVersion_Major_opt = 1;
 const u8 TransactionHeaderVersion_Minor_opt = 0;
 
-
 /***************************** Macro Definitions *****************************/
 #define XAIE_DEFAULT_NUM_CMDS 1024U
 #define XAIE_DEFAULT_TXN_BUFFER_SIZE (1024 * 4)
@@ -70,6 +69,43 @@ static inline void _XAie_CreateTxnHeader(XAie_DevInst *DevInst,
 	XAIE_DBG("Device Generation: %d\n", Header->DevGen);
 	XAIE_DBG("Cols, Rows, MemTile rows : (%d, %d, %d)\n", Header->NumCols,
 			Header->NumRows, Header->NumMemTileRows);
+}
+
+/*****************************************************************************/
+/**
+* This API return the default TXN initial command array size.
+*
+* @param        None
+*
+* @return       Default TXN command array size (XAIE_DEFAULT_NUM_CMDS)
+*
+******************************************************************************/
+u32 _XAie_Txn_GetDefTxnInitialCmdArraySize(void)
+{
+	return XAIE_DEFAULT_NUM_CMDS;
+}
+
+/*****************************************************************************/
+/**
+* This API sets the TXN Initial command array size to application layer
+* configured value.
+*
+* @param        DevInst: Device Instance
+* @param        CmdCount: Command count to be set.
+*
+* @return       XAIE_OK on success, error code on failure.
+*
+******************************************************************************/
+AieRC _XAie_Txn_CfgInitialCmdArraySize(XAie_DevInst *DevInst, u32 CmdCount)
+{
+	if (CmdCount == 0) {
+		return XAIE_INVALID_ARGS;
+	}
+
+	DevInst->InitialTxnCmdArraySize = CmdCount;
+	XAIE_DBG(" Configured initial TXN command array size: %d\n", CmdCount);
+
+	return XAIE_OK;
 }
 
 /*****************************************************************************/
@@ -189,16 +225,18 @@ AieRC _XAie_Txn_Start(XAie_DevInst *DevInst, u32 Flags)
 		return XAIE_ERR;
 	}
 
-	Inst->CmdBuf = (XAie_TxnCmd*)calloc(XAIE_DEFAULT_NUM_CMDS,
+	Inst->CmdBuf = (XAie_TxnCmd*)calloc(DevInst->InitialTxnCmdArraySize,
 			sizeof(*Inst->CmdBuf));
 	if(Inst->CmdBuf == NULL) {
 		XAIE_ERROR("Failed to allocate memory for command buffer\n");
 		free(Inst);
 		return XAIE_ERR;
 	}
+	XAIE_DBG(" Allocated initial TXN command array of size: %d\n", DevInst->InitialTxnCmdArraySize);
 
 	Inst->NumCmds = 0U;
-	Inst->MaxCmds = XAIE_DEFAULT_NUM_CMDS;
+	Inst->MaxCmds = DevInst->InitialTxnCmdArraySize;
+	Inst->InitCmds = DevInst->InitialTxnCmdArraySize;
 	Inst->Tid = Backend->Ops.GetTid();
 	Inst->NextCustomOp = (u8)XAIE_IO_CUSTOM_OP_NEXT;
 
@@ -326,7 +364,8 @@ static int TxnCmdDump(XAie_TxnCmd* cmd) {
 /**
 * This API rellaocates the command buffer associated with the given transaction
 * instance. The command buffer is extended to accomodate an additional
-* XAIE_DEFAULT_NUM_CMDS number of commands.
+* TxnInst->InitCmds (XAIE_DEFAULT_NUM_CMDS number of commands by default else
+* based on the value configured by application layer).
 *
 * @param        TxnInst: Pointer to the transaction instance
 *
@@ -337,7 +376,7 @@ static int TxnCmdDump(XAie_TxnCmd* cmd) {
 ******************************************************************************/
 static AieRC _XAie_ReallocCmdBuf(XAie_TxnInst *TxnInst)
 {
-	u64 NewMaxCmds = (u64)TxnInst->MaxCmds + XAIE_DEFAULT_NUM_CMDS;
+	u64 NewMaxCmds = (u64)TxnInst->MaxCmds + TxnInst->InitCmds;
 	if(NewMaxCmds > UINT32_MAX) {
 		XAIE_ERROR("Failed reallocate memory for transaction buffer\n");
 		return XAIE_ERR;
@@ -351,7 +390,8 @@ static AieRC _XAie_ReallocCmdBuf(XAie_TxnInst *TxnInst)
 		return XAIE_ERR;
 	}
 
-	TxnInst->MaxCmds += XAIE_DEFAULT_NUM_CMDS;
+	TxnInst->MaxCmds += TxnInst->InitCmds;
+	XAIE_DBG(" Reallocated TXN CMD ARRAY to %llu with id: %llu\n", NewMaxCmds, TxnInst->Tid);
 
 	return XAIE_OK;
 }
@@ -3389,6 +3429,30 @@ AieRC XAie_Txn_RunOp(XAie_DevInst *DevInst, u8 Is_Config_ShimDMABD, void *Arg)
 				"when auto flush is disabled\n");
 		return XAIE_ERR;
 	}
+}
+
+/*****************************************************************************/
+/**
+*
+* This should be the first API called by the user to configure the initial
+* transaction command array size to be allocated dynamically. If this API is
+* not called or called with 0 size then the default size of 1024 will be used.
+*
+* @param	DevInst: Device instance pointer.
+* @param	CmdCount: Command count to be allocated.
+*
+* @return	XAIE_OK on success and error code on failure.
+*
+******************************************************************************/
+AieRC XAie_CfgInitialTxnCmdArraySize(XAie_DevInst *DevInst, u32 CmdCount)
+{
+	if((DevInst == XAIE_NULL) ||
+		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
+		XAIE_ERROR("Invalid arguments\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	return _XAie_Txn_CfgInitialCmdArraySize(DevInst, CmdCount);
 }
 
 /*****************************************************************************/

@@ -57,6 +57,11 @@
 				__VA_ARGS__);				      \
 	} while(0)
 
+/**
+* Note: Enable the definition of XAIE_FDEBUG macro to enable prints from aie-rt
+*/
+//#define XAIE_DEBUG 1
+
 #ifdef XAIE_DEBUG
 
 #define XAIE_DBG(...)							      \
