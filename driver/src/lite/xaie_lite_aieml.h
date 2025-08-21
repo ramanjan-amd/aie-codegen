@@ -1079,6 +1079,9 @@ static inline void _XAie_LNpiSetPartProtectedReg(XAie_DevInst *DevInst,
 ******************************************************************************/
 static inline AieRC _XAie_LSetDualAppModePrivileged(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 {
+	(void)DevInst;
+	(void)Opts;
+
 	return XAIE_OK;
 }
 
@@ -1257,7 +1260,7 @@ static inline AieRC _XAie_ClearCoreReg(XAie_DevInst *DevInst)
 *******************************************************************************/
 static inline AieRC _XAie_LTrigColIntr(XAie_DevInst *DevInst, u8 BcChan)
 {
-	(void *)DevInst;
+	(void)DevInst;
 	(void)BcChan;
 
 	return XAIE_NOT_SUPPORTED;
@@ -1275,7 +1278,7 @@ static inline AieRC _XAie_LTrigColIntr(XAie_DevInst *DevInst, u8 BcChan)
 *******************************************************************************/
 static inline AieRC _XAie_LClearBCPort(XAie_DevInst *DevInst, u8 BcChan)
 {
-	(void *)DevInst;
+	(void)DevInst;
 	(void)BcChan;
 
 	return XAIE_NOT_SUPPORTED;
@@ -1335,7 +1338,7 @@ static inline void _XAie_PauseMem(XAie_DevInst *DevInst)
 ******************************************************************************/
 static inline AieRC _XAie_WakeupShimUc(XAie_DevInst *DevInst, u8 ColNum)
 {
-	(void *)DevInst;
+	(void)DevInst;
 	(void)ColNum;
 
 	return XAIE_NOT_SUPPORTED;

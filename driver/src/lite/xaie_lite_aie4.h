@@ -1531,6 +1531,7 @@ static inline void _XAie_LNpiSetPartProtectedReg(XAie_DevInst *DevInst,
  *****************************************************************************/
 static inline void _XAie_DisableTlast(XAie_DevInst *DevInst)
 {
+	(void)DevInst;
 }
 
 /*****************************************************************************/
