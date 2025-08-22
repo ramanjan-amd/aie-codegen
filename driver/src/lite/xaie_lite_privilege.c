@@ -258,6 +258,9 @@ AieRC XAie_SetupErrorNetwork(XAie_DevInst *DevInst)
 			_XAie_LPartWrite32(DevInst, RegAddr, XAIE_CORE_TILE_GROUP_ERRORS0_EVENT_NUM);
 		}
 	}
+#else
+	(void)DevInst;
+	(void)RegAddr;
 #endif
 
 	return XAIE_OK;
@@ -397,7 +400,6 @@ void XAie_GenWrite(u64 RegAddr, u32 Value) {
 ******************************************************************************/
 AieRC XAie_GenNPIInterrupt(XAie_DevInst *DevInst, u8 IntLine) {
 
-    AieRC RC;
     u64 RegAddr;
     u32 RegVal;
 
@@ -450,6 +452,12 @@ AieRC XAie_GenNPIInterrupt(XAie_DevInst *DevInst, u8 IntLine) {
 
 	// Lock NPI
 	_XAie_LNpiWrite32(0x0C, 0x0);
+#else
+	(void)DevInst;
+	(void)RegAddr;
+	(void)RegVal;
+	(void)IntLine;
+	
 #endif
     return 0;
 }
@@ -466,7 +474,7 @@ AieRC XAie_GenNPIInterrupt(XAie_DevInst *DevInst, u8 IntLine) {
 ******************************************************************************/
 
 AieRC XAie_ClearNPIInterrupt(XAie_DevInst *DevInst, u8 IntLine) {
-	AieRC RC;
+
     u64 RegAddr;
     u32 RegVal;
 
@@ -488,6 +496,11 @@ AieRC XAie_ClearNPIInterrupt(XAie_DevInst *DevInst, u8 IntLine) {
 
 	// Lock NPI
 	_XAie_LNpiWrite32(0x0C, 0x0);
+#else
+	(void)DevInst;
+	(void)RegAddr;
+	(void)RegVal;
+	(void)IntLine;
 #endif
 	return 0;
 }
@@ -616,7 +629,7 @@ static AieRC _XAie_PrivilegeApplicationReset(XAie_DevInst *DevInst)
 	
 #ifdef __AIESIM__
 	// Wait for Application reset to finish in Simnow
-	usleep(100000);
+	usleep(8000);
 #endif
 
 	// Disable all DMAs pause after De-Asserting Application reset
@@ -857,7 +870,6 @@ static void _XAie_PrivilegeSetHwErrIrq(XAie_DevInst *DevInst,
  ******************************************************************************/
 AieRC XAie_CfgPrivilegeHwErrIrq(XAie_DevInst *DevInst, XAie_HwErrCfg HwErrCfg)
 {
-	AieRC RC = XAIE_OK;
 
 	if((DevInst == XAIE_NULL) ||
 	   (DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
@@ -1466,8 +1478,7 @@ AieRC XAie_PowerOnReset(XAie_DevInst *DevInst, XAie_PartPorOpts *PorOptions) {
 *******************************************************************************/
 AieRC XAie_TileClockControl(XAie_DevInst *DevInst, XAie_LocType *Loc,u8 NumTiles, u8 Enable) {
 	AieRC RC;
-	u32 FldVal;
-	u64 RegAddr;
+
 	if (!_XAie_LIsDeviceGenAIE4()) {
 			return XAIE_NOT_SUPPORTED;
 	}

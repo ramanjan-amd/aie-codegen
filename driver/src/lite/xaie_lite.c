@@ -259,7 +259,6 @@ AieRC XAie_LMemBlockWrite(XAie_DevInst *DevInst, XAie_LocType Loc, u32 Addr,
 		const void *Src, u32 Size)
 {
 	AieRC RC;
-	u8 TileType;
 	const unsigned char *CharSrc = (const unsigned char *)Src;
 
 	if((DevInst == XAIE_NULL) || (Src == NULL))
@@ -279,11 +278,11 @@ AieRC XAie_LMemBlockWrite(XAie_DevInst *DevInst, XAie_LocType Loc, u32 Addr,
 			return XAIE_ERR_OUTOFBOUND;
 		}
 	} else if(Loc.Row >= XAIE_MEM_TILE_ROW_START && Loc.Row < XAIE_AIE_TILE_ROW_START) {
-		if(Addr < XAIE_MEM_ROW_START_OFFSET || (Addr + Size) > XAIE_MEM_ROW_END_OFFSET) {
+		if((Addr + Size) > XAIE_MEM_ROW_END_OFFSET) {
 			return XAIE_ERR_OUTOFBOUND;
 		}
 	} else if(Loc.Row >= XAIE_AIE_TILE_ROW_START && Loc.Row < DevInst->NumRows) {
-		if(Addr < XAIE_AIE_ROW_START_OFFSET || (Addr + Size) > XAIE_AIE_ROW_END_OFFSET) {
+		if((Addr + Size) > XAIE_AIE_ROW_END_OFFSET) {
 			return XAIE_ERR_OUTOFBOUND;
 		}
 	} else {
@@ -344,11 +343,11 @@ AieRC XAie_LMemBlockRead(XAie_DevInst *DevInst, XAie_LocType Loc, u32 Addr,
 			return XAIE_ERR_OUTOFBOUND;
 		}
 	} else if(Loc.Row >= XAIE_MEM_TILE_ROW_START && Loc.Row < XAIE_AIE_TILE_ROW_START) {
-		if(Addr < XAIE_MEM_ROW_START_OFFSET || (Addr + Size) > XAIE_MEM_ROW_END_OFFSET) {
+		if((Addr + Size) > XAIE_MEM_ROW_END_OFFSET) {
 			return XAIE_ERR_OUTOFBOUND;
 		}
 	} else if(Loc.Row >= XAIE_AIE_TILE_ROW_START && Loc.Row < DevInst->NumRows) {
-		if(Addr < XAIE_AIE_ROW_START_OFFSET || (Addr + Size) > XAIE_AIE_ROW_END_OFFSET) {
+		if((Addr + Size) > XAIE_AIE_ROW_END_OFFSET) {
 			return XAIE_ERR_OUTOFBOUND;
 		}
 	} else {

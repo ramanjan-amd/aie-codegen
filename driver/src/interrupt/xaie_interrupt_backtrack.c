@@ -85,7 +85,6 @@ static inline void _XAie_LIntrCtrlL2Enable(XAie_DevInst *DevInst,
 ******************************************************************************/
 u32 XAie_L2IntrCtrlStatus(XAie_DevInst *DevInst, u8 StartCol)
 {
-	u8 TType;
 	u64 RegAddr;
 
 	XAie_LocType Loc = XAie_TileLoc(StartCol, XAIE_SHIM_ROW);
@@ -471,16 +470,14 @@ static inline u8 _XAie_LMapGroupErrorsToEventId(XAie_DevInst *DevInst,
 			u8 GroupErrorIndex)
 {
 #if DEV_GEN_AIE4
-	if ((GroupErrorIndex > 255) ||
-		((XAIE_MEM_TILE_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
+	if (((XAIE_MEM_TILE_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
 		((XAIE_CORE_MOD_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
 		((XAIE_PL_MOD_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255)){
 		XAIE_ERROR("Function Return Type not sufficient \n");
 		return XAIE_ERR;
 	}
 #else
-	if ((GroupErrorIndex > 255) ||
-		((XAIE_MEM_TILE_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
+	if (((XAIE_MEM_TILE_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
 		((XAIE_CORE_MOD_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
 		((XAIE_MEM_MOD_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255) ||
 		((XAIE_PL_MOD_EVENT_GROUP_ERROR0 + GroupErrorIndex) > 255)){
@@ -744,9 +741,10 @@ static AieRC _XAie_LBacktrackIntrCtrlL1(XAie_DevInst *DevInst,
 
 		RC = _XAie_LBacktrackTile(DevInst, MData, Loc, XAIE_PL_MOD,
 						XAIE_ERROR_BROADCAST_ID);
-		if (RC == XAIE_INSUFFICIENT_BUFFER_SIZE)
+		if (RC == XAIE_INSUFFICIENT_BUFFER_SIZE) {
 			MData->ErrInfo->ReturnCode = XAIE_INSUFFICIENT_BUFFER_SIZE;
 			return RC;
+		}
 	}
 
 	/* Backtrack array tile's internal events. */
