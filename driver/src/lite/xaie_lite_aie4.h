@@ -61,15 +61,16 @@
 #define XAIE_AIETILE_MEDG_CLKCNTRL_VALUE  0XF
 
 
-#define A2S_BUFFER_SIZE (128 * 1024)
 /* Set the timeout to maximum zeroization cycles required for Memtile DM zeroization for Sim backend.
    If polling timeout is less driver will return an error before zeroization is complete */
 #ifdef __AIESIM__
 	#define XAIE4_MEMZERO_POLL_TIMEOUT		100000
 	#define XAIE4_AIETILE_MEMZERO_POLL_TIMEOUT	8000
+	#define A2S_BUFFER_SIZE (1 * 1024)
 #else
 	#define XAIE4_MEMZERO_POLL_TIMEOUT		1000
 	#define XAIE4_AIETILE_MEMZERO_POLL_TIMEOUT	800
+	#define A2S_BUFFER_SIZE (128 * 1024)
 #endif
 
 /* Keep AXI-MM Pending Transaction Poll time to maximum since it is a Fatal conditition and will need Full IPU Reset */
@@ -1178,9 +1179,8 @@ static inline void  _XAie_LPartMemZeroInit(XAie_DevInst *DevInst)
 	if (clearA2SBuffer) {
 		/* A2S work-around : Poll for A2S buffer written with Dummy data*/
 		//Note: After testing remove XAIE4_MEMZERO_POLL_TIMEOUT as A2S DMA should be done in parallel of mem-zeroisation
-		Ret = _XAie_LPartPoll32(DevInst, (_XAie_LGetTileAddr(0, 0) + XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS),
-			XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STATUS_MASK, 0, XAIE4_MEMZERO_POLL_TIMEOUT);
-
+		Ret = _XAie_LPartPoll32(DevInst, (_XAie_LGetTileAddr(0, 0) + XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS + RegAddrSpaceOffset),
+			(XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STATUS_MASK | XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_CHANNEL_RUNNING_MASK), 0, XAIE4_MEMZERO_POLL_TIMEOUT);
 		if (Ret < 0)
 		{
 			XAIE_ERROR("A2S buffer DMA poll time out");
@@ -1644,8 +1644,8 @@ static inline AieRC _XAie_LPartDataMemZeroInit(XAie_DevInst *DevInst)
 	if (clearA2SBuffer) {
 		/* A2S work-around : Poll for A2S buffer written with Dummy data*/
 		//Note: After testing remove XAIE4_MEMZERO_POLL_TIMEOUT as A2S DMA should be done in parallel of mem-zeroisation
-		Ret = _XAie_LPartPoll32(DevInst, (_XAie_LGetTileAddr(0, 0) + XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS),
-			XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STATUS_MASK, 0, XAIE4_MEMZERO_POLL_TIMEOUT);
+		Ret = _XAie_LPartPoll32(DevInst, (_XAie_LGetTileAddr(0, 0) + XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS + RegAddrSpaceOffset),
+			(XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_STATUS_MASK | XAIE4GBL_NOC_MODULE_DMA_S2MM_0_STATUS_CHANNEL_RUNNING_MASK), 0, XAIE4_MEMZERO_POLL_TIMEOUT);
 		if (Ret < 0)
 		{
 			XAIE_ERROR("A2S buffer DMA poll time out");

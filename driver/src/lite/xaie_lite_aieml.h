@@ -45,7 +45,6 @@
 #define MAX_DMA_CHAN			2
 #define MAX_DMA_DIR			2
 
-#define A2S_BUFFER_SIZE (64 * 1024)
 
 /************************** Constant Definitions *****************************/
 /************************** Function Prototypes  *****************************/
@@ -53,8 +52,10 @@
    If polling timeout is less driver will return an error before zeroization is complete */
 #ifdef __AIESIM__
 	#define XAIEML_MEMZERO_POLL_TIMEOUT		150000
+	#define A2S_BUFFER_SIZE (1 * 1024)
 #else
 	#define XAIEML_MEMZERO_POLL_TIMEOUT		1000
+	#define A2S_BUFFER_SIZE (64 * 1024)
 #endif
 #if defined(XAIE_FEATURE_LITE_UTIL)
 /*****************************************************************************/
@@ -743,7 +744,7 @@ static inline void  _XAie_LPartMemZeroInit(XAie_DevInst *DevInst)
 		/* A2S work-around : Poll for A2S buffer written with Dummy data*/
 		//Note: After testing remove XAIEML_MEMZERO_POLL_TIMEOUT as A2S DMA should be done in parallel of mem-zeroisation
 		Ret = _XAie_LPartPoll32(DevInst, (_XAie_LGetTileAddr(0, 0) + XAIE2PGBL_NOC_MODULE_DMA_S2MM_STATUS_0),
-			XAIE2PGBL_NOC_MODULE_DMA_S2MM_STATUS_0_STATUS_MASK, 0, XAIEML_MEMZERO_POLL_TIMEOUT);
+			(XAIE2PGBL_NOC_MODULE_DMA_S2MM_STATUS_0_STATUS_MASK | XAIE2PGBL_NOC_MODULE_DMA_S2MM_STATUS_0_CHANNEL_RUNNING_MASK), 0, XAIEML_MEMZERO_POLL_TIMEOUT);
 		if (Ret < 0)
 		{
 			XAIE_ERROR("A2S buffer DMA poll time out");
@@ -1016,7 +1017,7 @@ static inline AieRC _XAie_LPartDataMemZeroInit(XAie_DevInst *DevInst)
 		/* A2S work-around : Poll for A2S buffer written with Dummy data*/
 		//Note: After testing remove XAIEML_MEMZERO_POLL_TIMEOUT as A2S DMA should be done in parallel of mem-zeroisation
 		Ret = _XAie_LPartPoll32(DevInst, (_XAie_LGetTileAddr(0, 0) + XAIE2PGBL_NOC_MODULE_DMA_S2MM_STATUS_0),
-			XAIE2PGBL_NOC_MODULE_DMA_S2MM_STATUS_0_STATUS_MASK, 0, XAIEML_MEMZERO_POLL_TIMEOUT);
+			(XAIE2PGBL_NOC_MODULE_DMA_S2MM_STATUS_0_STATUS_MASK | XAIE2PGBL_NOC_MODULE_DMA_S2MM_STATUS_0_CHANNEL_RUNNING_MASK), 0, XAIEML_MEMZERO_POLL_TIMEOUT);
 		if (Ret < 0) {
 			XAIE_ERROR("A2S buffer DMA poll time out");
 			return XAIE_ERR;
