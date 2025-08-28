@@ -34,8 +34,8 @@ if (WITH_BUILD_XAIEDRV)
   set (CFLAGS -Wall -Wextra ${AIEDRV_BACKEND})
   find_program(MAKE_EXE NAMES gmake nmake make)
   ExternalProject_Add(driver
-    URL "${CMAKE_CURRENT_SOURCE_DIR}/../driver"
     SOURCE_DIR "${CMAKE_BINARY_DIR}/driver-src"
+    DOWNLOAD_COMMAND rsync -a --exclude=fal "${CMAKE_CURRENT_SOURCE_DIR}/../" "${CMAKE_BINARY_DIR}/driver-src/"
     BUILD_IN_SOURCE true
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ${MAKE_EXE} -C src -f ${_makefile} CC=${CC} "CFLAGS=-std=c99 -Wall -Wextra ${AIEDRV_BACKEND}"
