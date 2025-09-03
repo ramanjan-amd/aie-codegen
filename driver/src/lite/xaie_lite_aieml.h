@@ -671,7 +671,7 @@ static inline void  _XAie_LPartMemZeroInit(XAie_DevInst *DevInst)
 		s2mm_bd_1.reg0.bits.Buffer_Length = ((size_t)DevInst->HostddrBuffSize/2) >> 2;
 		s2mm_bd_1.reg5.bits.SMID = DevInst->HostddrBuff_SMID;
 
-		for (int i = 0; i < sizeof(s2mm_bd_1)/sizeof(s2mm_bd_1.reg0) ; i++)
+		for (size_t i = 0; i < sizeof(s2mm_bd_1)/sizeof(s2mm_bd_1.reg0) ; i++)
 		{
 			RegAddr = _XAie_LGetTileAddr(0, 0) + XAIE_NOC_MODULE_DMA_BD1_0 + (i * 4);
 			_XAie_LPartWrite32(DevInst, RegAddr, *((u32 *)&s2mm_bd_1.reg0 + i));
@@ -688,7 +688,7 @@ static inline void  _XAie_LPartMemZeroInit(XAie_DevInst *DevInst)
 		mm2s_bd_0.reg0.bits.Buffer_Length = ((size_t)DevInst->HostddrBuffSize/2) >> 2;
 		mm2s_bd_0.reg5.bits.SMID = DevInst->HostddrBuff_SMID;
 
-		for (int i = 0; i < sizeof(mm2s_bd_0)/sizeof(mm2s_bd_0.reg0) ; i++)
+		for (size_t i = 0; i < sizeof(mm2s_bd_0)/sizeof(mm2s_bd_0.reg0) ; i++)
 		{
 			RegAddr = _XAie_LGetTileAddr(0, 0) + XAIE_NOC_MODULE_DMA_BD0_0 + (i * 4);
 			_XAie_LPartWrite32(DevInst, RegAddr, *((u32 *)&mm2s_bd_0.reg0 + i));
@@ -757,7 +757,7 @@ static inline void  _XAie_LPartMemZeroInit(XAie_DevInst *DevInst)
 		_XAie_LPartWrite32(DevInst, (_XAie_LGetTileAddr(0, 0) + XAIE_NOC_MODULE_MUX_CONFIG), 0x00);
 		_XAie_LPartWrite32(DevInst, (_XAie_LGetTileAddr(0, 0) + XAIE_NOC_MODULE_DEMUX_CONFIG), 0x00);
 
-		for (int i = 0; i < sizeof(s2mm_bd_1)/sizeof(s2mm_bd_1.reg0) ; i++)
+		for (size_t i = 0; i < sizeof(s2mm_bd_1)/sizeof(s2mm_bd_1.reg0) ; i++)
 		{
 			RegAddr = _XAie_LGetTileAddr(0, 0) + XAIE_NOC_MODULE_DMA_BD0_0 + (i * 4);
 			_XAie_LPartWrite32(DevInst, RegAddr, 0x0);
@@ -939,7 +939,7 @@ static inline AieRC _XAie_LPartDataMemZeroInit(XAie_DevInst *DevInst)
 		s2mm_bd_1.reg0.bits.Buffer_Length = ((size_t)DevInst->HostddrBuffSize/2) >> 2;
 		s2mm_bd_1.reg5.bits.SMID = DevInst->HostddrBuff_SMID;
 
-		for (int i = 0; i < sizeof(s2mm_bd_1)/sizeof(s2mm_bd_1.reg0) ; i++)
+		for (size_t i = 0; i < sizeof(s2mm_bd_1)/sizeof(s2mm_bd_1.reg0) ; i++)
 		{
 			RegAddr = _XAie_LGetTileAddr(0, 0) + XAIE_NOC_MODULE_DMA_BD1_0 + (i * 4);
 			_XAie_LPartWrite32(DevInst, RegAddr, *((u32 *)&s2mm_bd_1.reg0 + i));
@@ -956,7 +956,7 @@ static inline AieRC _XAie_LPartDataMemZeroInit(XAie_DevInst *DevInst)
 		mm2s_bd_0.reg0.bits.Buffer_Length = ((size_t)DevInst->HostddrBuffSize/2) >> 2;
 		mm2s_bd_0.reg5.bits.SMID = DevInst->HostddrBuff_SMID;
 
-		for (int i = 0; i < sizeof(mm2s_bd_0)/sizeof(mm2s_bd_0.reg0) ; i++)
+		for (size_t i = 0; i < sizeof(mm2s_bd_0)/sizeof(mm2s_bd_0.reg0) ; i++)
 		{
 			RegAddr = _XAie_LGetTileAddr(0, 0) + XAIE_NOC_MODULE_DMA_BD0_0 + (i * 4);
 			_XAie_LPartWrite32(DevInst, RegAddr, *((u32 *)&mm2s_bd_0.reg0 + i));
@@ -1029,7 +1029,7 @@ static inline AieRC _XAie_LPartDataMemZeroInit(XAie_DevInst *DevInst)
 		_XAie_LPartWrite32(DevInst, (_XAie_LGetTileAddr(0, 0) + XAIE_NOC_MODULE_MUX_CONFIG), 0x00);
 		_XAie_LPartWrite32(DevInst, (_XAie_LGetTileAddr(0, 0) + XAIE_NOC_MODULE_DEMUX_CONFIG), 0x00);
 
-		for (int i = 0; i < sizeof(s2mm_bd_1)/sizeof(s2mm_bd_1.reg0) ; i++)
+		for (size_t i = 0; i < sizeof(s2mm_bd_1)/sizeof(s2mm_bd_1.reg0) ; i++)
 		{
 			RegAddr = _XAie_LGetTileAddr(0, 0) + XAIE_NOC_MODULE_DMA_BD0_0 + (i * 4);
 			_XAie_LPartWrite32(DevInst, RegAddr, 0x0);

@@ -199,6 +199,8 @@ static inline void _XAie_PrivilegeSetShimClk(XAie_DevInst *DevInst,
 static inline void _XAie_PrivilegeSetUCMemoryPrivileged(XAie_DevInst *DevInst,
 							u8 Enable)
 {
+	(void)DevInst;
+	(void)Enable;
 }
 
 #endif		/* end of protection macro */

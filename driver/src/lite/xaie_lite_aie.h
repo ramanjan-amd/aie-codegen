@@ -164,6 +164,7 @@ static inline void  _XAie_LPartMemZeroInit(XAie_DevInst *DevInst)
 
 static inline void _XAie_LCertMemZeroInit(XAie_DevInst *DevInst)
 {
+	(void)DevInst;
 }
 
 /*****************************************************************************/
@@ -314,6 +315,7 @@ static inline AieRC _XAie_LPartDataMemZeroInit(XAie_DevInst *DevInst)
  *****************************************************************************/
 static inline void _XAie_DisableTlast(XAie_DevInst *DevInst)
 {
+	(void)DevInst;
 }
 
 /*****************************************************************************/
@@ -546,7 +548,7 @@ static inline AieRC _XAie_LConfigureShimDmaRegisters(XAie_DevInst *DevInst, XAie
 *******************************************************************************/
 static inline AieRC _XAie_LTrigColIntr(XAie_DevInst *DevInst, u8 BcChan)
 {
-	(void *)DevInst;
+	(void)DevInst;
 	(void)BcChan;
 
 	return XAIE_NOT_SUPPORTED;
@@ -565,7 +567,7 @@ static inline AieRC _XAie_LTrigColIntr(XAie_DevInst *DevInst, u8 BcChan)
 *******************************************************************************/
 static inline AieRC _XAie_LClearBCPort(XAie_DevInst *DevInst, u8 BcChan)
 {
-        (void *)DevInst;
+        (void)DevInst;
         (void)BcChan;
 
         return XAIE_NOT_SUPPORTED;
@@ -607,7 +609,7 @@ static inline void _XAie_PauseMem(XAie_DevInst *DevInst)
 ******************************************************************************/
 static inline AieRC _XAie_WakeupShimUc(XAie_DevInst *DevInst, u8 ColNum)
 {
-	(void *)DevInst;
+	(void)DevInst;
 	(void)ColNum;
 
 	return XAIE_NOT_SUPPORTED;

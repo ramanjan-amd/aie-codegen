@@ -54,6 +54,8 @@ AieRC XAie_MapIrqIdToCols(u8 IrqId, XAie_Range *Range)
 			XAIE_ERROR_MSG("Invalid AIE IRQ ID\n"));
 
 #if DEV_GEN_AIE4
+    (void)IrqId;
+
     /**
 	 * As per the latest agreement with MPNPU Firmware team, Since spatial
 	 * sharing and dual app mode is not supported for AIE4 at this point of
