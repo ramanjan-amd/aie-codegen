@@ -180,12 +180,11 @@ AieRC XAie_ControlCodeIO_Init(XAie_DevInst *DevInst)
 {
 	XAie_ControlCodeIO *IOInst;
 
-	IOInst = (XAie_ControlCodeIO *)malloc(sizeof(*IOInst));
+	IOInst = (XAie_ControlCodeIO *)calloc(1,sizeof(*IOInst));
 	if(IOInst == NULL) {
 		XAIE_ERROR("Memory allocation failed\n");
 		return XAIE_ERR;
 	}
-
 	IOInst->BaseAddr = DevInst->BaseAddr;
 	IOInst->NpiBaseAddr = XAIE_NPI_BASEADDR;
 	IOInst->ScrachpadName = NULL;
