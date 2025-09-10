@@ -45,6 +45,7 @@ u8 _XAie_MaxBitsNeeded(u64 value);
 u8 _XAie_CountTrailingZeros(u32 value);
 u32 _XAie_Txn_GetDefTxnInitialCmdArraySize(void);
 AieRC _XAie_Txn_CfgInitialCmdArraySize(XAie_DevInst *DevInst, u32 CmdCount);
+void _XAie_ResetInUseBitMaps(XAie_DevInst *DevInst);
 
 /* Below are aie4 specific internal APIs*/
 u8 _XAie_IsDeviceGenAIE4(u8 DevGen);
