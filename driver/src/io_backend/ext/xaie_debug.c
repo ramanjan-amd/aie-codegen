@@ -583,6 +583,7 @@ const XAie_Backend DebugBackend =
 	.Ops.SetPadString = NULL,
 	.Ops.AttachToGroup = NULL,
 	.Ops.RemoteBarrier = NULL,
+	.Ops.SaveRegister = NULL,
 };
 
 /** @} */

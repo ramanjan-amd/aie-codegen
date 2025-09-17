@@ -705,7 +705,7 @@ AieRC XAie_Preempt(XAie_DevInst *DevInst, u16 PreemptId, char* SaveLabel, char* 
 	}
 	else
 	{
-		XAIE_ERROR("Preempt function pointer points to NULL, hence returned mode is XAIE_INVALID_MODE\n");
+		XAIE_ERROR("Preempt function pointer points to NULL\n");
 		return XAIE_NOT_SUPPORTED;
 	}
 }
@@ -719,7 +719,7 @@ AieRC XAie_AttachToGroup(XAie_DevInst *DevInst, uint8_t UcIndex)
 	}
 	else
 	{
-		XAIE_ERROR("AttachToGroup function pointer points to NULL, hence returned mode is XAIE_INVALID_MODE\n");
+		XAIE_ERROR("AttachToGroup function pointer points to NULL\n");
 		return XAIE_NOT_SUPPORTED;
 	}
 }
@@ -733,7 +733,21 @@ AieRC XAie_RemoteBarrier(XAie_DevInst *DevInst,  uint8_t RbId, uint32_t UcMask)
 	}
 	else
 	{
-		XAIE_ERROR("RemoteBarrier function pointer points to NULL, hence returned mode is XAIE_INVALID_MODE\n");
+		XAIE_ERROR("RemoteBarrier function pointer points to NULL\n");
+		return XAIE_NOT_SUPPORTED;
+	}
+}
+
+AieRC XAie_SaveRegister(XAie_DevInst *DevInst, u32 RegOff, u32 Id)
+{
+	const XAie_Backend *Backend = DevInst->Backend;
+	if (Backend->Ops.SaveRegister != NULL)
+	{
+		return Backend->Ops.SaveRegister((void *)DevInst->IOInst, RegOff, Id);
+	}
+	else
+	{
+		XAIE_ERROR("SaveRegister function pointer points to NULL\n");
 		return XAIE_NOT_SUPPORTED;
 	}
 }

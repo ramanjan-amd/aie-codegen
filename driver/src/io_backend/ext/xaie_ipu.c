@@ -506,6 +506,7 @@ const XAie_Backend IpuBackend =
 	.Ops.SetPadString = NULL,
 	.Ops.AttachToGroup = NULL,
 	.Ops.RemoteBarrier = NULL,
+	.Ops.SaveRegister = NULL,
 };
 
 /** @} */

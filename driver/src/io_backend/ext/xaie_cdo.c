@@ -573,6 +573,7 @@ const XAie_Backend CdoBackend =
 	.Ops.SetPadString = NULL,
 	.Ops.AttachToGroup = NULL,
 	.Ops.RemoteBarrier = NULL,
+	.Ops.SaveRegister = NULL,
 };
 
 /** @} */

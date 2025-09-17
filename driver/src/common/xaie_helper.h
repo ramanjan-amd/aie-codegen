@@ -262,5 +262,6 @@ XAIE_AIG_EXPORT AieRC XAie_SetPadInteger(XAie_DevInst *DevInst, char* BuffName, 
 XAIE_AIG_EXPORT AieRC XAie_SetPadString(XAie_DevInst *DevInst, char* BuffName, char* BuffBlobPath);
 XAIE_AIG_EXPORT AieRC XAie_AttachToGroup(XAie_DevInst *DevInst, uint8_t UcIndex);
 XAIE_AIG_EXPORT AieRC XAie_RemoteBarrier(XAie_DevInst *DevInst,  uint8_t RbId, uint32_t UcMask);
+XAIE_AIG_EXPORT AieRC XAie_SaveRegister(XAie_DevInst *DevInst, u32 RegOff, u32 Id);
 #endif		/* end of protection macro */
 /** @} */
