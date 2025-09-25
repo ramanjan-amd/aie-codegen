@@ -792,6 +792,7 @@ typedef struct {
 	XAie_RegFldAttr StrmSwClkEnable;
 	XAie_RegFldAttr PlIntClkEnable;
 	XAie_RegFldAttr CteClkEnable;
+	XAie_RegFldAttr UcClkEnable;
 } XAie_ShimModClkCntr0;
 
 /*
