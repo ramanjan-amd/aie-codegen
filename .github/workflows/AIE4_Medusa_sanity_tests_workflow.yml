@@ -22,7 +22,7 @@ jobs:
       run: |
         jenkinsUrl="${{ env.JENKINS_URL }}"
         user="${{ env.JENKINS_USER }}"
-        token="${{ env.JENKINS_TOKEN }}"
+        token=$(jq -r '.jenkins_token' /proj/xresults_dcs7/kishorer/my_work/config_files/jenkins_config.json)
         auth="$user:$token"
         base64AuthInfo=$(echo -n "$auth" | base64)
         headers="Authorization: Basic $base64AuthInfo"
