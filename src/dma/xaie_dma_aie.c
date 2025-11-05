@@ -666,7 +666,7 @@ AieRC _XAie_TileDmaWriteBd(XAie_DevInst *DevInst , XAie_DmaDesc *DmaDesc,
 	const XAie_DmaBdProp *BdProp;
 	u8 LockAcqVal, LockRelVal;
 	u8 LockAcqVal_2, LockRelVal_2;
-	u8 IntrleaveCount;
+	u8 InterleaveCount;
 
 	DmaMod = DevInst->DevProp.DevMod[DmaDesc->TileType].DmaMod;
 	BdProp = DmaMod->BdProp;
