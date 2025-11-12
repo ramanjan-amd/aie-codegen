@@ -44,6 +44,7 @@
 #define MAX_LABELS_PER_ASM_FILE 1000
 #define FNAME_SIZE 100
 #define HASH_INVALID -1
+#define MAX_REMOTE_BARRIER_ID 7
 
 #define EXTRACT_LOWER_FOUR_BYTES(RegOff) (u32)(RegOff & UINT32_MAX)
 
@@ -1731,9 +1732,9 @@ AieRC XAie_ControlCodeIO_AttachToGroup(void *IOInst, uint8_t UcIndex)
 *
 * @param        IOInst: IO instance pointer
 * @param        RbId: Remote Barrier ID
-*				There are 64 remote barriers namely:
+*				There are 8 remote barriers namely:
 *               ---------------------------------------------------------
-*    			| rb0 - rb63											|
+*    			|  $rb0-$rb7											|
 *               ---------------------------------------------------------
 * @param        Mask: Mask to be applied, bitmap of uCs which are going to
 *					  use the barrier.
@@ -1754,6 +1755,11 @@ AieRC XAie_ControlCodeIO_AttachToGroup(void *IOInst, uint8_t UcIndex)
 *******************************************************************************/
 AieRC XAie_ControlCodeIO_RemoteBarrier(void *IOInst, uint8_t RbId, uint32_t UcMask)
 {
+	if(RbId > MAX_REMOTE_BARRIER_ID) {
+		XAIE_ERROR("Remote Barrier ID should be between 0 to %d\n", MAX_REMOTE_BARRIER_ID);
+		return XAIE_ERR;
+	}
+
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
 	
 	if(ControlCodeInst->ControlCodefp != NULL) {
@@ -1767,8 +1773,8 @@ AieRC XAie_ControlCodeIO_RemoteBarrier(void *IOInst, uint8_t RbId, uint32_t UcMa
             _XAie_StartNewJob(ControlCodeInst);
         }
 
-		fprintf(ControlCodeInst->ControlCodefp, "REMOTE_BARRIER\t %d, 0x%x\n", RbId, UcMask);
-		fprintf(ControlCodeInst->DebugAsmFile, "REMOTE_BARRIER\t %d, 0x%x\n", RbId, UcMask);
+		fprintf(ControlCodeInst->ControlCodefp, "REMOTE_BARRIER\t $rb%d, 0x%x\n", RbId, UcMask);
+		fprintf(ControlCodeInst->DebugAsmFile, "REMOTE_BARRIER\t $rb%d, 0x%x\n", RbId, UcMask);
 		ControlCodeInst->CombineCommands = 0;
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_REMOTE_BARRIER;
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_REMOTE_BARRIER;
