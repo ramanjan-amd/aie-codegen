@@ -11,6 +11,8 @@ The `aie-codegen` repository is derived from `aie-rt` and provides enhanced feat
 - ✅ AIE2PS device support added
 - ❌ Lite driver APIs removed (19 APIs)
 
+**For any question/query, please reach out to dhruval.shah@amd.com for further assistance!**
+
 ---
 
 ## What Changed
@@ -59,11 +61,11 @@ grep -r "XAie_L" your_code/
 grep -r "xaie_lite.h" your_code/
 ```
 
-If found, replace with standard APIs.
+If found, please reach out to dhruval.shah@amd.com for further assitance
 
 ### 2. Update Header Includes
 
-**Remove these includes** (no longer available):
+**Remove these includes (ideally you do not even need these)** (no longer available):
 - `xaie_lite.h` - lite driver removed
 - `xaie_lite_util.h` - lite driver removed
 
@@ -105,3 +107,4 @@ If found, replace with standard APIs.
 - **Main header:** `xaiengine.h` (single include for all APIs)
 
 For detailed API documentation, refer to the inline comments in the header files.
+
