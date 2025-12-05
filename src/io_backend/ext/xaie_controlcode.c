@@ -527,7 +527,14 @@ static void _XAie_StartNewPage(XAie_ControlCodeIO  *ControlCodeInst) {
 * @note		Internal only.
 *
 *******************************************************************************/
-static void _XAie_StartNewJob(XAie_ControlCodeIO  *ControlCodeInst) {
+static void _XAie_StartNewJob(XAie_ControlCodeIO  *ControlCodeInst,
+	XAie_CertStartJobType JobType) {
+
+	if (JobType > XAIE_START_COND_JOB_PREEMPT) {
+		XAIE_ERROR("Invalid Job Type\n");
+		return;
+	}
+
 	// no open page, create one
 	if (!ControlCodeInst->IsPageOpen) {
 		_XAie_StartNewPage(ControlCodeInst);
@@ -550,10 +557,23 @@ static void _XAie_StartNewJob(XAie_ControlCodeIO  *ControlCodeInst) {
 		_XAie_EndJob(ControlCodeInst);
 	}
 
-	fprintf(ControlCodeInst->ControlCodefp, "START_JOB %d\n",
-		ControlCodeInst->UcJobNum);
-	fprintf(ControlCodeInst->DebugAsmFile, "START_JOB %d\n",
-		ControlCodeInst->UcJobNum);
+	if (JobType == XAIE_START_COND_JOB_PREEMPT) {
+		fprintf(ControlCodeInst->ControlCodefp, "START_COND_JOB_PREEMPT %d\n",
+			ControlCodeInst->UcJobNum);
+		fprintf(ControlCodeInst->DebugAsmFile, "START_COND_JOB_PREEMPT %d\n",
+			ControlCodeInst->UcJobNum);
+	} else if (JobType == XAIE_START_JOB_DEFERRED) {
+		fprintf(ControlCodeInst->ControlCodefp, "START_JOB_DEFERRED %d\n",
+			ControlCodeInst->UcJobNum);
+		fprintf(ControlCodeInst->DebugAsmFile, "START_JOB_DEFERRED %d\n",
+			ControlCodeInst->UcJobNum);
+	} else if (JobType == XAIE_START_JOB) {
+		fprintf(ControlCodeInst->ControlCodefp, "START_JOB %d\n",
+			ControlCodeInst->UcJobNum);
+		fprintf(ControlCodeInst->DebugAsmFile, "START_JOB %d\n",
+			ControlCodeInst->UcJobNum);
+	}
+
 	ControlCodeInst->UcPageTextSize += ISA_OPSIZE_START_JOB + ISA_OPSIZE_END_JOB;
 	ControlCodeInst->UcPageSize += ISA_OPSIZE_START_JOB + ISA_OPSIZE_END_JOB;
 	_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId, ControlCodeInst->UcPageSize);
@@ -682,13 +702,13 @@ AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 	if (ControlCodeInst->ControlCodefp != NULL) {
 
 		if (!ControlCodeInst->IsJobOpen) {
-			_XAie_StartNewJob(ControlCodeInst);
+			_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 		}
 
 		if(ControlCodeInst->IsAdjacentMemWrite == 1 && ControlCodeInst->LabelMatchFound == 0) {
 			if((ControlCodeInst->UcPageSize + UC_DMA_WORD_LEN + ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 				_XAie_StartNewPage(ControlCodeInst);
-				_XAie_StartNewJob(ControlCodeInst);
+				_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 				ControlCodeInst->IsAdjacentMemWrite = 0;
 			}
 			else {
@@ -704,7 +724,7 @@ AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 			if((ControlCodeInst->UcPageSize + OpSize +
 				UC_DMA_BD_SIZE + UC_DMA_WORD_LEN + ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 				_XAie_StartNewPage(ControlCodeInst);
-				_XAie_StartNewJob(ControlCodeInst);
+				_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 			}
 
 			if(Map) {
@@ -743,7 +763,7 @@ AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 					if((ControlCodeInst->UcPageSize + OpSize + ISA_OPSIZE_WAIT_UC_DMA +
 						UC_DMA_BD_SIZE + UC_DMA_WORD_LEN + ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 						_XAie_StartNewPage(ControlCodeInst);
-						_XAie_StartNewJob(ControlCodeInst);
+						_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 					}
 
 					fprintf(ControlCodeInst->ControlCodefp,
@@ -758,7 +778,7 @@ AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 					if((ControlCodeInst->UcPageSize + OpSize +
 						UC_DMA_BD_SIZE + UC_DMA_WORD_LEN + ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 						_XAie_StartNewPage(ControlCodeInst);
-						_XAie_StartNewJob(ControlCodeInst);
+						_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 					}
 
 					fprintf(ControlCodeInst->ControlCodefp,
@@ -879,13 +899,13 @@ AieRC XAie_ControlCodeIO_MaskWrite32(void *IOInst, u64 RegOff, u32 Mask,
 
 	if (ControlCodeInst->ControlCodefp != NULL) {
 		if (!ControlCodeInst->IsJobOpen) {
-			_XAie_StartNewJob(ControlCodeInst);
+			_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 		}
 
 		if((ControlCodeInst->UcPageSize + ISA_OPSIZE_MASK_WRITE_32 +
 			ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 			_XAie_StartNewPage(ControlCodeInst);
-			_XAie_StartNewJob(ControlCodeInst);
+			_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 		}
 
 		fprintf(ControlCodeInst->ControlCodefp, "MASK_WRITE_32\t 0x%x, 0x%x, 0x%x\n",
@@ -932,13 +952,13 @@ AieRC XAie_ControlCodeIO_MaskPoll(void *IOInst, u64 RegOff, u32 Mask, u32 Value,
 	(void) TimeOutUs;
 	if (ControlCodeInst->ControlCodefp != NULL) {
 		if (!ControlCodeInst->IsJobOpen) {
-			_XAie_StartNewJob(ControlCodeInst);
+			_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 		}
 
 		if((ControlCodeInst->UcPageSize + ISA_OPSIZE_MASK_POLL_32 +
 			ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 			_XAie_StartNewPage(ControlCodeInst);
-			_XAie_StartNewJob(ControlCodeInst);
+			_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 		}
 
 		fprintf(ControlCodeInst->ControlCodefp, "MASK_POLL_32\t 0x%x, 0x%x, 0x%x\n",
@@ -999,7 +1019,7 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 	while (Size > CompletedSize) {
 		if (ControlCodeInst->ControlCodefp != NULL) {
 			if (!ControlCodeInst->IsJobOpen) {
-				_XAie_StartNewJob(ControlCodeInst);
+				_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 			}
 
 			if((RegOff == ControlCodeInst->CalculatedNextRegOff) && (ControlCodeInst->PageBreak == 0)) {
@@ -1021,7 +1041,7 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 				if((ControlCodeInst->UcPageSize + UC_DMA_WORD_LEN
 							+ ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 					_XAie_StartNewPage(ControlCodeInst);
-					_XAie_StartNewJob(ControlCodeInst);
+					_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 					ControlCodeInst->IsAdjacentMemWrite = 0;
 				}
 				if(ControlCodeInst->IsShimBd) {
@@ -1035,16 +1055,14 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 					if((ControlCodeInst->UcPageSize + OpSize + ISA_OPSIZE_WAIT_UC_DMA +
 						UC_DMA_BD_SIZE + UC_DMA_WORD_LEN + ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 						_XAie_StartNewPage(ControlCodeInst);
-						_XAie_StartNewJob(ControlCodeInst);
-						ControlCodeInst->IsAdjacentMemWrite = 0;
+						_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 					}
 				}
 				else {
 					if((ControlCodeInst->UcPageSize + OpSize +
 						UC_DMA_BD_SIZE + UC_DMA_WORD_LEN +ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 						_XAie_StartNewPage(ControlCodeInst);
-						_XAie_StartNewJob(ControlCodeInst);
-						ControlCodeInst->IsAdjacentMemWrite = 0;
+						_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 					}
 				}
 
@@ -1269,7 +1287,7 @@ AieRC XAie_ControlCodeIO_BlockSet32(void *IOInst, u64 RegOff, u32 Data, u32 Size
 	while (Size > CompletedSize) {
 		if (ControlCodeInst->ControlCodefp != NULL) {
 			if (!ControlCodeInst->IsJobOpen) {
-				_XAie_StartNewJob(ControlCodeInst);
+				_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 			}
 
 			ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
@@ -1281,7 +1299,7 @@ AieRC XAie_ControlCodeIO_BlockSet32(void *IOInst, u64 RegOff, u32 Data, u32 Size
 			if((ControlCodeInst->UcPageSize + ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC +
 				UC_DMA_BD_SIZE + UC_DMA_WORD_LEN + ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 				_XAie_StartNewPage(ControlCodeInst);
-				_XAie_StartNewJob(ControlCodeInst);
+				_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 			}
 
 			if(ControlCodeInst->CombineCommands) {
@@ -1371,13 +1389,13 @@ AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u16 Arg_Index, u8 Num_BDs
 	if (ControlCodeInst->ControlCodefp != NULL) {
 
 		if (!ControlCodeInst->IsJobOpen) {
-			_XAie_StartNewJob(ControlCodeInst);
+			_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 		}
 		
 		if((ControlCodeInst->UcPageSize + ISA_OPSIZE_APPLY_OFFSET_57 + OpSize +
 			(UC_DMA_BD_SIZE + (Num_BDs * UC_DMA_WORD_LEN * SHIM_BD_NUM_REGS)) + ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 			_XAie_StartNewPage(ControlCodeInst);
-			_XAie_StartNewJob(ControlCodeInst);
+			_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 		}
 
 		if(ControlCodeInst->ScrachpadName == NULL) {
@@ -1487,13 +1505,13 @@ AieRC XAie_WaitTaskCompleteToken(XAie_DevInst *DevInst,
 	if (ControlCodeInst->ControlCodefp != NULL) {
 
 		if (!ControlCodeInst->IsJobOpen) {
-			_XAie_StartNewJob(ControlCodeInst);
+			_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 		}
 
 		if((ControlCodeInst->UcPageSize + ISA_OPSIZE_WAIT_TCTS +
 			ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
 			_XAie_StartNewPage(ControlCodeInst);
-			_XAie_StartNewJob(ControlCodeInst);
+			_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 		}
 
 		TileId = ((Column << 5) | Row);
@@ -1539,13 +1557,13 @@ AieRC XAie_ControlCodeSaveTimestamp(XAie_DevInst *DevInst, u32 Timestamp)
         if (ControlCodeInst->ControlCodefp != NULL) {
 
                 if (!ControlCodeInst->IsJobOpen) {
-                        _XAie_StartNewJob(ControlCodeInst);
+                        _XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
                 }
 
                 if((ControlCodeInst->UcPageSize + ISA_OPSIZE_SAVE_TIMESTAMPS +
                         ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
                         _XAie_StartNewPage(ControlCodeInst);
-                        _XAie_StartNewJob(ControlCodeInst);
+                        _XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
                 }
 
                 fprintf(ControlCodeInst->ControlCodefp, "SAVE_TIMESTAMPS\t %d\n",
@@ -1603,7 +1621,7 @@ AieRC XAie_ControlCodeIO_Preempt(void *IOInst, u16 PreemptId, char* SaveLabel, c
 		if(ControlCodeInst->UcPageTextSize > ISA_OPSIZE_EOF) { 
 			_XAie_StartNewPage(ControlCodeInst);
 		}
-		_XAie_StartNewJob(ControlCodeInst);
+		_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 		fprintf(ControlCodeInst->ControlCodefp, "PREEMPT\t0x%x, @%s, @%s\n",PreemptId, SaveLabel, RestoreLabel);
 		fprintf(ControlCodeInst->DebugAsmFile, "PREEMPT\t0x%x, @%s, @%s\n",PreemptId, SaveLabel, RestoreLabel);
 		ControlCodeInst->CombineCommands = 0;
@@ -1764,13 +1782,13 @@ AieRC XAie_ControlCodeIO_RemoteBarrier(void *IOInst, uint8_t RbId, uint32_t UcMa
 	
 	if(ControlCodeInst->ControlCodefp != NULL) {
         if (!ControlCodeInst->IsJobOpen) {
-            _XAie_StartNewJob(ControlCodeInst);
+            _XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
         }
 
         if((ControlCodeInst->UcPageSize + ISA_OPSIZE_REMOTE_BARRIER +
             ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
             _XAie_StartNewPage(ControlCodeInst);
-            _XAie_StartNewJob(ControlCodeInst);
+            _XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
         }
 
 		fprintf(ControlCodeInst->ControlCodefp, "REMOTE_BARRIER\t $rb%d, 0x%x\n", RbId, UcMask);
@@ -1805,13 +1823,13 @@ AieRC XAie_ControlCodeIO_SaveRegister(void *IOInst, u32 RegOff, u32 Id)
 	if(ControlCodeInst->ControlCodefp != NULL) {
 
 		if (!ControlCodeInst->IsJobOpen) {
-    		_XAie_StartNewJob(ControlCodeInst);
+    		_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
    	 	}
 
 		if((ControlCodeInst->UcPageSize + ISA_OPSIZE_SAVE_REGISTER +
         	ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
     		_XAie_StartNewPage(ControlCodeInst);
-        	_XAie_StartNewJob(ControlCodeInst);
+        	_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
     	}
 
 		fprintf(ControlCodeInst->ControlCodefp, "SAVE_REGISTER\t 0x%x, 0x%x\n", RegOff, Id);
@@ -2108,12 +2126,12 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 * @return  0 on success.
 *
 ******************************************************************************/
-AieRC XAie_StartNewJob(XAie_DevInst *DevInst)
+AieRC XAie_StartNewJob(XAie_DevInst *DevInst, XAie_CertStartJobType JobType)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)DevInst->IOInst;
 
 	if (ControlCodeInst->ControlCodefp != NULL) {
-		_XAie_StartNewJob(ControlCodeInst);
+		_XAie_StartNewJob(ControlCodeInst, JobType);
 		return XAIE_OK;
 	}
 
@@ -2286,10 +2304,11 @@ AieRC XAie_ControlCodeAddAnnotation(XAie_DevInst *DevInst,
        return XAIE_INVALID_BACKEND;
 }
 
-AieRC XAie_StartNewJob(XAie_DevInst *DevInst)
+AieRC XAie_StartNewJob(XAie_DevInst *DevInst, XAie_CertStartJobType JobType)
 {
 	/* no-op */
 	(void)DevInst;
+	(void)JobType;
 	XAIE_ERROR("Driver is not compiled with ControlCode generation "
 			"backend (__AIECONTROLCODE__)\n");
 	return XAIE_INVALID_BACKEND;
