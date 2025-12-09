@@ -809,7 +809,7 @@ AieRC _XAie_PrivilegeInitPart(XAie_DevInst *DevInst, XAie_PartInitOpts *Opts)
 	}
 
 	/* Enable only the tiles requested in Opts parameter */
-	if(Opts != NULL) {
+	if((Opts != NULL) && (Opts->NumUseTiles > 0)) {
 		RC = XAie_RunOp(DevInst, XAIE_BACKEND_OP_REQUEST_TILES,
 				(void *)&TilesArray);
 
