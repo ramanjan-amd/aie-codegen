@@ -45,6 +45,7 @@
 #define FNAME_SIZE 100
 #define HASH_INVALID -1
 #define MAX_REMOTE_BARRIER_ID 7
+#define MAX_COMMENT_LENGTH 128
 
 #define EXTRACT_LOWER_FOUR_BYTES(RegOff) (u32)(RegOff & UINT32_MAX)
 
@@ -238,6 +239,51 @@ AieRC _XAie_ControlCodePageInfo(FILE *Fp, u32 PageId, u32 PageSize,
         }
         else
                 return XAIE_ERR;
+}
+
+/*****************************************************************************/
+/**
+*
+* This function is used to add a custom comment in the control code ASM file.
+*
+* @param        DevInst: Device instance pointer
+* @param        Comment: Custom comment string to be inserted
+*
+* @return       XAIE_OK or XAIE_ERR.
+*
+* @note         Maximum comment length is MAX_COMMENT_LENGTH characters.
+*
+*******************************************************************************/
+AieRC XAie_ControlCodeAddComment(XAie_DevInst *DevInst, const char *Comment)
+{
+	if(DevInst->Backend->Type != XAIE_IO_BACKEND_CONTROLCODE) {
+			XAIE_ERROR("This is supported only in Controlcode Backend %d \n", DevInst->Backend->Type);
+			return XAIE_INVALID_BACKEND;
+	}
+
+	if(Comment == NULL) {
+		XAIE_ERROR("Comment string cannot be NULL\n");
+		return XAIE_ERR;
+	}
+
+	size_t CommentLen = strlen(Comment);
+	if(CommentLen == 0 || CommentLen > MAX_COMMENT_LENGTH) {
+		XAIE_ERROR("Comment string must be non-empty and not exceed %d characters (provided: %zu)\n", 
+			MAX_COMMENT_LENGTH, CommentLen);
+		return XAIE_ERR;
+	}
+
+	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)DevInst->IOInst;
+
+	if (ControlCodeInst->ControlCodefp != NULL) {
+		fprintf(ControlCodeInst->ControlCodefp, "; %s\n", Comment);
+		fprintf(ControlCodeInst->DebugAsmFile, "; %s\n", Comment);
+		return XAIE_OK;
+	}
+	else {
+		XAIE_ERROR("Control code file pointer is NULL\n");
+		return XAIE_ERR;
+	}
 }
 
 /*****************************************************************************/
@@ -2480,6 +2526,15 @@ AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u16 Arg_Index, u8 Num_BDs
 	XAIE_ERROR("Driver is not compiled with ControlCode generation "
 			"backend (__AIECONTROLCODE__)\n");
 	return XAIE_INVALID_BACKEND;
+}
+
+AieRC XAie_ControlCodeAddComment(XAie_DevInst *DevInst, const char *Comment)
+{
+        (void)DevInst;
+        (void)Comment;
+        XAIE_ERROR("Driver is not compiled with ControlCode generation "
+                        "backend (__AIECONTROLCODE__)\n");
+        return XAIE_INVALID_BACKEND;
 }
 
 AieRC XAie_ControlCodeSaveTimestamp(XAie_DevInst *DevInst, u32 Timestamp)
