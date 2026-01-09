@@ -462,7 +462,7 @@ typedef enum {
 	DMA_S2MM,
 	DMA_MM2S,
 	DMA_MM2S_CTRL, /* Added from AIE4 Shim DMA */
-	DMA_S2MM_TRACE,
+	DMA_S2MM_TRACE, /* Added from AIE4 Shim DMA */
 	DMA_MAX
 } XAie_DmaDirection;
 
@@ -647,6 +647,15 @@ typedef enum {
 	XAIE_MEM_INTERLEAVING_MODE_INVALID = (3 << XAIE_MEMINTERLEAVE_MODE_SHIFT), /* Invalid Mode */
 } XAie_MemInterleavingMode;
 
+/**
+ * Enum defining the CERT START JOB Type
+ **/
+typedef enum {
+    XAIE_START_JOB,
+    XAIE_START_JOB_DEFERRED,
+    XAIE_START_COND_JOB_PREEMPT
+} XAie_CertStartJobType;
+
 /**************************** Function prototypes ***************************/
 XAIE_AIG_EXPORT AieRC XAie_SetupPartitionConfig(XAie_DevInst *DevInst,
 		u64 PartBaseAddr, u8 PartStartCol, u8 PartNumCols);
@@ -677,7 +686,7 @@ XAIE_AIG_EXPORT AieRC XAie_ConfigBackendAttr(XAie_DevInst *InstPtr,
 XAIE_AIG_EXPORT AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 JobSize);
 XAIE_AIG_EXPORT void XAie_CloseControlCodeFile(XAie_DevInst *DevInst);
 XAIE_AIG_EXPORT AieRC XAie_StartNextJob(XAie_DevInst *DevInst);
-XAIE_AIG_EXPORT AieRC XAie_StartNewJob(XAie_DevInst *DevInst);
+XAIE_AIG_EXPORT AieRC XAie_StartNewJob(XAie_DevInst *DevInst, XAie_CertStartJobType JobType);
 XAIE_AIG_EXPORT AieRC XAie_EndPage(XAie_DevInst *DevInst);
 XAIE_AIG_EXPORT AieRC XAie_EndJob(XAie_DevInst *DevInst);
 XAIE_AIG_EXPORT AieRC XAie_ControlCodeSaveTimestamp(XAie_DevInst *DevInst, u32 Timestamp);

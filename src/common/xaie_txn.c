@@ -642,6 +642,17 @@ AieRC _XAie_Txn_Submit(XAie_DevInst *DevInst, XAie_TxnInst *TxnInst)
 		return XAIE_OK;
 	}
 
+	/* Free DataPtr for custom ops and blockwrites before cleanup */
+	for(u32 i = 0U; i < Inst->NumCmds; i++) {
+		XAie_TxnCmd *Cmd = &Inst->CmdBuf[i];
+
+		if((Cmd->Opcode == XAIE_IO_BLOCKWRITE ||
+			(Cmd->Opcode >= XAIE_IO_CUSTOM_OP_BEGIN && Cmd->Opcode < XAIE_IO_CUSTOM_OP_NEXT)) &&
+			((void *)(uintptr_t)Cmd->DataPtr != NULL)) {
+			free((void *)(uintptr_t)Cmd->DataPtr);
+		}
+	}
+
 	RC = _XAie_RemoveTxnInstFromList(DevInst, Tid);
 	if(RC != XAIE_OK) {
 		return RC;
@@ -968,14 +979,28 @@ static inline void _XAie_AppendCustomOp_opt(XAie_TxnCmd *Cmd, u8 *TxnPtr)
 static inline void _XAie_AppendDDRPatch_opt(XAie_TxnCmd *Cmd, u8 *TxnPtr)
 {
 	u8 *Payload = TxnPtr + sizeof(XAie_CustomOpHdr_opt);
-	XAie_CustomOpHdr_opt *Hdr = (XAie_CustomOpHdr_opt*)(uintptr_t)TxnPtr;
+
+	/**
+	 * Use stack variable instead of pointer access to avoid unaligned access
+	 * when TxnPtr is unaligned. To avoid UBSan alignment errors.
+	 */
+	XAie_CustomOpHdr_opt Hdr;
+	patch_op_t PatchOp;
+	patch_op_opt_t PatchOpOpt;
 
 	// Modify the cmd size to align with version 1.0
 	Cmd->Size = (u32)sizeof(patch_op_opt_t);
 
 	// Write the custom header into Txn Ptr with correct size.
-	Hdr->Size = (u32)sizeof(*Hdr) + Cmd->Size;
-	Hdr->OpHdr.Op = (u8)Cmd->Opcode;
+	Hdr.Size = (u32)sizeof(Hdr) + Cmd->Size;
+	Hdr.OpHdr.Op = (u8)Cmd->Opcode;
+	Hdr.OpHdr.padding[0] = 0;
+	Hdr.OpHdr.padding[1] = 0;
+	Hdr.OpHdr.padding[2] = 0;
+
+	// Use memcpy to avoid unaligned access
+	memcpy(TxnPtr, &Hdr, sizeof(Hdr));
+
 #if UINTPTR_MAX == U64_MAX  // 64-bit system
     if (Cmd->DataPtr > UINTPTR_MAX) {
     	XAIE_ERROR("DataPtr cannot be represented in 64bit system\n");
@@ -983,13 +1008,24 @@ static inline void _XAie_AppendDDRPatch_opt(XAie_TxnCmd *Cmd, u8 *TxnPtr)
     }
 #endif
 
-	// Map the patch_op_t fields to patch_op_opt_t and
-	// Write patch_op_opt_t into txn ptr.
-	patch_op_t *PatchOp = (patch_op_t *)(uintptr_t)Cmd->DataPtr;
-	patch_op_opt_t *PatchOpOpt = (patch_op_opt_t *)(uintptr_t)Payload;
-	PatchOpOpt->regaddr = (uint32_t)(PatchOp->regaddr & 0xFFFFFFFF);
-	PatchOpOpt->argidx = (uint8_t)(PatchOp->argidx & 0xFF);
-	PatchOpOpt->argplus = PatchOp->argplus;
+	// Map the patch_op_t fields to patch_op_opt_t
+	// Use memcpy to safely read from DataPtr, which may point to misaligned data.
+	// memcpy performs byte-wise copy and does not require alignment.
+	// Coverity note: The cast to void* is intentional. The alignment of the
+	// source pointer is unknown, but memcpy handles misalignment correctly.
+	const void *data_src = (const void *)(uintptr_t)Cmd->DataPtr;
+	memcpy(&PatchOp, data_src, sizeof(PatchOp));
+
+	// Convert u64 fields to smaller types
+	PatchOpOpt.regaddr = (u32)(PatchOp.regaddr & UINT32_MAX);
+	PatchOpOpt.argidx = (u8)(PatchOp.argidx & UINT8_MAX);
+	PatchOpOpt.padding[0] = 0;
+	PatchOpOpt.padding[1] = 0;
+	PatchOpOpt.padding[2] = 0;
+	PatchOpOpt.argplus = PatchOp.argplus;
+
+	// Write patch_op_opt_t into txn ptr using memcpy to avoid unaligned access
+	memcpy(Payload, &PatchOpOpt, sizeof(PatchOpOpt));
 }
 
 static u8* _XAie_ReallocTxnBuf_MemInit(u8 *TxnPtr, u32 NewSize, u32 Buffsize)
@@ -1011,7 +1047,7 @@ static u8* _XAie_ReallocTxnBuf(u8 *TxnPtr, u32 NewSize)
 	Tmp =  (u8*)realloc((void*)TxnPtr, NewSize);
 	if(Tmp == NULL) {
 		XAIE_ERROR("Reallocation failed for txn buffer\n");
-		free(TxnPtr);  /* Free original memory to prevent leak */
+		/* Standard realloc semantics: original pointer remains valid on failure */
 		return NULL;
 	}
 
@@ -1764,11 +1800,14 @@ u8* _XAie_TxnExportSerialized(XAie_DevInst *DevInst, u8 NumConsumers,
 			TmpInst->NumCmds);
 
 	/* Adjust pointer and reallocate to the right size */
-	TxnPtr = _XAie_ReallocTxnBuf(TxnPtr - BuffSize, four_byte_aligned_BuffSize);
-	if(TxnPtr == NULL) {
+	u8 *OrigPtr = TxnPtr - BuffSize;
+	u8 *NewPtr = _XAie_ReallocTxnBuf(OrigPtr, four_byte_aligned_BuffSize);
+	if(NewPtr == NULL) {
 		XAIE_ERROR("TxnPtr realloc failed\n");
+		free(OrigPtr);  /* Free original buffer on failure */
 		return NULL;
 	}
+	TxnPtr = NewPtr;
 	((XAie_TxnHeader *)(uintptr_t)TxnPtr)->NumOps =  NumOps;
 	((XAie_TxnHeader *)(uintptr_t)TxnPtr)->TxnSize =  four_byte_aligned_BuffSize;
 
@@ -2338,11 +2377,14 @@ u8* _XAie_TxnExportSerialized_opt(XAie_DevInst *DevInst, u8 NumConsumers,
 			TmpInst->NumCmds);
 
 	/* Adjust pointer and reallocate to the right size */
-	TxnPtr = _XAie_ReallocTxnBuf(TxnPtr - BuffSize, four_byte_aligned_BuffSize);
-	if(TxnPtr == NULL) {
+	u8 *OrigPtr = TxnPtr - BuffSize;
+	u8 *NewPtr = _XAie_ReallocTxnBuf(OrigPtr, four_byte_aligned_BuffSize);
+	if(NewPtr == NULL) {
 		XAIE_ERROR("TxnPtr realloc failed\n");
+		free(OrigPtr);  /* Free original buffer on failure */
 		return NULL;
 	}
+	TxnPtr = NewPtr;
 	
 	((XAie_TxnHeader *)(uintptr_t)TxnPtr)->NumOps =  NumOps;
 	((XAie_TxnHeader *)(uintptr_t)TxnPtr)->TxnSize =  four_byte_aligned_BuffSize;
