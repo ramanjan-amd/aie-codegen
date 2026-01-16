@@ -46,6 +46,8 @@
 #define HASH_INVALID -1
 #define MAX_REMOTE_BARRIER_ID 7
 #define MAX_COMMENT_LENGTH 128
+#define BLOCKWRITE32 0
+#define WRITE32 1
 
 #define EXTRACT_LOWER_FOUR_BYTES(RegOff) (u32)(RegOff & UINT32_MAX)
 
@@ -112,6 +114,7 @@ typedef struct {
 	u32 CurrentDataLabel;
 	u32 CurrentDataBWLabel;
 	u8 LabelMatchFound;
+	int PrevMemWriteType;
 } XAie_ControlCodeIO;
 
 /************************** Function Definitions *****************************/
@@ -737,7 +740,7 @@ AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 		OpSize = ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC;
 	}
 
-	if(RegOff == ControlCodeInst->CalculatedNextRegOff) {
+	if((RegOff == ControlCodeInst->CalculatedNextRegOff) && (ControlCodeInst->PrevMemWriteType != -1)) {
 		ControlCodeInst->IsAdjacentMemWrite = 1;
 	}
 	else {
@@ -765,7 +768,13 @@ AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 			else {
 				_XAie_UpdateDataLengthDmaBd(ControlCodeInst, (ControlCodeInst->CombinedMemWriteSize + 1));
 				if(Map) {
-					Map->HashW[ControlCodeInst->CurrentDataLabel-1] = HASH_INVALID;
+					if(ControlCodeInst->PrevMemWriteType == BLOCKWRITE32) {
+						Map->BWDataSizes[ControlCodeInst->CurrentDataBWLabel-1] += 1;
+						Map->HashBW[ControlCodeInst->CurrentDataBWLabel-1] = HASH_INVALID;
+					}
+					else {
+						Map->HashW[ControlCodeInst->CurrentDataLabel-1] = HASH_INVALID;
+					}
 				}
 			}
 		}
@@ -869,6 +878,7 @@ AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 				ControlCodeInst->UcbdDataNum++;
 				ControlCodeInst->CurrentDataLabel = ControlCodeInst->UcbdDataNum;
 			}
+			ControlCodeInst->PrevMemWriteType = WRITE32;
 		}
 		if(ControlCodeInst->LabelMatchFound == 0) {
 			fprintf(ControlCodeInst->ControlCodedata2fp, "\t.long 0x%08x\n", Value);
@@ -894,6 +904,7 @@ AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 
 	_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
 		 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+
 
 	return XAIE_OK;
 }
@@ -1061,7 +1072,6 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
 	XAie_LabelMap* Map = ControlCodeInst->LabelMap;
-	Hash = _XAie_ComputeHash(Data, Size);
 
 	if(ControlCodeInst->Mode == XAIE_WRITE_DES_ASYNC_ENABLE) {
 		OpSize = ISA_OPSIZE_UC_DMA_WRITE_DES;
@@ -1076,7 +1086,9 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 				_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
 			}
 
-			if((RegOff == ControlCodeInst->CalculatedNextRegOff) && (ControlCodeInst->PageBreak == 0)) {
+			if((RegOff == ControlCodeInst->CalculatedNextRegOff) && 
+			   (ControlCodeInst->PageBreak == 0) &&
+			   (ControlCodeInst->PrevMemWriteType != -1)) {
 				ControlCodeInst->IsAdjacentMemWrite = 1;
 			}
 			else {
@@ -1133,6 +1145,7 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 						}
 					}
 
+					Hash = _XAie_ComputeHash(Data, Size);
 					for(int Label = ControlCodeInst->CurrentDataBWLabel-1; Label >= ControlCodeInst->CompareLabelUpto; Label--) {
 						if(Map->BWDataSizes[Label] == Size) {
 							if(Map->HashBW[Label] == ((int)Hash)) {
@@ -1234,7 +1247,6 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 						 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
 					break;
 				}
-
 			}
 
 			ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
@@ -1263,8 +1275,13 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 				_XAie_UpdateDataLengthDmaBd(ControlCodeInst,
 						(ControlCodeInst->CombinedMemWriteSize + IterationSize));
 				if (Map) {
-					Map->BWDataSizes[ControlCodeInst->CurrentDataBWLabel-1] = ControlCodeInst->CombinedMemWriteSize + IterationSize;
-					Map->HashBW[ControlCodeInst->CurrentDataBWLabel-1] = HASH_INVALID;
+					if(ControlCodeInst->PrevMemWriteType == WRITE32) {
+						Map->HashW[ControlCodeInst->CurrentDataLabel-1] = HASH_INVALID;
+					}
+					else {
+						Map->BWDataSizes[ControlCodeInst->CurrentDataBWLabel-1] = ControlCodeInst->CombinedMemWriteSize + IterationSize;
+						Map->HashBW[ControlCodeInst->CurrentDataBWLabel-1] = HASH_INVALID;
+					}
 				}
 			}
 			else {
@@ -1283,6 +1300,7 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 						(IterationSize - TempItrSize));
 				ControlCodeInst->UcDmaDataNum++;
 				ControlCodeInst->CurrentDataBWLabel = ControlCodeInst->UcDmaDataNum;
+				ControlCodeInst->PrevMemWriteType = BLOCKWRITE32;
 			}
 			
 			NewPageRegOff = RegOff + AdjustedOff;
@@ -2100,6 +2118,7 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 	ControlCodeInst->CurrentDataLabel = ControlCodeInst->UcbdDataNum;
 	ControlCodeInst->CurrentDataBWLabel = ControlCodeInst->UcDmaDataNum;
 	ControlCodeInst->LabelMap = (XAie_LabelMap*)calloc(1,sizeof(XAie_LabelMap));
+	ControlCodeInst->PrevMemWriteType = -1;
 	
 	if(ControlCodeInst->LabelMap) {
 		if(_XAie_LabelMapSetup(ControlCodeInst->LabelMap, ControlCodeInst) == XAIE_OK) {
