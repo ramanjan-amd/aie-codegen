@@ -1691,27 +1691,23 @@ AieRC XAie_ControlCodeIO_Preempt(void *IOInst, u16 PreemptId, char* SaveLabel, c
 
 	if (ControlCodeInst->ControlCodefp != NULL)
 	{
-		/*
-		(1) As per the CERT spec, PREEMPT opcode should be in an new, independent and self contained Page,
-		    which means it should not be combined with any other opcode. Hence, everytime this API is called, aie-rt logic ends the current page
-		    and starts a new page, adds PREEMPT opcode and again ends that page.
-		
-		(2) But, check if the current page is a newly created one, which has either empty text section or just EOF opcode in the text section.
-		    If so, then there is no need to end the current page and start a new one.
-		*/
+		if (!ControlCodeInst->IsJobOpen) {
+        	_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
+        }
 
-		if(ControlCodeInst->UcPageTextSize > ISA_OPSIZE_EOF) { 
-			_XAie_StartNewPage(ControlCodeInst);
-		}
-		_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
+        if((ControlCodeInst->UcPageSize + ISA_OPSIZE_PREEMPT +
+        	ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
+        	_XAie_StartNewPage(ControlCodeInst);
+            _XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
+        }
+		
 		fprintf(ControlCodeInst->ControlCodefp, "PREEMPT\t0x%x, @%s, @%s\n",PreemptId, SaveLabel, RestoreLabel);
 		fprintf(ControlCodeInst->DebugAsmFile, "PREEMPT\t0x%x, @%s, @%s\n",PreemptId, SaveLabel, RestoreLabel);
 		ControlCodeInst->CombineCommands = 0;
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_PREEMPT;
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_PREEMPT;
-		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-			 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
-		_XAie_EndPage(ControlCodeInst);
+		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId, ControlCodeInst->UcPageSize, 
+								  ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
 	}
 	return XAIE_OK;
 }
