@@ -456,6 +456,41 @@ static AieRC _XAie_LoadElfFromMem(XAie_DevInst *DevInst, XAie_LocType Loc,
 /*****************************************************************************/
 /**
 *
+* This API loads selected ELF sections from an in-memory ELF buffer.
+*
+* @param	DevInst: Device Instance.
+* @param	Loc: Location of AIE Tile.
+* @param	ElfMem: Pointer to the ELF contents in memory.
+* @param	Sections: Flags to indicate sections to load.
+*
+* @return	XAIE_OK on success and error code for failure.
+*
+* @note		None.
+*
+*******************************************************************************/
+AieRC XAie_LoadElfPartialMem(XAie_DevInst *DevInst, XAie_LocType Loc,
+		const unsigned char* ElfMem, u8 Sections) {
+
+	u8 TileType;
+
+	if((DevInst == XAIE_NULL) || (ElfMem == XAIE_NULL) ||
+		(DevInst->IsReady != XAIE_COMPONENT_IS_READY)) {
+		XAIE_ERROR("Invalid arguments\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	TileType = DevInst->DevOps->GetTTypefromLoc(DevInst, Loc);
+	if(TileType != XAIEGBL_TILE_TYPE_AIETILE) {
+		XAIE_ERROR("Invalid tile type\n");
+		return XAIE_INVALID_TILE;
+	}
+	
+	return _XAie_LoadElfFromMem(DevInst, Loc, ElfMem, Sections);
+}
+
+/*****************************************************************************/
+/**
+*
 * This function loads the elf from memory to the AIE Cores. The function writes
 * 0 for the uninitialized data section.
 *
