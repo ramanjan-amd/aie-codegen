@@ -469,11 +469,11 @@ static int _XAie_ControlCodePrintf(XAie_ControlCodeIO *ControlCodeInst, XAie_Fil
 		size_t available = buf->Capacity - buf->Size;
 		XAIE_DBG("_XAie_ControlCodePrintf: Attempting write, available=%zu\n", available);
 
-		/* Make a copy of args in case we need to retry after growing buffer */
+		/* Copy args for this vsnprintf() call (va_list can't be reused after consumption). */
 		va_list args_copy;
 		va_copy(args_copy, args);
-
 		result = vsnprintf(buf->Data + buf->Size, available, fmt, args_copy);
+		va_end(args_copy);
 		XAIE_DBG("_XAie_ControlCodePrintf: vsnprintf returned %d\n", result);
 
 		/* If buffer was too small, grow it and retry */
@@ -509,10 +509,12 @@ static int _XAie_ControlCodePrintf(XAie_ControlCodeIO *ControlCodeInst, XAie_Fil
 
 			/* Retry the write with the full buffer capacity */
 			available = buf->Capacity - buf->Size;
-			result = vsnprintf(buf->Data + buf->Size, available, fmt, args_copy);
+			va_list args_copy_retry;
+			va_copy(args_copy_retry, args);
+			result = vsnprintf(buf->Data + buf->Size, available, fmt, args_copy_retry);
+			va_end(args_copy_retry);
 			XAIE_DBG("_XAie_ControlCodePrintf: After grow, vsnprintf returned %d\n", result);
 		}
-		va_end(args_copy);
 
 		if (result >= 0) {
 			buf->Size += result;
@@ -2241,27 +2243,33 @@ AieRC XAie_ControlCodeIO_Preempt(void *IOInst, u16 PreemptId, char* SaveLabel, c
         	+ ControlCodeInst->DataAligner) > ControlCodeInst->PageSizeMax) {
         	_XAie_StartNewPage(ControlCodeInst);
         }
-		
+
 		_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
-		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODE, "PREEMPT\t0x%x, @%s, @%s , @hintmap_%d\n",PreemptId, SaveLabel, RestoreLabel, ControlCodeInst->HintMapId);
-		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM, "PREEMPT\t0x%x, @%s, @%s , @hintmap_%d\n",PreemptId, SaveLabel, RestoreLabel, ControlCodeInst->HintMapId);
+		if(HintMap && HintMapSizeInWords) {
+			CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODE, "PREEMPT\t0x%x, @%s, @%s , @hintmap_%d\n",PreemptId, SaveLabel, RestoreLabel, ControlCodeInst->HintMapId);
+			CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM, "PREEMPT\t0x%x, @%s, @%s , @hintmap_%d\n",PreemptId, SaveLabel, RestoreLabel, ControlCodeInst->HintMapId);
+			
+			CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODEDATA2, "hintmap_%d:\n",
+						ControlCodeInst->HintMapId);
+			CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASMDATA1, "hintmap_%d:\n",
+						ControlCodeInst->HintMapId);
+
+			for(u32 i=0; i<HintMapSizeInWords; i++) {
+				CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODEDATA2, "\t.long 0x%08x\n", HintMap[i]);
+				CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASMDATA1, "\t.long 0x%08x\n", HintMap[i]);
+			}
+			ControlCodeInst->UcPageSize += ISA_OPSIZE_PREEMPT + (HintMapSizeInWords * UC_DMA_WORD_LEN);
+			ControlCodeInst->HintMapId++;
+		}
+		else {
+			CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODE, "PREEMPT\t0x%x, @%s, @%s\n",PreemptId, SaveLabel, RestoreLabel);
+			CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM, "PREEMPT\t0x%x, @%s, @%s\n",PreemptId, SaveLabel, RestoreLabel);
+			ControlCodeInst->UcPageSize += ISA_OPSIZE_PREEMPT;
+		}
 		_XAie_EndJob(ControlCodeInst);
 
-
-		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODEDATA2, "hintmap_%d:\n",
-					ControlCodeInst->HintMapId);
-		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASMDATA1, "hintmap_%d:\n",
-					ControlCodeInst->HintMapId);
-
-		for(u32 i=0; i<HintMapSizeInWords; i++) {
-			CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODEDATA2, "\t.long 0x%08x\n", HintMap[i]);
-			CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASMDATA1, "\t.long 0x%08x\n", HintMap[i]);
-		}
-
 		ControlCodeInst->CombineCommands = 0;
-		ControlCodeInst->UcPageSize += ISA_OPSIZE_PREEMPT + (HintMapSizeInWords * UC_DMA_WORD_LEN);
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_PREEMPT;
-		ControlCodeInst->HintMapId++;
 		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId, ControlCodeInst->UcPageSize, 
 								  ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
 	}
