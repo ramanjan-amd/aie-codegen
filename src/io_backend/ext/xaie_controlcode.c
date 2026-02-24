@@ -63,8 +63,17 @@ typedef SSIZE_T ssize_t;
 #define EXTRACT_LOWER_FOUR_BYTES(RegOff) (u32)(RegOff & UINT32_MAX)
 
 /* Helper macro to safely call fprintf only when file pointer is non-NULL */
-#define SAFE_FPRINTF(fp, ...) do { if (fp) fprintf(fp, __VA_ARGS__); } while(0)
-#define SAFE_FSEEK(fp, offset, whence) do { if (fp) fseek(fp, offset, whence); } while(0)
+#define SAFE_FPRINTF(fp, ...) \
+	do { \
+		if (fp) \
+			fprintf(fp, __VA_ARGS__); \
+	} while(0)
+
+#define SAFE_FSEEK(fp, offset, whence) \
+	do { \
+		if (fp) \
+			fseek(fp, offset, whence); \
+	} while(0)
 
 /* Helper macro to check for critical errors in ControlCodeInst */
 #define CHECK_ERROR_STATE(inst) \
@@ -88,13 +97,14 @@ typedef SSIZE_T ssize_t;
 
 /*
  * Void-safe variant of CONTROLCODE_PRINTF_CHECK for functions that return void.
- * Calls _XAie_ControlCodePrintf and checks ErrorState, logging errors but not returning.
+ * Calls _XAie_ControlCodePrintf and checks ErrorState, logging errors and returning early.
  */
 #define CONTROLCODE_PRINTF_VOID(inst, target, ...) \
 	do { \
 		_XAie_ControlCodePrintf(inst, target, __VA_ARGS__); \
 		if ((inst)->ErrorState) { \
 			XAIE_ERROR("Critical error in void function - ErrorState set after printf\n"); \
+			return; \
 		} \
 	} while(0)
 
@@ -109,9 +119,9 @@ typedef SSIZE_T ssize_t;
  *    - This macro calls _XAie_ControlCodePrintf() then CHECK_ERROR_STATE()
  *    - If ErrorState is set, the function returns XAIE_ERR immediately
  * 
- * 3. For void functions or special cases:
- *    - Call _XAie_ControlCodePrintf() directly
- *    - Manually check ErrorState where appropriate
+ * 3. For void functions:
+ *    - Use CONTROLCODE_PRINTF_VOID() macro for automatic error handling
+ *    - This macro calls _XAie_ControlCodePrintf() and returns early if ErrorState is set
  * 
  * 4. assert() is NOT used because:
  *    - Only active in debug builds
@@ -224,7 +234,7 @@ typedef struct {
 /************************** Function Definitions *****************************/
 
 /* Forward declarations */
-static void _XAie_MegreFiles(FILE *SrcFp, FILE *DesFp);
+static void _XAie_MergeFiles(FILE *SrcFp, FILE *DesFp);
 static int _XAie_ControlCodeSeekAndOverwrite(XAie_ControlCodeIO *ControlCodeInst,
 		XAie_FileTarget FileTarget, long Offset, const char *Replacement);
 
@@ -3166,12 +3176,28 @@ AieRC XAie_GetControlCodeBuffer(XAie_DevInst *DevInst, const char **Buffer, size
 	/* Merge data sections into main buffer */
 	if (_XAie_MergeMemBuffers(ControlCodeInst->ControlCodeDataBuf, ControlCodeInst->ControlCodeBuf) != XAIE_OK) {
 		XAIE_ERROR("Failed to merge data buffer\n");
+		/* Free intermediate buffers on error to prevent memory leak */
+		_XAie_MemBufferFree(ControlCodeInst->ControlCodeDataBuf);
+		_XAie_MemBufferFree(ControlCodeInst->ControlCodeData2Buf);
+		ControlCodeInst->ControlCodeDataBuf = NULL;
+		ControlCodeInst->ControlCodeData2Buf = NULL;
 		return XAIE_ERR;
 	}
 	if (_XAie_MergeMemBuffers(ControlCodeInst->ControlCodeData2Buf, ControlCodeInst->ControlCodeBuf) != XAIE_OK) {
 		XAIE_ERROR("Failed to merge data2 buffer\n");
+		/* Free intermediate buffers on error to prevent memory leak */
+		_XAie_MemBufferFree(ControlCodeInst->ControlCodeDataBuf);
+		_XAie_MemBufferFree(ControlCodeInst->ControlCodeData2Buf);
+		ControlCodeInst->ControlCodeDataBuf = NULL;
+		ControlCodeInst->ControlCodeData2Buf = NULL;
 		return XAIE_ERR;
 	}
+	
+	/* Free intermediate data buffers after merge - no longer needed */
+	_XAie_MemBufferFree(ControlCodeInst->ControlCodeDataBuf);
+	_XAie_MemBufferFree(ControlCodeInst->ControlCodeData2Buf);
+	ControlCodeInst->ControlCodeDataBuf = NULL;
+	ControlCodeInst->ControlCodeData2Buf = NULL;
 	
 	*Buffer = ControlCodeInst->ControlCodeBuf->Data;
 	*Size = ControlCodeInst->ControlCodeBuf->Size;
@@ -3245,12 +3271,28 @@ AieRC XAie_GetDebugAsmBuffer(XAie_DevInst *DevInst, const char **Buffer, size_t 
 	/* Merge debug data sections into debug buffer */
 	if (_XAie_MergeMemBuffers(ControlCodeInst->DebugAsmDataBuf0, ControlCodeInst->DebugAsmBuf) != XAIE_OK) {
 		XAIE_ERROR("Failed to merge debug data buffer 0\n");
+		/* Free intermediate buffers on error to prevent memory leak */
+		_XAie_MemBufferFree(ControlCodeInst->DebugAsmDataBuf0);
+		_XAie_MemBufferFree(ControlCodeInst->DebugAsmDataBuf1);
+		ControlCodeInst->DebugAsmDataBuf0 = NULL;
+		ControlCodeInst->DebugAsmDataBuf1 = NULL;
 		return XAIE_ERR;
 	}
 	if (_XAie_MergeMemBuffers(ControlCodeInst->DebugAsmDataBuf1, ControlCodeInst->DebugAsmBuf) != XAIE_OK) {
 		XAIE_ERROR("Failed to merge debug data buffer 1\n");
+		/* Free intermediate buffers on error to prevent memory leak */
+		_XAie_MemBufferFree(ControlCodeInst->DebugAsmDataBuf0);
+		_XAie_MemBufferFree(ControlCodeInst->DebugAsmDataBuf1);
+		ControlCodeInst->DebugAsmDataBuf0 = NULL;
+		ControlCodeInst->DebugAsmDataBuf1 = NULL;
 		return XAIE_ERR;
 	}
+	
+	/* Free intermediate data buffers after merge - no longer needed */
+	_XAie_MemBufferFree(ControlCodeInst->DebugAsmDataBuf0);
+	_XAie_MemBufferFree(ControlCodeInst->DebugAsmDataBuf1);
+	ControlCodeInst->DebugAsmDataBuf0 = NULL;
+	ControlCodeInst->DebugAsmDataBuf1 = NULL;
 	
 	*Buffer = ControlCodeInst->DebugAsmBuf->Data;
 	*Size = ControlCodeInst->DebugAsmBuf->Size;
@@ -3380,7 +3422,7 @@ AieRC XAie_EndPage(XAie_DevInst *DevInst) {
 * @note		Internal API only.
 *
 ******************************************************************************/
-static void _XAie_MegreFiles(FILE *SrcFp, FILE *DesFp) {
+static void _XAie_MergeFiles(FILE *SrcFp, FILE *DesFp) {
 	char TempBuf;
 
 	if (!SrcFp || !DesFp) {
@@ -3413,13 +3455,13 @@ void XAie_CloseControlCodeFile(XAie_DevInst *DevInst) {
 			CONTROLCODE_PRINTF_VOID(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM, "EOF\n\n");
 		}
 
-		_XAie_MegreFiles(ControlCodeInst->ControlCodedatafp, ControlCodeInst->ControlCodefp);
-		_XAie_MegreFiles(ControlCodeInst->ControlCodedata2fp, ControlCodeInst->ControlCodefp);
+		_XAie_MergeFiles(ControlCodeInst->ControlCodedatafp, ControlCodeInst->ControlCodefp);
+		_XAie_MergeFiles(ControlCodeInst->ControlCodedata2fp, ControlCodeInst->ControlCodefp);
 		if (ControlCodeInst->DebugAsmFile && ControlCodeInst->DebugAsmFileData0) {
-			_XAie_MegreFiles(ControlCodeInst->DebugAsmFileData0, ControlCodeInst->DebugAsmFile);
+			_XAie_MergeFiles(ControlCodeInst->DebugAsmFileData0, ControlCodeInst->DebugAsmFile);
 		}
 		if (ControlCodeInst->DebugAsmFile && ControlCodeInst->DebugAsmFileData1) {
-			_XAie_MegreFiles(ControlCodeInst->DebugAsmFileData1, ControlCodeInst->DebugAsmFile);
+			_XAie_MergeFiles(ControlCodeInst->DebugAsmFileData1, ControlCodeInst->DebugAsmFile);
 		}
 
 		fclose(ControlCodeInst->ControlCodefp);
