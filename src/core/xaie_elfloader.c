@@ -45,6 +45,8 @@
 #define XAIESIM_CMDIO_CMD_SETSTACK       0U
 #define XAIESIM_CMDIO_CMD_LOADSYM        1U
 #define PT_FILLSEGMENTS                  0x70123463U
+#define MIN_FILL_DIRECTIVE_DATASIZE      16U
+#define MAX_32BIT_VAL                    0xFFFFFFFFU
 
 /************************** Function Definitions *****************************/
 /*****************************************************************************/
@@ -451,7 +453,7 @@ static AieRC _XAie_ProcessFillSegments(XAie_DevInst *DevInst, XAie_LocType Loc,
 	XAIE_DBG("Processing fillsegments data, size=%d bytes\n", DataSize);
 
 	/* Validate minimum data size and alignment */
-	if(DataSize < 16U) {
+	if(DataSize < MIN_FILL_DIRECTIVE_DATASIZE) {
 		XAIE_WARN("Fillsegments data too small (%d bytes), skipping\n", DataSize);
 		return XAIE_OK;
 	}
@@ -475,7 +477,7 @@ static AieRC _XAie_ProcessFillSegments(XAie_DevInst *DevInst, XAie_LocType Loc,
 	}
 
 	/* Check for potential overflow in bounds calculation */
-	if( ((0xFFFFFFFFU - FillAddr) < FillSize) || (FillSize > (0xFFFFFFFFU - 3U)) ) {
+	if( ((MAX_32BIT_VAL - FillAddr) < FillSize) || (FillSize > (MAX_32BIT_VAL - 3U)) ) {
 		XAIE_ERROR("Fill operation would cause address overflow\n");
 		return XAIE_ERR;
 	}
