@@ -1,6 +1,6 @@
 /******************************************************************************
 * Copyright (C) 2019-2022 Xilinx, Inc. All rights reserved.
-* Copyright (C) 2022-2025 Advanced Micro Devices, Inc. All rights reserved.
+* Copyright (C) 2022-2026 Advanced Micro Devices, Inc. All rights reserved.
 * SPDX-License-Identifier: MIT
 ******************************************************************************/
 
@@ -827,16 +827,16 @@ AieRC XAie_LoadElfPartial(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	Fd = fopen(ElfPtr, "rb");
 	if(Fd == XAIE_NULL) {
-		XAIE_ERROR("Unable to open elf file, %d: %s\n",
-				errno, strerror(errno));
+		XAIE_ERROR("Unable to open elf file, %s: %s\n",
+				ElfPtr, strerror(errno));
 		return XAIE_INVALID_ELF;
 	}
 
 	/* Get the file size of the elf */
 	Ret = fseek(Fd, 0L, SEEK_END);
 	if(Ret != 0) {
-		XAIE_ERROR("Failed to get end of file, %d: %s\n",
-				errno, strerror(errno));
+		XAIE_ERROR("Failed to get end of file, %s: %s\n",
+				ElfPtr, strerror(errno));
 		if(fclose(Fd) == EOF) {  
         		XAIE_ERROR("Failed to close file \n");  
     		}
@@ -845,8 +845,8 @@ AieRC XAie_LoadElfPartial(XAie_DevInst *DevInst, XAie_LocType Loc,
 
 	ElfSize = ftell(Fd);
 	if (ElfSize < 0) {
-		XAIE_ERROR("Failed to determine file size, %d: %s\n",
-				errno, strerror(errno));
+		XAIE_ERROR("Failed to determine file size, %s: %s\n",
+				ElfPtr, strerror(errno));
 		if(fclose(Fd) == EOF) {  
         		XAIE_ERROR("Failed to close file \n");  
     		}
