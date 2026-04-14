@@ -171,4 +171,6 @@ void XAie_CloseControlCodeFile(XAie_DevInst *DevInst);
 AieRC XAie_ControlCodeAddAnnotation(XAie_DevInst *DevInst, u32 Id, const char *Name, const char *Description);
 AieRC XAie_ControlCodeSetScrachPad(XAie_DevInst *DevInst, const char *Scrachpad);
 AieRC XAie_Nop(XAie_DevInst *DevInst);
+AieRC XAie_LoadCoresStart(XAie_DevInst *DevInst, u32 UniqueCoreElfId, const char* Label);
+AieRC XAie_LoadCoresEnd(XAie_DevInst *DevInst);
 #endif

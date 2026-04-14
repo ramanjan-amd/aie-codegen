@@ -59,8 +59,21 @@ typedef SSIZE_T ssize_t;
 #define MAX_COMMENT_LENGTH 128
 #define BLOCKWRITE32 0
 #define WRITE32 1
+#define XAIE_LOAD_CORES_CACHE_INITIAL_CAPACITY 8
 
 #define EXTRACT_LOWER_FOUR_BYTES(RegOff) (u32)(RegOff & UINT32_MAX)
+
+/*
+ * Guard macro: prevents other public APIs from being called while a
+ * LoadCoresStart / LoadCoresEnd block is active in the label reuse case.
+ */
+#define CHECK_LOAD_CORES_NOT_ACTIVE(inst) \
+	do { \
+		if ((inst)->IsLoadCoresActive && (inst)->IsLoadCoresReused) { \
+			XAIE_ERROR("Cannot call this API between LoadCoresStart and LoadCoresEnd during label reuse\n"); \
+			return XAIE_ERR; \
+		} \
+	} while(0)
 
 /* Helper macro to safely call fprintf only when file pointer is non-NULL */
 #define SAFE_FPRINTF(fp, ...) \
@@ -93,6 +106,28 @@ typedef SSIZE_T ssize_t;
 	do { \
 		_XAie_ControlCodePrintf(inst, target, __VA_ARGS__); \
 		CHECK_ERROR_STATE(inst); \
+	} while(0)
+
+/*
+ * Writes the same formatted string to both the main control code file
+ * (XAIE_FILE_TARGET_CONTROLCODE) and the debug ASM file (XAIE_FILE_TARGET_DEBUGASM).
+ * Use in functions that return AieRC.
+ */
+#define EMIT_TO_CONTROL_CODE_AND_DEBUG_FILE(inst, ...) \
+	do { \
+		CONTROLCODE_PRINTF_CHECK(inst, XAIE_FILE_TARGET_CONTROLCODE, __VA_ARGS__); \
+		CONTROLCODE_PRINTF_CHECK(inst, XAIE_FILE_TARGET_DEBUGASM, __VA_ARGS__); \
+	} while(0)
+
+/*
+ * Writes the same formatted string to both the control code data file
+ * (XAIE_FILE_TARGET_CONTROLCODEDATA) and the debug ASM data file (XAIE_FILE_TARGET_DEBUGASMDATA0).
+ * Use in functions that return AieRC.
+ */
+#define EMIT_TO_CONTROL_CODE_AND_DEBUG_DATA_FILE(inst, ...) \
+	do { \
+		CONTROLCODE_PRINTF_CHECK(inst, XAIE_FILE_TARGET_CONTROLCODEDATA, __VA_ARGS__); \
+		CONTROLCODE_PRINTF_CHECK(inst, XAIE_FILE_TARGET_DEBUGASMDATA0, __VA_ARGS__); \
 	} while(0)
 
 /*
@@ -180,6 +215,72 @@ typedef struct {
 } XAie_LabelMap;
 
 typedef struct {
+	u32 UniqueCoreElfId;
+	char *Label;
+} XAie_LoadCoresCacheEntry;
+
+typedef struct {
+	XAie_LoadCoresCacheEntry *Entries;
+	u32 Count;
+	u32 Capacity;
+} XAie_LoadCoresCache;
+
+/**
+ * XAie_SavedPageState - Snapshot of outer page/job tracking state
+ *
+ * Captured in LoadCoresStart and restored in LoadCoresEnd so that
+ * instructions inside the label have their own independent tracking.
+ */
+typedef struct {
+	u32 UcPageSize;
+	u32 UcPageTextSize;
+	u32 DataAligner;
+	u32 UcbdLabelNum;
+	u32 UcbdDataNum;
+	u32 UcDmaDataNum;
+	u32 UcJobNum;
+	u32 NumShimBDsChained;
+	u32 CombinedMemWriteSize;
+	u32 PageId;
+	u32 CurrentDataLabel;
+	u32 CurrentDataBWLabel;
+	u32 HintMapId;
+	u64 CalculatedNextRegOff;
+	u64 TotalLabelsAllocated;
+	u64 TotalLabelsAllocatedWrite;
+	u64 BarrierId;
+	int CompareLabelUpto;
+	int CompareLabelUptoWrite;
+	int PrevMemWriteType;
+	u8  CombineCommands;
+	u8  IsJobOpen;
+	u8  IsPageOpen;
+	u8  IsShimBd;
+	u8  Mode;
+	u8  IsAdjacentMemWrite;
+	u8  PageBreak;
+	u8  LabelMatchFound;
+} XAie_SavedPageState;
+
+/**
+ * XAie_LoadCoresContext - Buffers for capturing LoadCores label content
+ *
+ * When a LoadCores label is active (first use, not reused), all instructions
+ * and data are captured in these buffers instead of going to the main/global
+ * files. On LoadCoresEnd, the buffered content is emitted in the correct order:
+ * label, instructions, data section, .endl directive.
+ */
+typedef struct {
+	XAie_MemBuffer *InstructionBuffer;      /* Instructions within the label (CONTROLCODE) */
+	XAie_MemBuffer *DataBuffer;             /* Data section for the label (CONTROLCODEDATA) */
+	XAie_MemBuffer *DataBuffer2;            /* Data section 2 for the label (CONTROLCODEDATA2) */
+	XAie_MemBuffer *DebugInstructionBuffer; /* Debug asm instructions (DEBUGASM) */
+	XAie_MemBuffer *DebugDataBuffer0;       /* Debug asm data 0 (DEBUGASMDATA0) */
+	XAie_MemBuffer *DebugDataBuffer1;       /* Debug asm data 1 (DEBUGASMDATA1) */
+	XAie_SavedPageState SavedState;         /* Outer page state snapshot */
+} XAie_LoadCoresContext;
+
+typedef struct {
 	XAie_DevInst *DevInst;
 	u64 BaseAddr;
 	u64 NpiBaseAddr;
@@ -230,6 +331,11 @@ typedef struct {
 	int PrevMemWriteType;
 	u64 BarrierId;
 	u32 HintMapId;
+	char* LoadCoresLabel;
+	u8 IsLoadCoresActive;          /* 1 when between LoadCoresStart/LoadCoresEnd, 0 otherwise */
+	u8 IsLoadCoresReused;          /* 1 when current LoadCores block is a label reuse (no body allowed) */
+	XAie_LoadCoresCache* LoadCoresCache; /* Cache of seen (UniqueCoreElfId, Label) pairs for label reuse */
+	XAie_LoadCoresContext* LoadCoresContext; /* Buffers for capturing LoadCores label content */
 } XAie_ControlCodeIO;
 
 /************************** Function Definitions *****************************/
@@ -238,6 +344,12 @@ typedef struct {
 static void _XAie_MergeFiles(FILE *SrcFp, FILE *DesFp);
 static int _XAie_ControlCodeSeekAndOverwrite(XAie_ControlCodeIO *ControlCodeInst,
 		XAie_FileTarget FileTarget, long Offset, const char *Replacement);
+static inline void _XAie_LoadCoresCacheTeardown(XAie_LoadCoresCache *Cache);
+static inline AieRC _XAie_LoadCoresContextInit(XAie_ControlCodeIO *ControlCodeInst);
+static inline void _XAie_LoadCoresContextFree(XAie_ControlCodeIO *ControlCodeInst);
+static inline AieRC _XAie_EmitLoadCoresBuffer(XAie_ControlCodeIO *ControlCodeInst,
+		XAie_MemBuffer *SrcBuffer, FILE *TargetFile, XAie_MemBuffer *TargetMemBuf,
+		const char *ErrorMsg);
 
 /*****************************************************************************/
 /**
@@ -368,6 +480,66 @@ static void _XAie_MemBufferFree(XAie_MemBuffer *Buf)
 /*****************************************************************************/
 /**
 *
+* This function writes formatted output into an XAie_MemBuffer, growing it
+* automatically if the current capacity is insufficient.
+*
+* @param	Buf: Target memory buffer
+* @param	fmt: Format string
+* @param	args: Variable argument list (consumed by this call)
+*
+* @return	Number of characters written, or negative on error
+*
+* @note		Internal only.  The caller must NOT reuse @args after this call.
+*
+*******************************************************************************/
+static int _XAie_MemBufferVPrintf(XAie_MemBuffer *Buf, const char *fmt, va_list args) {
+	size_t available = Buf->Capacity - Buf->Size;
+
+	/* First attempt: try to write with current capacity */
+	va_list args_copy;
+	va_copy(args_copy, args);
+	int result = vsnprintf(Buf->Data + Buf->Size, available, fmt, args_copy);
+	va_end(args_copy);
+
+	/* If buffer was too small, grow it and retry */
+	if (result >= 0 && (size_t)result >= available) {
+		size_t needed = result + 1;  /* +1 for null terminator */
+		size_t new_capacity = Buf->Capacity;
+
+		while (Buf->Size + needed > new_capacity) {
+			new_capacity *= BUFFER_GROWTH_FACTOR;
+			if (new_capacity <= Buf->Capacity) {
+				XAIE_ERROR("Buffer capacity overflow\n");
+				return -1;
+			}
+		}
+
+		char *new_data = (char*)realloc(Buf->Data, new_capacity);
+		if (!new_data) {
+			XAIE_ERROR("Buffer realloc failed (size: %zu)\n", new_capacity);
+			return -1;
+		}
+		Buf->Data = new_data;
+		Buf->Capacity = new_capacity;
+
+		/* Retry the write with grown buffer */
+		result = vsnprintf(Buf->Data + Buf->Size, Buf->Capacity - Buf->Size, fmt, args);
+		if (result < 0) {
+			XAIE_ERROR("vsnprintf failed after buffer realloc\n");
+			return -1;
+		}
+	}
+
+	if (result >= 0) {
+		Buf->Size += result;
+	}
+
+	return result;
+}
+
+/*****************************************************************************/
+/**
+*
 * This function allocates memory for LabelMap Struct
 *
 * @param        Map: XAie_LabelMap structure pointer
@@ -456,6 +628,47 @@ static int _XAie_ControlCodePrintf(XAie_ControlCodeIO *ControlCodeInst, XAie_Fil
 
 	va_start(args, fmt);
 
+	/* Redirect to LoadCores buffers if we're in an active, non-reused LoadCores block */
+	if (ControlCodeInst->IsLoadCoresActive && !ControlCodeInst->IsLoadCoresReused &&
+	    ControlCodeInst->LoadCoresContext != NULL) {
+		XAie_MemBuffer *buf = NULL;
+
+		XAIE_DBG("_XAie_ControlCodePrintf: FileTarget=%d, LoadCores active, redirecting\n", FileTarget);
+
+		switch(FileTarget) {
+			case XAIE_FILE_TARGET_CONTROLCODE:
+				buf = ControlCodeInst->LoadCoresContext->InstructionBuffer;
+				break;
+			case XAIE_FILE_TARGET_CONTROLCODEDATA:
+				buf = ControlCodeInst->LoadCoresContext->DataBuffer;
+				break;
+			case XAIE_FILE_TARGET_CONTROLCODEDATA2:
+				buf = ControlCodeInst->LoadCoresContext->DataBuffer2;
+				break;
+			case XAIE_FILE_TARGET_DEBUGASM:
+				buf = ControlCodeInst->LoadCoresContext->DebugInstructionBuffer;
+				break;
+			case XAIE_FILE_TARGET_DEBUGASMDATA0:
+				buf = ControlCodeInst->LoadCoresContext->DebugDataBuffer0;
+				break;
+			case XAIE_FILE_TARGET_DEBUGASMDATA1:
+				buf = ControlCodeInst->LoadCoresContext->DebugDataBuffer1;
+				break;
+			default:
+				/* Other file targets go to their normal destinations */
+				break;
+		}
+
+		if (buf != NULL) {
+			result = _XAie_MemBufferVPrintf(buf, fmt, args);
+			if (result < 0) {
+				ControlCodeInst->ErrorState = 1;
+			}
+			va_end(args);
+			return result;
+		}
+	}
+
 	/* Write to buffer if in memory mode */
 	if (ControlCodeInst->UseInMemoryBuffers) {
 		XAie_MemBuffer *buf = NULL;
@@ -483,60 +696,13 @@ static int _XAie_ControlCodePrintf(XAie_ControlCodeIO *ControlCodeInst, XAie_Fil
 		XAIE_DBG("_XAie_ControlCodePrintf: buf=%p, Size=%zu, Capacity=%zu\n",
 				 (void*)buf, buf->Size, buf->Capacity);
 
-		/* Try to write with current capacity */
-		size_t available = buf->Capacity - buf->Size;
-		XAIE_DBG("_XAie_ControlCodePrintf: Attempting write, available=%zu\n", available);
+		va_list args_buf;
+		va_copy(args_buf, args);
+		result = _XAie_MemBufferVPrintf(buf, fmt, args_buf);
+		va_end(args_buf);
 
-		/* Copy args for this vsnprintf() call (va_list can't be reused after consumption). */
-		va_list args_copy;
-		va_copy(args_copy, args);
-		result = vsnprintf(buf->Data + buf->Size, available, fmt, args_copy);
-		va_end(args_copy);
-		XAIE_DBG("_XAie_ControlCodePrintf: vsnprintf returned %d\n", result);
-
-		/* If buffer was too small, grow it and retry */
-		if (result >= 0 && (size_t)result >= available) {
-			XAIE_DBG("_XAie_ControlCodePrintf: Output truncated, need %d bytes, growing buffer\n", result);
-			size_t needed = result + 1;  /* +1 for null terminator */
-
-			/* Grow buffer to accommodate */
-			size_t new_capacity = buf->Capacity;
-			while (buf->Size + needed > new_capacity) {
-				new_capacity *= BUFFER_GROWTH_FACTOR;
-				if (new_capacity <= buf->Capacity) {
-					XAIE_ERROR("Buffer capacity overflow\n");
-					ControlCodeInst->ErrorState = 1;
-					va_end(args_copy);
-					va_end(args);
-					return -1;
-				}
-			}
-
-			XAIE_DBG("_XAie_ControlCodePrintf: Growing buffer from %zu to %zu\n",
-					 buf->Capacity, new_capacity);
-			char *new_data = (char*)realloc(buf->Data, new_capacity);
-			if (!new_data) {
-				XAIE_ERROR("Buffer realloc failed (size: %zu)\n", new_capacity);
-				ControlCodeInst->ErrorState = 1;
-				va_end(args_copy);
-				va_end(args);
-				return -1;
-			}
-			buf->Data = new_data;
-			buf->Capacity = new_capacity;
-
-			/* Retry the write with the full buffer capacity */
-			available = buf->Capacity - buf->Size;
-			va_list args_copy_retry;
-			va_copy(args_copy_retry, args);
-			result = vsnprintf(buf->Data + buf->Size, available, fmt, args_copy_retry);
-			va_end(args_copy_retry);
-			XAIE_DBG("_XAie_ControlCodePrintf: After grow, vsnprintf returned %d\n", result);
-		}
-
-		if (result >= 0) {
-			buf->Size += result;
-			XAIE_DBG("_XAie_ControlCodePrintf: Success, new buf->Size=%zu\n", buf->Size);
+		if (result < 0) {
+			ControlCodeInst->ErrorState = 1;
 		}
 	}
 
@@ -673,26 +839,119 @@ static int _XAie_ControlCodeSeekAndOverwrite(XAie_ControlCodeIO *ControlCodeInst
 /*****************************************************************************/
 /**
 *
-* This is the function to add annotation in asm code.
+* This function adds page-tracking annotations to the debug ASM output.
+* Routes through _XAie_ControlCodePrintf so the output is captured by
+* the LoadCores buffer redirect when active.
 *
-* @param        Fp: File Pointer
-* @param        PageId: Serves as Page Number
-* @param        PageSize: Serves as PageSize
-
-* @return       XAIE_OK or XAIE_ERR.
+* @param	ControlCodeInst: ControlCode instance pointer
 *
+* @return	None
+*
+* @note		Internal only.
 *
 *******************************************************************************/
-AieRC _XAie_ControlCodePageInfo(FILE *Fp, u32 PageId, u32 PageSize,
-								u32 TextSecSize, u32 DataAligner)
+static inline void _XAie_ControlCodePageInfoPrintf(
+		XAie_ControlCodeIO *ControlCodeInst,
+		XAie_FileTarget DebugTarget)
 {
-        if (Fp != NULL) {
-                fprintf(Fp,";Page#: %d, PageSize: %d, TextSecSize: %d, DataAligner: %d\n",
-					 PageId,PageSize, TextSecSize, DataAligner);
-                return XAIE_OK;
-        }
-        else
-                return XAIE_ERR;
+	_XAie_ControlCodePrintf(ControlCodeInst, DebugTarget,
+		";Page#: %d, PageSize: %d, TextSecSize: %d, DataAligner: %d\n",
+		ControlCodeInst->PageId, ControlCodeInst->UcPageSize,
+		ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+}
+
+/*****************************************************************************/
+/**
+*
+* Saves the current page/job tracking state from ControlCodeInst into the
+* provided XAie_SavedPageState snapshot.
+*
+* @param	ControlCodeInst: ControlCode instance pointer
+* @param	s: Destination snapshot struct
+*
+* @return	None
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+static inline void _XAie_SavePageState(XAie_ControlCodeIO *ControlCodeInst,
+                                       XAie_SavedPageState *s)
+{
+	s->UcPageSize              = ControlCodeInst->UcPageSize;
+	s->UcPageTextSize          = ControlCodeInst->UcPageTextSize;
+	s->DataAligner             = ControlCodeInst->DataAligner;
+	s->UcbdLabelNum            = ControlCodeInst->UcbdLabelNum;
+	s->UcbdDataNum             = ControlCodeInst->UcbdDataNum;
+	s->UcDmaDataNum            = ControlCodeInst->UcDmaDataNum;
+	s->UcJobNum                = ControlCodeInst->UcJobNum;
+	s->NumShimBDsChained       = ControlCodeInst->NumShimBDsChained;
+	s->CombinedMemWriteSize    = ControlCodeInst->CombinedMemWriteSize;
+	s->PageId                  = ControlCodeInst->PageId;
+	s->CurrentDataLabel        = ControlCodeInst->CurrentDataLabel;
+	s->CurrentDataBWLabel      = ControlCodeInst->CurrentDataBWLabel;
+	s->HintMapId               = ControlCodeInst->HintMapId;
+	s->CalculatedNextRegOff    = ControlCodeInst->CalculatedNextRegOff;
+	s->TotalLabelsAllocated    = ControlCodeInst->TotalLabelsAllocated;
+	s->TotalLabelsAllocatedWrite = ControlCodeInst->TotalLabelsAllocatedWrite;
+	s->BarrierId               = ControlCodeInst->BarrierId;
+	s->CompareLabelUpto        = ControlCodeInst->CompareLabelUpto;
+	s->CompareLabelUptoWrite   = ControlCodeInst->CompareLabelUptoWrite;
+	s->PrevMemWriteType        = ControlCodeInst->PrevMemWriteType;
+	s->CombineCommands         = ControlCodeInst->CombineCommands;
+	s->IsJobOpen               = ControlCodeInst->IsJobOpen;
+	s->IsPageOpen              = ControlCodeInst->IsPageOpen;
+	s->IsShimBd                = ControlCodeInst->IsShimBd;
+	s->Mode                    = ControlCodeInst->Mode;
+	s->IsAdjacentMemWrite      = ControlCodeInst->IsAdjacentMemWrite;
+	s->PageBreak               = ControlCodeInst->PageBreak;
+	s->LabelMatchFound         = ControlCodeInst->LabelMatchFound;
+}
+
+/*****************************************************************************/
+/**
+*
+* Restores page/job tracking state from a XAie_SavedPageState snapshot
+* back into ControlCodeInst.
+*
+* @param	ControlCodeInst: ControlCode instance pointer
+* @param	s: Source snapshot struct
+*
+* @return	None
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+static inline void _XAie_RestorePageState(XAie_ControlCodeIO *ControlCodeInst,
+                                          const XAie_SavedPageState *s)
+{
+	ControlCodeInst->UcPageSize              = s->UcPageSize;
+	ControlCodeInst->UcPageTextSize          = s->UcPageTextSize;
+	ControlCodeInst->DataAligner             = s->DataAligner;
+	ControlCodeInst->UcbdLabelNum            = s->UcbdLabelNum;
+	ControlCodeInst->UcbdDataNum             = s->UcbdDataNum;
+	ControlCodeInst->UcDmaDataNum            = s->UcDmaDataNum;
+	ControlCodeInst->UcJobNum                = s->UcJobNum;
+	ControlCodeInst->NumShimBDsChained       = s->NumShimBDsChained;
+	ControlCodeInst->CombinedMemWriteSize    = s->CombinedMemWriteSize;
+	ControlCodeInst->PageId                  = s->PageId;
+	ControlCodeInst->CurrentDataLabel        = s->CurrentDataLabel;
+	ControlCodeInst->CurrentDataBWLabel      = s->CurrentDataBWLabel;
+	ControlCodeInst->HintMapId               = s->HintMapId;
+	ControlCodeInst->CalculatedNextRegOff    = s->CalculatedNextRegOff;
+	ControlCodeInst->TotalLabelsAllocated    = s->TotalLabelsAllocated;
+	ControlCodeInst->TotalLabelsAllocatedWrite = s->TotalLabelsAllocatedWrite;
+	ControlCodeInst->BarrierId               = s->BarrierId;
+	ControlCodeInst->CompareLabelUpto        = s->CompareLabelUpto;
+	ControlCodeInst->CompareLabelUptoWrite   = s->CompareLabelUptoWrite;
+	ControlCodeInst->PrevMemWriteType        = s->PrevMemWriteType;
+	ControlCodeInst->CombineCommands         = s->CombineCommands;
+	ControlCodeInst->IsJobOpen               = s->IsJobOpen;
+	ControlCodeInst->IsPageOpen              = s->IsPageOpen;
+	ControlCodeInst->IsShimBd                = s->IsShimBd;
+	ControlCodeInst->Mode                    = s->Mode;
+	ControlCodeInst->IsAdjacentMemWrite      = s->IsAdjacentMemWrite;
+	ControlCodeInst->PageBreak               = s->PageBreak;
+	ControlCodeInst->LabelMatchFound         = s->LabelMatchFound;
 }
 
 /*****************************************************************************/
@@ -972,6 +1231,14 @@ AieRC XAie_ControlCodeIO_Finish(void *IOInst)
         }
 
 	if(IOInst) {
+		if(ControlCodeInst->LoadCoresLabel) {
+			free(ControlCodeInst->LoadCoresLabel);
+			ControlCodeInst->LoadCoresLabel = NULL;
+		}
+		if(ControlCodeInst->LoadCoresCache) {
+			_XAie_LoadCoresCacheTeardown(ControlCodeInst->LoadCoresCache);
+			ControlCodeInst->LoadCoresCache = NULL;
+		}
 		free(IOInst);
 	}
 
@@ -1035,8 +1302,7 @@ static void _XAie_EndJob(XAie_ControlCodeIO  *ControlCodeInst) {
 		CONTROLCODE_PRINTF_VOID(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM, "WAIT_UC_DMA\t $r0\n");
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_WAIT_UC_DMA;
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_WAIT_UC_DMA;
-		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-			 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+		_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 
 	}
 	else if(ControlCodeInst->NumShimBDsChained > 0) {
@@ -1047,8 +1313,7 @@ static void _XAie_EndJob(XAie_ControlCodeIO  *ControlCodeInst) {
 				"UC_DMA_WRITE_DES_SYNC\t @UCBD_label_%d\n",
 				ControlCodeInst->UcbdLabelNum);
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC;
-		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-			 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+		_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_UC_DMA_WRITE_DES_SYNC;
 		ControlCodeInst->NumShimBDsChained = 0;
@@ -1188,12 +1453,19 @@ static void _XAie_StartNewJob(XAie_ControlCodeIO  *ControlCodeInst,
 
 	ControlCodeInst->UcPageTextSize += ISA_OPSIZE_START_JOB + ISA_OPSIZE_END_JOB;
 	ControlCodeInst->UcPageSize += ISA_OPSIZE_START_JOB + ISA_OPSIZE_END_JOB;
-	_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-		 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+	_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 
 	ControlCodeInst->UcJobNum++;
 	ControlCodeInst->IsJobOpen = 1;
 	ControlCodeInst->CombineCommands = 0;
+}
+
+static void _XAie_UpdateDataAligner(XAie_ControlCodeIO *ControlCodeInst, u32 jobSize) {
+	ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
+		((ControlCodeInst->UcPageTextSize + jobSize) % DATA_SECTION_ALIGNMENT));
+	if (ControlCodeInst->DataAligner == DATA_SECTION_ALIGNMENT) {
+		ControlCodeInst->DataAligner = 0U;
+	}
 }
 
 /*****************************************************************************/
@@ -1234,8 +1506,7 @@ AieRC XAie_ConfigMode(void *IOInst, XAie_ModeSelect Mode)
 							"UC_DMA_WRITE_DES_SYNC\t @UCBD_label_%d\n",
 							ControlCodeInst->UcbdLabelNum);
 					ControlCodeInst->UcPageSize += ISA_OPCODE_UC_DMA_WRITE_DES_SYNC;
-				_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-						 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+				_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 					ControlCodeInst->NumShimBDsChained = 0;
 					ControlCodeInst->UcbdLabelNum++;
 				}
@@ -1284,6 +1555,7 @@ XAie_ModeSelect XAie_GetConfigMode(void *IOInst)
 AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 	u32 OpSize;
 
 	XAie_LabelMap* Map = ControlCodeInst->LabelMap;
@@ -1425,6 +1697,7 @@ AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 				}
 				ControlCodeInst->UcPageTextSize += OpSize;
 				ControlCodeInst->UcPageSize += OpSize;
+				_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 
 				CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODEDATA, "UCBD_label_%d:\n",
 						ControlCodeInst->UcbdLabelNum);
@@ -1525,6 +1798,7 @@ AieRC XAie_ControlCodeIO_MaskWrite32(void *IOInst, u64 RegOff, u32 Mask,
 		u32 Value)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 	ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
 		((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_MASK_WRITE_32) % DATA_SECTION_ALIGNMENT));
 	if (ControlCodeInst->DataAligner == DATA_SECTION_ALIGNMENT) {
@@ -1549,8 +1823,7 @@ AieRC XAie_ControlCodeIO_MaskWrite32(void *IOInst, u64 RegOff, u32 Mask,
 		ControlCodeInst->CombineCommands = 0;
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_MASK_WRITE_32;
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_MASK_WRITE_32;
-		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-			 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+		_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 
 	}
 
@@ -1578,6 +1851,7 @@ AieRC XAie_ControlCodeIO_MaskPoll(void *IOInst, u64 RegOff, u32 Mask, u32 Value,
 		u32 TimeOutUs)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 	ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
 		((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_MASK_POLL_32) % DATA_SECTION_ALIGNMENT));
 	if (ControlCodeInst->DataAligner == DATA_SECTION_ALIGNMENT) {
@@ -1603,8 +1877,7 @@ AieRC XAie_ControlCodeIO_MaskPoll(void *IOInst, u64 RegOff, u32 Mask, u32 Value,
 		ControlCodeInst->CombineCommands = 0;
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_MASK_POLL_32;
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_MASK_POLL_32;
-		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-			 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+		_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 
 	}
 
@@ -1642,6 +1915,7 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 	u64 CumilativeRegOff = 0;
 
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 	XAie_LabelMap* Map = ControlCodeInst->LabelMap;
 
 	if(ControlCodeInst->Mode == XAIE_WRITE_DES_ASYNC_ENABLE) {
@@ -1810,8 +2084,7 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 						Size);
 					ControlCodeInst->UcPageSize += UC_DMA_BD_SIZE;
 					ControlCodeInst->UcDmaDataNum = ControlCodeInst->CurrentDataBWLabel;
-					_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-						 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+					_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASMDATA0);
 					break;
 				}
 			}
@@ -1869,15 +2142,14 @@ AieRC XAie_ControlCodeIO_BlockWrite32(void *IOInst, u64 RegOff, const u32 *Data,
 				ControlCodeInst->CurrentDataBWLabel = ControlCodeInst->UcDmaDataNum;
 				ControlCodeInst->PrevMemWriteType = BLOCKWRITE32;
 			}
-			
+
 			NewPageRegOff = RegOff + AdjustedOff;
 			AdjustedOff += ((IterationSize - TempItrSize) * UC_DMA_WORD_LEN);
 			CompletedSize += (IterationSize - TempItrSize);
 			TempItrSize = IterationSize;
-			
+
 		}
-		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-			 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+		_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASMDATA0);
 	}
 
 	ControlCodeInst->CalculatedNextRegOff = (u64)(RegOff + (Size * (sizeof(*Data))));
@@ -1927,6 +2199,7 @@ AieRC XAie_ControlCodeIO_BlockSet32(void *IOInst, u64 RegOff, u32 Data, u32 Size
 	u64 CumilativeRegOff = 0;
 
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 
 	CompletedSize = 0;
 	while (Size > CompletedSize) {
@@ -2020,6 +2293,7 @@ AieRC XAie_ControlCodeIO_BlockSet32(void *IOInst, u64 RegOff, u32 Data, u32 Size
 AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u16 Arg_Index, u8 Num_BDs)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 	u32 OpSize;
 
 	if(ControlCodeInst->Mode == XAIE_WRITE_DES_ASYNC_ENABLE) {
@@ -2071,8 +2345,7 @@ AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u16 Arg_Index, u8 Num_BDs
 
 	ControlCodeInst->UcPageTextSize += ISA_OPSIZE_APPLY_OFFSET_57;
 	ControlCodeInst->UcPageSize += ISA_OPSIZE_APPLY_OFFSET_57;
-	_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-		 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+	_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 	}
 
 	if(ControlCodeInst->ScrachpadName != NULL) {
@@ -2099,6 +2372,7 @@ AieRC XAie_ControlCodeIO_AddressPatching(void *IOInst, u16 Arg_Index, u8 Num_BDs
 AieRC XAie_ControlCodeIO_WaitUcDMA(void *IOInst)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 
 	ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
 		((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_WAIT_UC_DMA) % DATA_SECTION_ALIGNMENT));
@@ -2116,8 +2390,7 @@ AieRC XAie_ControlCodeIO_WaitUcDMA(void *IOInst)
 	CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM, "WAIT_UC_DMA\t $r0\n");
 	ControlCodeInst->UcPageTextSize += ISA_OPSIZE_WAIT_UC_DMA;
 	ControlCodeInst->UcPageSize += ISA_OPSIZE_WAIT_UC_DMA;
-	_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-		 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+	_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 
 	return XAIE_OK;
 }
@@ -2174,8 +2447,7 @@ AieRC XAie_WaitTaskCompleteToken(XAie_DevInst *DevInst,
 		ControlCodeInst->CombineCommands = 0;
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_WAIT_TCTS;
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_WAIT_TCTS;
-		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-			 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+		_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 	}
 
 	return XAIE_OK;
@@ -2200,6 +2472,7 @@ AieRC XAie_ControlCodeSaveTimestamp(XAie_DevInst *DevInst, u32 Timestamp)
         }
 
         XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)DevInst->IOInst;
+        CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 
         ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
                 ((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_SAVE_TIMESTAMPS)% DATA_SECTION_ALIGNMENT));
@@ -2226,8 +2499,7 @@ AieRC XAie_ControlCodeSaveTimestamp(XAie_DevInst *DevInst, u32 Timestamp)
                 ControlCodeInst->CombineCommands = 0;
                 ControlCodeInst->UcPageSize += ISA_OPSIZE_SAVE_TIMESTAMPS;
                 ControlCodeInst->UcPageTextSize += ISA_OPSIZE_SAVE_TIMESTAMPS;
-				_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-					 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+				_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 
                 return XAIE_OK;
         }
@@ -2252,6 +2524,7 @@ AieRC XAie_ControlCodeSaveTimestamp(XAie_DevInst *DevInst, u32 Timestamp)
 AieRC XAie_ControlCodeIO_Nop(void *IOInst)
 {
         XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+        CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 
         ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
                 ((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_NOP) % DATA_SECTION_ALIGNMENT));
@@ -2276,8 +2549,7 @@ AieRC XAie_ControlCodeIO_Nop(void *IOInst)
                 ControlCodeInst->CombineCommands = 0;
                 ControlCodeInst->UcPageSize += ISA_OPSIZE_NOP;
                 ControlCodeInst->UcPageTextSize += ISA_OPSIZE_NOP;
-                _XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-                         ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+                _XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 
                 return XAIE_OK;
         }
@@ -2307,6 +2579,7 @@ AieRC XAie_ControlCodeIO_Preempt(void *IOInst, u16 PreemptId, char* SaveLabel, c
 		return XAIE_ERR;
 	}
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 	ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT - ((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_PREEMPT) % DATA_SECTION_ALIGNMENT));
 	if (ControlCodeInst->DataAligner == DATA_SECTION_ALIGNMENT)
 	{
@@ -2347,8 +2620,7 @@ AieRC XAie_ControlCodeIO_Preempt(void *IOInst, u16 PreemptId, char* SaveLabel, c
 
 		ControlCodeInst->CombineCommands = 0;
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_PREEMPT;
-		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId, ControlCodeInst->UcPageSize, 
-								  ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+		_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 	}
 	return XAIE_OK;
 }
@@ -2376,7 +2648,8 @@ AieRC XAie_ControlCodeIO_SetPadInteger(void *IOInst, char* BuffName, u32 BuffSiz
 		return XAIE_ERR;
 	}
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
-	
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
+
 	if(ControlCodeInst->ControlCodefp || ControlCodeInst->UseInMemoryBuffers) {
 		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODE, ".setpad\t %s, 0x%x\n",BuffName, BuffSize);
 		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM, ".setpad\t %s, 0x%x\n",BuffName, BuffSize);
@@ -2412,7 +2685,8 @@ AieRC XAie_ControlCodeIO_SetPadString(void *IOInst, char* BuffName, char* BuffBl
 		return XAIE_ERR;
 	}
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
-	
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
+
 	if(ControlCodeInst->ControlCodefp || ControlCodeInst->UseInMemoryBuffers) {
 		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODE, ".setpad\t %s, %s\n",BuffName, BuffBlobPath);
 		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM, ".setpad\t %s, %s\n",BuffName, BuffBlobPath);
@@ -2450,7 +2724,8 @@ AieRC XAie_ControlCodeIO_SetPadString(void *IOInst, char* BuffName, char* BuffBl
 AieRC XAie_ControlCodeIO_AttachToGroup(void *IOInst, uint8_t UcIndex)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
-	
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
+
 	if(ControlCodeInst->ControlCodefp || ControlCodeInst->UseInMemoryBuffers) {
 		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODE, ".attach_to_group\t %d\n",UcIndex);
 		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM, ".attach_to_group\t %d\n",UcIndex);
@@ -2499,6 +2774,7 @@ AieRC XAie_ControlCodeIO_RemoteBarrier(void *IOInst, uint8_t RbId, uint32_t UcMa
 	}
 
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 	ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
 		((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_REMOTE_BARRIER) % DATA_SECTION_ALIGNMENT));
 	if (ControlCodeInst->DataAligner == DATA_SECTION_ALIGNMENT)
@@ -2522,8 +2798,7 @@ AieRC XAie_ControlCodeIO_RemoteBarrier(void *IOInst, uint8_t RbId, uint32_t UcMa
 		ControlCodeInst->CombineCommands = 0;
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_REMOTE_BARRIER;
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_REMOTE_BARRIER;
-		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-			 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+		_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 		return XAIE_OK;
 	}
 	else {
@@ -2546,6 +2821,7 @@ AieRC XAie_ControlCodeIO_RemoteBarrier(void *IOInst, uint8_t RbId, uint32_t UcMa
 AieRC XAie_ControlCodeIO_SaveRegister(void *IOInst, u32 RegOff, u32 Id)
 {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 	ControlCodeInst->DataAligner = (DATA_SECTION_ALIGNMENT -
 		((ControlCodeInst->UcPageTextSize + ISA_OPSIZE_SAVE_REGISTER) % DATA_SECTION_ALIGNMENT));
 	if (ControlCodeInst->DataAligner == DATA_SECTION_ALIGNMENT)
@@ -2570,8 +2846,7 @@ AieRC XAie_ControlCodeIO_SaveRegister(void *IOInst, u32 RegOff, u32 Id)
 		ControlCodeInst->CombineCommands = 0;
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_SAVE_REGISTER;
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_SAVE_REGISTER;
-		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-			 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+		_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 		return XAIE_OK;
 	}
 	else {
@@ -2612,6 +2887,7 @@ AieRC XAie_ControlCodeRelAcqSync(XAie_DevInst *DevInst, const XAie_LockMod *Lock
 	u64 RegOffAcq = 0;
 
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)DevInst->IOInst;
+	CHECK_LOAD_CORES_NOT_ACTIVE(ControlCodeInst);
 
 	if((DevInst->AppMode == XAIE_DEVICE_SINGLE_APP_MODE) && (LockId >= LockMod->NumLocks)) {
 		RegOffRel = _XAie_ChangeRegisterSpace(DevInst->DevProp.DevGen, RegOffRel);
@@ -2654,14 +2930,468 @@ AieRC XAie_ControlCodeRelAcqSync(XAie_DevInst *DevInst, const XAie_LockMod *Lock
 		ControlCodeInst->CombineCommands = 0;
 		ControlCodeInst->UcPageSize += ISA_OPSIZE_REL_ACQ_SYNC;
 		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_REL_ACQ_SYNC;
-		_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-			 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+		_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 
 		ControlCodeInst->BarrierId++;
 
 		return XAIE_OK;
 	}
 	return XAIE_ERR;
+}
+
+static inline AieRC _XAie_SetLoadCoresLabel(XAie_ControlCodeIO *ControlCodeInst, const char* Label) {
+	free(ControlCodeInst->LoadCoresLabel);
+	ControlCodeInst->LoadCoresLabel = (char *)calloc(strlen(Label) + 1, sizeof(char));
+	if (ControlCodeInst->LoadCoresLabel == NULL) {
+		XAIE_ERROR("Memory allocation failed\n");
+		return XAIE_ERR;
+	}
+	strcpy(ControlCodeInst->LoadCoresLabel, Label);
+	return XAIE_OK;
+}
+
+static inline void _XAie_ResetLoadCoresLabel(XAie_ControlCodeIO *ControlCodeInst) {
+	if(ControlCodeInst->LoadCoresLabel) {
+		free(ControlCodeInst->LoadCoresLabel);
+		ControlCodeInst->LoadCoresLabel = NULL;
+	}
+}
+
+/*****************************************************************************/
+/**
+*
+* This function initializes the LoadCoresContext with buffers for capturing
+* label content.
+*
+* @param	ControlCodeInst: ControlCode instance pointer
+*
+* @return	XAIE_OK on success, XAIE_ERR on failure
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+static inline AieRC _XAie_LoadCoresContextInit(XAie_ControlCodeIO *ControlCodeInst) {
+	if (ControlCodeInst->LoadCoresContext != NULL) {
+		XAIE_ERROR("LoadCoresContext already allocated\n");
+		return XAIE_ERR;
+	}
+
+	ControlCodeInst->LoadCoresContext = (XAie_LoadCoresContext *)calloc(1, sizeof(XAie_LoadCoresContext));
+	if (ControlCodeInst->LoadCoresContext == NULL) {
+		XAIE_ERROR("Memory allocation failed for LoadCoresContext\n");
+		return XAIE_ERR;
+	}
+
+	/* Allocate all buffers up front; calloc zeroed the struct so any
+	 * NULL members are safe to pass to _XAie_MemBufferFree on cleanup. */
+	XAie_LoadCoresContext *ctx = ControlCodeInst->LoadCoresContext;
+	ctx->InstructionBuffer      = _XAie_MemBufferInit();
+	ctx->DataBuffer             = _XAie_MemBufferInit();
+	ctx->DataBuffer2            = _XAie_MemBufferInit();
+
+	if (!ControlCodeInst->DisableDebugAsm) {
+		ctx->DebugInstructionBuffer = _XAie_MemBufferInit();
+		ctx->DebugDataBuffer0       = _XAie_MemBufferInit();
+		ctx->DebugDataBuffer1       = _XAie_MemBufferInit();
+	}
+
+	if (!ctx->InstructionBuffer || !ctx->DataBuffer || !ctx->DataBuffer2 ||
+	    (!ControlCodeInst->DisableDebugAsm &&
+	     (!ctx->DebugInstructionBuffer || !ctx->DebugDataBuffer0 || !ctx->DebugDataBuffer1))) {
+		XAIE_ERROR("Memory allocation failed for LoadCoresContext buffers\n");
+		_XAie_LoadCoresContextFree(ControlCodeInst);
+		return XAIE_ERR;
+	}
+
+	return XAIE_OK;
+}
+
+/*****************************************************************************/
+/**
+*
+* This function frees the LoadCoresContext and all its buffers.
+*
+* @param	ControlCodeInst: ControlCode instance pointer
+*
+* @return	None
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+static inline void _XAie_LoadCoresContextFree(XAie_ControlCodeIO *ControlCodeInst) {
+	if (ControlCodeInst->LoadCoresContext) {
+		_XAie_MemBufferFree(ControlCodeInst->LoadCoresContext->InstructionBuffer);
+		_XAie_MemBufferFree(ControlCodeInst->LoadCoresContext->DataBuffer);
+		_XAie_MemBufferFree(ControlCodeInst->LoadCoresContext->DataBuffer2);
+		_XAie_MemBufferFree(ControlCodeInst->LoadCoresContext->DebugInstructionBuffer);
+		_XAie_MemBufferFree(ControlCodeInst->LoadCoresContext->DebugDataBuffer0);
+		_XAie_MemBufferFree(ControlCodeInst->LoadCoresContext->DebugDataBuffer1);
+		free(ControlCodeInst->LoadCoresContext);
+		ControlCodeInst->LoadCoresContext = NULL;
+	}
+}
+
+/*****************************************************************************/
+/**
+*
+* This function emits a LoadCores buffer to both file and in-memory targets.
+* Handles buffer reallocation if needed.
+*
+* @param	ControlCodeInst: ControlCode instance pointer
+* @param	SrcBuffer: Source buffer to emit from LoadCoresContext
+* @param	TargetFile: Target file pointer (can be NULL)
+* @param	TargetMemBuf: Target in-memory buffer (can be NULL)
+* @param	ErrorMsg: Error message prefix for logging
+*
+* @return	XAIE_OK on success, XAIE_ERR on failure
+*
+* @note		Internal only.
+*
+*******************************************************************************/
+static inline AieRC _XAie_EmitLoadCoresBuffer(XAie_ControlCodeIO *ControlCodeInst,
+                                               XAie_MemBuffer *SrcBuffer,
+                                               FILE *TargetFile,
+                                               XAie_MemBuffer *TargetMemBuf,
+                                               const char *ErrorMsg) {
+	if (!SrcBuffer || SrcBuffer->Size == 0) {
+		XAIE_ERROR("No instructions for LoadCores\n");
+		return XAIE_ERR;
+	}
+
+	/* Write to file if file pointer exists */
+	if (TargetFile) {
+		fwrite(SrcBuffer->Data, 1, SrcBuffer->Size, TargetFile);
+	}
+
+	/* Write to in-memory buffer if in-memory mode is active */
+	if (ControlCodeInst->UseInMemoryBuffers && TargetMemBuf) {
+		size_t needed = SrcBuffer->Size;
+
+		/* Grow target buffer if needed */
+		while (TargetMemBuf->Size + needed > TargetMemBuf->Capacity) {
+			size_t new_capacity = TargetMemBuf->Capacity * BUFFER_GROWTH_FACTOR;
+			char *new_data = (char*)realloc(TargetMemBuf->Data, new_capacity);
+			if (!new_data) {
+				XAIE_ERROR("Failed to reallocate %s\n", ErrorMsg);
+				return XAIE_ERR;
+			}
+			TargetMemBuf->Data = new_data;
+			TargetMemBuf->Capacity = new_capacity;
+		}
+
+		/* Copy data to target buffer */
+		memcpy(TargetMemBuf->Data + TargetMemBuf->Size, SrcBuffer->Data, needed);
+		TargetMemBuf->Size += needed;
+	}
+
+	return XAIE_OK;
+}
+
+static inline AieRC _XAie_LoadCoresCacheInit(XAie_ControlCodeIO *ControlCodeInst) {
+	ControlCodeInst->LoadCoresCache = (XAie_LoadCoresCache *)calloc(1, sizeof(XAie_LoadCoresCache));
+	if (ControlCodeInst->LoadCoresCache == NULL) {
+		XAIE_ERROR("Memory allocation failed for LoadCores cache\n");
+		return XAIE_ERR;
+	}
+	ControlCodeInst->LoadCoresCache->Capacity = XAIE_LOAD_CORES_CACHE_INITIAL_CAPACITY;
+	ControlCodeInst->LoadCoresCache->Count = 0;
+	ControlCodeInst->LoadCoresCache->Entries = (XAie_LoadCoresCacheEntry *)calloc(XAIE_LOAD_CORES_CACHE_INITIAL_CAPACITY, sizeof(XAie_LoadCoresCacheEntry));
+	if (ControlCodeInst->LoadCoresCache->Entries == NULL) {
+		XAIE_ERROR("Memory allocation failed for LoadCores cache entries\n");
+		free(ControlCodeInst->LoadCoresCache);
+		ControlCodeInst->LoadCoresCache = NULL;
+		return XAIE_ERR;
+	}
+	return XAIE_OK;
+}
+
+/*****************************************************************************/
+/**
+*
+* Checks whether a (UniqueCoreElfId, Label) pair has already been registered
+* in the LoadCores cache. This is used by LoadCoresStart to decide whether to
+* emit a full label declaration or only the LOAD_CORES instruction.
+*
+* @param	Cache: Pointer to the LoadCores cache (may be NULL)
+* @param	UniqueCoreElfId: The unique 32-bit core ELF identifier to look up
+* @param	Label: The label string to look up (must not be NULL)
+*
+* @return	1 if the (UniqueCoreElfId, Label) pair exists in the cache,
+*		0 otherwise (including when Cache is NULL).
+*
+* @note		Performs a linear search. Suitable for small cache sizes typical
+*		of control code generation (tens of entries).
+*
+*******************************************************************************/
+static inline u8 _XAie_LoadCoresCacheLookup(XAie_LoadCoresCache *Cache, u32 UniqueCoreElfId, const char *Label) {
+	if (Cache == NULL) return 0;
+	for (u32 i = 0; i < Cache->Count; i++) {
+		if (Cache->Entries[i].UniqueCoreElfId == UniqueCoreElfId &&
+			strcmp(Cache->Entries[i].Label, Label) == 0) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static inline AieRC _XAie_LoadCoresCacheAdd(XAie_LoadCoresCache *Cache, u32 UniqueCoreElfId, const char *Label) {
+	if (Cache->Count >= Cache->Capacity) {
+		u32 newCapacity = Cache->Capacity * 2;
+		XAie_LoadCoresCacheEntry *newEntries = (XAie_LoadCoresCacheEntry *)realloc(
+			Cache->Entries, newCapacity * sizeof(XAie_LoadCoresCacheEntry));
+		if (newEntries == NULL) {
+			XAIE_ERROR("Memory reallocation failed for LoadCores cache\n");
+			return XAIE_ERR;
+		}
+		Cache->Entries = newEntries;
+		Cache->Capacity = newCapacity;
+	}
+	Cache->Entries[Cache->Count].UniqueCoreElfId = UniqueCoreElfId;
+	Cache->Entries[Cache->Count].Label = (char *)calloc(strlen(Label) + 1, sizeof(char));
+	if (Cache->Entries[Cache->Count].Label == NULL) {
+		XAIE_ERROR("Memory allocation failed for LoadCores cache label\n");
+		return XAIE_ERR;
+	}
+	strcpy(Cache->Entries[Cache->Count].Label, Label);
+	Cache->Count++;
+	return XAIE_OK;
+}
+
+static inline void _XAie_LoadCoresCacheTeardown(XAie_LoadCoresCache *Cache) {
+	if (Cache == NULL) return;
+	if (Cache->Entries != NULL) {
+		for (u32 i = 0; i < Cache->Count; i++) {
+			free(Cache->Entries[i].Label);
+		}
+		free(Cache->Entries);
+	}
+	free(Cache);
+}
+
+/*****************************************************************************/
+/**
+*
+* This API generates the LOAD_CORES instruction in the control code assembly.
+* The LOAD_CORES instruction allows loading control packets using set of instructions
+*
+* @param	IOInst: IO instance pointer
+* @param	UniqueCoreElfId: A unique 32bit ID provided by the application
+* @param	Label: A unique label used in asm provided by the application
+*
+* @return	XAIE_OK on success, XAIE_ERR on failure.
+*
+* @note		It's the application's responsibility to ensure:
+*		1. The UniqueCoreElfId is unique per uC
+*		2. The label specified is unique for the entire elf
+*
+*******************************************************************************/
+AieRC XAie_ControlCodeIO_LoadCoresStart(void *IOInst, u32 UniqueCoreElfId, const char* Label)
+{
+	XAie_ControlCodeIO *ControlCodeInst;
+
+	if(Label == NULL) {
+		XAIE_ERROR("Invalid arguments: Label cannot be NULL\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	ControlCodeInst = (XAie_ControlCodeIO *)(IOInst);
+	if(ControlCodeInst == NULL) {
+		XAIE_ERROR("Invalid ControlCode Instance\n");
+		return XAIE_INVALID_ARGS;
+	}
+
+	CHECK_ERROR_STATE(ControlCodeInst);
+
+	if(ControlCodeInst->IsLoadCoresActive) {
+		XAIE_ERROR("LoadCoresStart called while a previous LoadCoresStart is still active\n");
+		return XAIE_ERR;
+	}
+
+	const u32 loadCoresJobSize = ISA_OPSIZE_START_JOB + ISA_OPSIZE_LOAD_CORES + ISA_OPSIZE_END_JOB;
+
+	_XAie_UpdateDataAligner(ControlCodeInst, loadCoresJobSize);
+
+	if (ControlCodeInst->ControlCodefp || ControlCodeInst->UseInMemoryBuffers) {
+		if (ControlCodeInst->LoadCoresCache == NULL) {
+			AieRC RC = _XAie_LoadCoresCacheInit(ControlCodeInst);
+			if (RC != XAIE_OK) return RC;
+		}
+
+		u8 isReused = _XAie_LoadCoresCacheLookup(ControlCodeInst->LoadCoresCache, UniqueCoreElfId, Label);
+
+		// check if the complete job can fit in the current page otherwise start a new page
+		u32 alignedJobSize = loadCoresJobSize + ControlCodeInst->DataAligner;
+		if(ControlCodeInst->UcPageSize + alignedJobSize > ControlCodeInst->PageSizeMax) {
+			_XAie_StartNewPage(ControlCodeInst);
+		}
+		_XAie_StartNewJob(ControlCodeInst, XAIE_START_JOB);
+
+		EMIT_TO_CONTROL_CODE_AND_DEBUG_FILE(ControlCodeInst, "LOAD_CORES\t 0x%x, @%s\n", UniqueCoreElfId, Label);
+
+		// update page size tracking, StartNewJob adds the START_JOB and END_JOB instruction sizes
+		ControlCodeInst->UcPageSize += ISA_OPSIZE_LOAD_CORES;
+		ControlCodeInst->UcPageTextSize += ISA_OPSIZE_LOAD_CORES;
+
+		_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
+
+		_XAie_EndJob(ControlCodeInst);
+
+		ControlCodeInst->IsLoadCoresActive = 1;
+		ControlCodeInst->IsLoadCoresReused = isReused;
+
+		if (isReused) {
+			return XAIE_OK;
+		}
+
+		/*
+		 * Emit label directly to file BEFORE initializing LoadCoresContext,
+		 * so it is not captured by the buffer redirection in _XAie_ControlCodePrintf.
+		 */
+		EMIT_TO_CONTROL_CODE_AND_DEBUG_FILE(ControlCodeInst, "%s:\n", Label);
+
+		AieRC RC = _XAie_SetLoadCoresLabel(ControlCodeInst, Label);
+		if (RC != XAIE_OK) return RC;
+
+		/* Initialize LoadCores context to capture instructions and data */
+		RC = _XAie_LoadCoresContextInit(ControlCodeInst);
+		if (RC != XAIE_OK) return RC;
+
+		/* Save outer page tracking state before _XAie_EndPage resets it */
+		_XAie_SavePageState(ControlCodeInst,
+		                    &ControlCodeInst->LoadCoresContext->SavedState);
+
+		_XAie_EndPage(ControlCodeInst);
+
+		/* Reset fields so the label block starts with clean state.
+		 * _XAie_EndPage already zeroed UcPageSize, UcPageTextSize,
+		 * IsPageOpen, and IsJobOpen above.
+		 *
+		 * Fields tied to the shared LabelMap (UcbdLabelNum, UcbdDataNum,
+		 * UcDmaDataNum, CurrentDataLabel, CurrentDataBWLabel,
+		 * CompareLabelUpto, CompareLabelUptoWrite, TotalLabelsAllocated,
+		 * TotalLabelsAllocatedWrite) are NOT reset — they track global
+		 * label numbering that must remain consistent across scopes. */
+		ControlCodeInst->DataAligner             = 0;
+		ControlCodeInst->UcJobNum                = 0;
+		ControlCodeInst->NumShimBDsChained       = 0;
+		ControlCodeInst->CombinedMemWriteSize    = 0;
+		ControlCodeInst->PageId                  = 0;
+		ControlCodeInst->HintMapId               = 0;
+		ControlCodeInst->CalculatedNextRegOff    = 0;
+		ControlCodeInst->BarrierId               = 0;
+		ControlCodeInst->PrevMemWriteType        = -1;
+		ControlCodeInst->CombineCommands         = 0;
+		ControlCodeInst->IsShimBd                = 0;
+		ControlCodeInst->Mode                    = 0;
+		ControlCodeInst->IsAdjacentMemWrite      = 0;
+		ControlCodeInst->PageBreak               = 0;
+		ControlCodeInst->LabelMatchFound         = 0;
+
+		RC = _XAie_LoadCoresCacheAdd(ControlCodeInst->LoadCoresCache, UniqueCoreElfId, Label);
+		if (RC != XAIE_OK) return RC;
+
+		return XAIE_OK;
+	}
+
+	return XAIE_ERR;
+}
+
+AieRC XAie_ControlCodeIO_LoadCoresEnd(void *IOInst) {
+	XAie_ControlCodeIO *ControlCodeInst = (XAie_ControlCodeIO *)IOInst;
+	if (ControlCodeInst == NULL) {
+		XAIE_ERROR("Invalid ControlCode Instance\n");
+		return XAIE_INVALID_ARGS;
+	}
+	if (!ControlCodeInst->IsLoadCoresActive) {
+		XAIE_ERROR("LoadCoresEnd called without a prior LoadCoresStart\n");
+		return XAIE_FEATURE_NOT_SUPPORTED;
+	}
+
+	_XAie_EndJob(ControlCodeInst);
+	_XAie_EndPage(ControlCodeInst);
+
+	ControlCodeInst->IsLoadCoresActive = 0;
+	ControlCodeInst->IsLoadCoresReused = 0;
+
+	if (ControlCodeInst->LoadCoresLabel == NULL) {
+		return XAIE_OK;
+	}
+
+	/* If we have a LoadCoresContext, emit the buffered content now */
+	if (ControlCodeInst->LoadCoresContext != NULL) {
+		AieRC RC;
+
+		/* Emit buffered instructions to main asm and debug files */
+		RC = _XAie_EmitLoadCoresBuffer(ControlCodeInst,
+		                                ControlCodeInst->LoadCoresContext->InstructionBuffer,
+		                                ControlCodeInst->ControlCodefp,
+		                                ControlCodeInst->ControlCodeBuf,
+		                                "ControlCodeBuf");
+		if (RC != XAIE_OK) goto cleanup_context;
+
+		if (!ControlCodeInst->DisableDebugAsm) {
+			RC = _XAie_EmitLoadCoresBuffer(ControlCodeInst,
+			                                ControlCodeInst->LoadCoresContext->DebugInstructionBuffer,
+			                                ControlCodeInst->DebugAsmFile,
+			                                ControlCodeInst->DebugAsmBuf,
+			                                "DebugAsmBuf");
+			if (RC != XAIE_OK) goto cleanup_context;
+		}
+
+		/* Emit EOF between instructions and data sections (only if there were instructions) */
+		if (ControlCodeInst->LoadCoresContext->InstructionBuffer->Size > 0) {
+			EMIT_TO_CONTROL_CODE_AND_DEBUG_FILE(ControlCodeInst, "EOF\n\n");
+		}
+
+		/* Emit buffered data sections to main asm and debug files */
+		RC = _XAie_EmitLoadCoresBuffer(ControlCodeInst,
+		                                ControlCodeInst->LoadCoresContext->DataBuffer,
+		                                ControlCodeInst->ControlCodefp,
+		                                ControlCodeInst->ControlCodeBuf,
+		                                "ControlCodeBuf (data)");
+		if (RC != XAIE_OK) goto cleanup_context;
+
+		RC = _XAie_EmitLoadCoresBuffer(ControlCodeInst,
+		                                ControlCodeInst->LoadCoresContext->DataBuffer2,
+		                                ControlCodeInst->ControlCodefp,
+		                                ControlCodeInst->ControlCodeBuf,
+		                                "ControlCodeBuf (data2)");
+		if (RC != XAIE_OK) goto cleanup_context;
+
+		if (!ControlCodeInst->DisableDebugAsm) {
+			RC = _XAie_EmitLoadCoresBuffer(ControlCodeInst,
+			                                ControlCodeInst->LoadCoresContext->DebugDataBuffer0,
+			                                ControlCodeInst->DebugAsmFile,
+			                                ControlCodeInst->DebugAsmBuf,
+			                                "DebugAsmBuf (data0)");
+			if (RC != XAIE_OK) goto cleanup_context;
+
+			RC = _XAie_EmitLoadCoresBuffer(ControlCodeInst,
+			                                ControlCodeInst->LoadCoresContext->DebugDataBuffer1,
+			                                ControlCodeInst->DebugAsmFile,
+			                                ControlCodeInst->DebugAsmBuf,
+			                                "DebugAsmBuf (data1)");
+			if (RC != XAIE_OK) goto cleanup_context;
+		}
+
+cleanup_context:
+		{
+			/* Copy saved state to a local before freeing the context */
+			XAie_SavedPageState saved = ControlCodeInst->LoadCoresContext->SavedState;
+
+			_XAie_LoadCoresContextFree(ControlCodeInst);
+			if (RC != XAIE_OK) return RC;
+
+			EMIT_TO_CONTROL_CODE_AND_DEBUG_FILE(ControlCodeInst, ".endl %s\n",
+			                                    ControlCodeInst->LoadCoresLabel);
+
+			/* Restore outer page tracking state */
+			_XAie_RestorePageState(ControlCodeInst, &saved);
+		}
+	}
+
+	_XAie_ResetLoadCoresLabel(ControlCodeInst);
+	return XAIE_OK;
 }
 
 /*****************************************************************************/
@@ -2829,8 +3559,10 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 		XAIE_ERROR("This is supported only in Controlcode Backend %d \n", DevInst->Backend->Type);
 		return XAIE_INVALID_BACKEND;
 	}
+	/* NB: memset clears all fields; restore any that must survive */
 	memset(ControlCodeInst, 0, sizeof(XAie_ControlCodeIO));
 	ControlCodeInst->DisableDebugAsm = (DevInst->DisableDebugAsm != 0U) ? 1U : 0U;
+	ControlCodeInst->DevInst = DevInst;
 	ControlCodeInst->ScrachpadName = NULL;
 	ControlCodeInst->Mode = (u8)XAIE_INVALID_MODE;
 	ControlCodeInst->ControlCodefp      = fopen(FileName, "w");
@@ -2950,8 +3682,7 @@ AieRC XAie_OpenControlCodeFile(XAie_DevInst *DevInst, const char *FileName, u32 
 	ControlCodeInst->UcPageTextSize += ISA_OPSIZE_EOF;
 	ControlCodeInst->UcPageSize += PAGE_HEADER_SIZE + ISA_OPSIZE_EOF;
 	ControlCodeInst->IsPageOpen = 1;
-	_XAie_ControlCodePageInfo(ControlCodeInst->DebugAsmFile, ControlCodeInst->PageId,
-		 ControlCodeInst->UcPageSize, ControlCodeInst->UcPageTextSize, ControlCodeInst->DataAligner);
+	_XAie_ControlCodePageInfoPrintf(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM);
 
 	CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODEDATA, ";\n");
 	CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODEDATA, ";data\n");
@@ -3562,6 +4293,15 @@ void XAie_CloseControlCodeFile(XAie_DevInst *DevInst) {
 	XAie_ControlCodeIO  *ControlCodeInst = (XAie_ControlCodeIO *)DevInst->IOInst;
 
 	if (ControlCodeInst->ControlCodefp || ControlCodeInst->UseInMemoryBuffers) {
+		/* Warn if LoadCoresStart was called but not ended with LoadCoresEnd */
+		if (ControlCodeInst->IsLoadCoresActive) {
+			XAIE_WARN("LoadCoresStart called but not ended with LoadCoresEnd\n");
+		}
+		/* Clean up any lingering LoadCoresContext (shouldn't happen in normal flow) */
+		if (ControlCodeInst->LoadCoresContext != NULL) {
+			_XAie_LoadCoresContextFree(ControlCodeInst);
+		}
+
 		_XAie_EndPage(ControlCodeInst);
 		CONTROLCODE_PRINTF_VOID(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODE, "EOF\n\n");
 		if (ControlCodeInst->DebugAsmFile) {
@@ -3625,6 +4365,20 @@ void XAie_CloseControlCodeFile(XAie_DevInst *DevInst) {
 			}
 			free(ControlCodeInst->LabelMap);
 			ControlCodeInst->LabelMap = NULL;
+		}
+
+		if(ControlCodeInst->IsLoadCoresActive) {
+			XAIE_ERROR("LoadCoresStart called but not ended with LoadCoresEnd\n");
+			ControlCodeInst->IsLoadCoresActive = 0;
+			ControlCodeInst->IsLoadCoresReused = 0;
+		}
+		if(ControlCodeInst->LoadCoresLabel) {
+			free(ControlCodeInst->LoadCoresLabel);
+			ControlCodeInst->LoadCoresLabel = NULL;
+		}
+		if(ControlCodeInst->LoadCoresCache) {
+			_XAie_LoadCoresCacheTeardown(ControlCodeInst->LoadCoresCache);
+			ControlCodeInst->LoadCoresCache = NULL;
 		}
 	}
 }
@@ -3980,6 +4734,26 @@ AieRC XAie_ControlCodeRelAcqSync(XAie_DevInst *DevInst, const XAie_LockMod *Lock
 
 }
 
+AieRC XAie_ControlCodeIO_LoadCoresStart(void *IOInst, u32 UniqueCoreElfId, const char* Label)
+{
+	/* no-op */
+	(void)IOInst;
+	(void)UniqueCoreElfId;
+	(void)Label;
+	XAIE_ERROR("Driver is not compiled with ControlCode generation "
+			"backend (__AIECONTROLCODE__)\n");
+	return XAIE_INVALID_BACKEND;
+}
+
+AieRC XAie_ControlCodeIO_LoadCoresEnd(void *IOInst)
+{
+	/* no-op */
+	(void)IOInst;
+	XAIE_ERROR("Driver is not compiled with ControlCode generation "
+			"backend (__AIECONTROLCODE__)\n");
+	return XAIE_INVALID_BACKEND;
+}
+
 #endif /* __AIECONTROLCODE__ */
 
 static AieRC XAie_ControlCodeIO_CmdWrite(void *IOInst, u8 Col, u8 Row, u8 Command,
@@ -4069,6 +4843,8 @@ const XAie_Backend ControlCodeBackend =
 	.Ops.RemoteBarrier = XAie_ControlCodeIO_RemoteBarrier,
 	.Ops.SaveRegister = XAie_ControlCodeIO_SaveRegister,
 	.Ops.Nop = XAie_ControlCodeIO_Nop,
+	.Ops.LoadCoresStart = XAie_ControlCodeIO_LoadCoresStart,
+	.Ops.LoadCoresEnd = XAie_ControlCodeIO_LoadCoresEnd,
 	.Ops.SubmitTxn = NULL,
 };
 

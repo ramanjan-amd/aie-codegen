@@ -4,7 +4,7 @@
 ###############################################################################
 
 cmake_minimum_required(VERSION 3.16.3)
-project(aie_codegen LANGUAGES C VERSION 3.5)
+project(aie_codegen LANGUAGES C CXX VERSION 3.5)
 
 set(CMAKE_C_STANDARD 11)
 

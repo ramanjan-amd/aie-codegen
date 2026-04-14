@@ -797,6 +797,32 @@ AieRC XAie_Nop(XAie_DevInst *DevInst)
 	}
 }
 
+AieRC XAie_LoadCoresStart(XAie_DevInst *DevInst, u32 UniqueCoreElfId, const char* Label) {
+	const XAie_Backend *Backend = DevInst->Backend;
+	if (Backend->Ops.LoadCoresStart != NULL)
+	{
+		return Backend->Ops.LoadCoresStart((void *)DevInst->IOInst, UniqueCoreElfId, Label);
+	}
+	else
+	{
+		XAIE_ERROR("LoadCoresStart function pointer points to NULL\n");
+		return XAIE_NOT_SUPPORTED;
+	}
+}
+
+AieRC XAie_LoadCoresEnd(XAie_DevInst *DevInst) {
+	const XAie_Backend *Backend = DevInst->Backend;
+	if (Backend->Ops.LoadCoresEnd != NULL)
+	{
+		return Backend->Ops.LoadCoresEnd((void *)DevInst->IOInst);
+	}
+	else
+	{
+		XAIE_ERROR("LoadCoresEnd function pointer points to NULL\n");
+		return XAIE_NOT_SUPPORTED;
+	}
+}
+
 /*****************************************************************************/
 /**
 *

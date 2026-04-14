@@ -49,6 +49,7 @@
 #define ISA_OPCODE_PREEMPT 0x19
 #define ISA_OPCODE_SAVE_REGISTER 0x1e
 #define ISA_OPCODE_REL_ACQ_SYNC 0x21
+#define ISA_OPCODE_LOAD_CORES 0x04
 
 // Operation sizes
 
@@ -78,6 +79,7 @@
 #define ISA_OPSIZE_PREEMPT 0x08
 #define ISA_OPSIZE_SAVE_REGISTER 0x0c
 #define ISA_OPSIZE_REL_ACQ_SYNC 0x0c
+#define ISA_OPSIZE_LOAD_CORES 0x0c
 
 #ifdef CERT_FW
 // Operation implementation forward declarations
@@ -301,6 +303,14 @@ static inline unsigned int control_dispatch_nop(const uint8_t *pc)
   );
 }
 
+static inline unsigned int control_dispatch_load_cores(const uint8_t *pc)
+{
+  return control_op_load_cores(
+    pc,
+    /* unique_core_elf_id (const) */ *(uint32_t *)(&pc[2]),
+    /* label (const) */ *(uint16_t *)(&pc[6])
+  );
+}
 
 // Case statements for regular operations
 
@@ -324,7 +334,7 @@ static inline unsigned int control_dispatch_nop(const uint8_t *pc)
   case ISA_OPCODE_MASK_POLL_32: pc += control_dispatch_mask_poll_32(pc); break; \
   case ISA_OPCODE_TRACE: pc += control_dispatch_trace(pc); break; \
   case ISA_OPCODE_NOP: pc += control_dispatch_nop(pc); break;
-
+  case ISA_OPCODE_LOAD_CORES: pc += control_dispatch_load_cores(pc); break;
 #endif // CERT_FW
 
 #endif

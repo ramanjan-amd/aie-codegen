@@ -191,6 +191,8 @@ typedef struct XAie_BackendOps {
 	AieRC (*RemoteBarrier)(void *IOInst, uint8_t RbId, uint32_t UcMask);
 	AieRC (*SaveRegister) (void *IOInst, u32 RegOff, u32 Id);
 	AieRC (*Nop) (void *IOInst);
+	AieRC (*LoadCoresStart) (void *IOInst, u32 UniqueCoreElfId, const char* Label);
+	AieRC (*LoadCoresEnd) (void *IOInst);
 } XAie_BackendOps;
 
 /* Typedef to capture all backend information */
