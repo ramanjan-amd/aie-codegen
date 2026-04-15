@@ -2878,7 +2878,9 @@ AieRC XAie_DmaSetPadding(XAie_DmaDesc *DmaDesc, XAie_DmaPadTensor *PadTensor)
 
 	if ( PadTensor->NumDim > (sizeof(DmaDesc->PadDesc)/sizeof(DmaDesc->PadDesc[0])) )
 	{
-		XAIE_ERROR("Max dimension supported %d, but requested %d\n", (sizeof(DmaDesc->PadDesc)/sizeof(DmaDesc->PadDesc[0])), PadTensor->NumDim);
+		XAIE_ERROR("Max dimension supported %zu, but requested %d\n",
+				sizeof(DmaDesc->PadDesc) / sizeof(DmaDesc->PadDesc[0]),
+				(int)PadTensor->NumDim);
 		return XAIE_INVALID_ARGS;
 	}
 

@@ -372,7 +372,7 @@ int XAie_ControlCodeIO_swig_OpenControlCodeFile(Swig_DevInst *DevInst,
 int XAie_ControlCodeIO_swig_StartNewJob(Swig_DevInst *DevInst)
 {
 	AieRC RC;
-	RC = XAie_StartNewJob((XAie_DevInst *)DevInst);
+	RC = XAie_StartNewJob((XAie_DevInst *)DevInst, XAIE_START_JOB);
 	return RC;
 }
 

@@ -164,7 +164,7 @@ AieRC XAie_AllocControlCodeBuffer(XAie_DevInst *DevInst, u32 PageSize);
 AieRC XAie_GetControlCodeBuffer(XAie_DevInst *DevInst, const char **Buffer, size_t *Size);
 AieRC XAie_GetDebugAsmBuffer(XAie_DevInst *DevInst, const char **Buffer, size_t *Size);
 void XAie_ReleaseControlCodeBuffer(XAie_DevInst *DevInst);
-AieRC XAie_StartNewJob(XAie_DevInst *DevInst);
+AieRC XAie_StartNewJob(XAie_DevInst *DevInst, XAie_CertStartJobType JobType);
 AieRC XAie_EndJob(XAie_DevInst *DevInst);
 AieRC XAie_EndPage(XAie_DevInst *DevInst);
 void XAie_CloseControlCodeFile(XAie_DevInst *DevInst);
