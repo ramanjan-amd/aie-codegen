@@ -3344,6 +3344,7 @@ AieRC XAie_ControlCodeIO_LoadCoresEnd(void *IOInst) {
 		}
 
 		/* Emit buffered data sections to main asm and debug files */
+		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODE, ".align    16\n");
 		RC = _XAie_EmitLoadCoresBuffer(ControlCodeInst,
 		                                ControlCodeInst->LoadCoresContext->DataBuffer,
 		                                ControlCodeInst->ControlCodefp,
@@ -3351,6 +3352,7 @@ AieRC XAie_ControlCodeIO_LoadCoresEnd(void *IOInst) {
 		                                "ControlCodeBuf (data)");
 		if (RC != XAIE_OK) goto cleanup_context;
 
+		CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODE, ".align    4\n");
 		RC = _XAie_EmitLoadCoresBuffer(ControlCodeInst,
 		                                ControlCodeInst->LoadCoresContext->DataBuffer2,
 		                                ControlCodeInst->ControlCodefp,
@@ -3359,6 +3361,7 @@ AieRC XAie_ControlCodeIO_LoadCoresEnd(void *IOInst) {
 		if (RC != XAIE_OK) goto cleanup_context;
 
 		if (!ControlCodeInst->DisableDebugAsm) {
+			CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM, ".align    16\n");
 			RC = _XAie_EmitLoadCoresBuffer(ControlCodeInst,
 			                                ControlCodeInst->LoadCoresContext->DebugDataBuffer0,
 			                                ControlCodeInst->DebugAsmFile,
@@ -3366,6 +3369,7 @@ AieRC XAie_ControlCodeIO_LoadCoresEnd(void *IOInst) {
 			                                "DebugAsmBuf (data0)");
 			if (RC != XAIE_OK) goto cleanup_context;
 
+			CONTROLCODE_PRINTF_CHECK(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASM, ".align    4\n");
 			RC = _XAie_EmitLoadCoresBuffer(ControlCodeInst,
 			                                ControlCodeInst->LoadCoresContext->DebugDataBuffer1,
 			                                ControlCodeInst->DebugAsmFile,
