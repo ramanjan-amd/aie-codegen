@@ -35,6 +35,7 @@
 #include "xaie_reset_aie.h"
 #include "xaie_core.h"
 #include "xaie_txn.h"
+#include "xaie_instbuf.h"
 
 #ifdef __AIESOCKET__
 	#define XAIE4_APP_B_OFFSET  0x08000000U
@@ -515,6 +516,11 @@ AieRC XAie_Write32(XAie_DevInst *DevInst, u64 RegOff, u32 Value)
 	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
 		RegOff|= XAIE4_APP_B_OFFSET;
 	}
+
+	if (_XAie_IsInstBufRecording(DevInst)) {
+		return _XAie_Write32InstBuf(DevInst, RegOff, Value);
+	}
+
 	return Backend->Ops.Write32((void*)(DevInst->IOInst), RegOff, Value);
 }
 
@@ -529,6 +535,11 @@ AieRC XAie_Read32(XAie_DevInst *DevInst, u64 RegOff, u32 *Data)
 	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
 		RegOff|= XAIE4_APP_B_OFFSET;
 	}
+
+	if (_XAie_IsInstBufRecording(DevInst)) {
+		return _XAie_Read32InstBuf(DevInst, RegOff, Data);
+	}
+
 	return Backend->Ops.Read32((void*)(DevInst->IOInst), RegOff, Data);
 }
 
@@ -543,6 +554,11 @@ AieRC XAie_MaskWrite32(XAie_DevInst *DevInst, u64 RegOff, u32 Mask, u32 Value)
 	if(DevInst->AppMode == XAIE_DEVICE_DUAL_APP_MODE_B) {
 			RegOff|= XAIE4_APP_B_OFFSET;
 	}
+
+	if (_XAie_IsInstBufRecording(DevInst)) {
+		return _XAie_MaskWrite32InstBuf(DevInst, RegOff, Mask, Value);
+	}
+
 	return Backend->Ops.MaskWrite32((void *)(DevInst->IOInst), RegOff, Mask,
 			Value);
 }

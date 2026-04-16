@@ -45,6 +45,7 @@
 #include "xaiegbl_defs.h"
 #include "xaiegbl_regdef.h"
 #include "xaie_io_privilege.h"
+#include "xaie_instbuf.h"
 
 /************************** Constant Definitions *****************************/
 
@@ -266,6 +267,7 @@ AieRC XAie_CfgInitialize(XAie_DevInst *InstPtr, XAie_Config *ConfigPtr)
 	InstPtr->ShimTileNumRowsNorth = ConfigPtr->ShimTileNumRowsNorth;
 	InstPtr->ShimTileNumRowsSouth = ConfigPtr->ShimTileNumRowsSouth;
 	InstPtr->TxnList.Next = NULL;
+	InstPtr->InstBufPriv = NULL;
 
 	if ((InstPtr->DevProp.DevGen == XAIE_DEV_GEN_AIE2IPU) ||
 		(InstPtr->DevProp.DevGen == XAIE_DEV_GEN_AIE2P) ||
@@ -563,6 +565,8 @@ AieRC XAie_Finish(XAie_DevInst *DevInst)
 
 	/* Free transaction mode resources, if any */
 	_XAie_TxnResourceCleanup(DevInst);
+
+	_XAie_FinishInstBuf(DevInst);
 
 	CurrBackend = DevInst->Backend;
 	RC = CurrBackend->Ops.Finish(DevInst->IOInst);

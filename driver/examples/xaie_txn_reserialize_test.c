@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <xaiengine.h>
+#include <aie_codegen.h>
 #include <xaie_helper.h>
 
 /***************************** Macro Definitions *****************************/

@@ -26,6 +26,7 @@ extern "C" {
 #include <aie_codegen_inc/xaiegbl.h>
 #include <aie_codegen_inc/xaiegbl_defs.h>
 #include <aie_codegen_inc/xaie_txn.h>
+#include <aie_codegen_inc/xaie_instbuf.h>
 #include <aie_codegen_inc/xaie_noc.h>
 
 #ifdef __cplusplus
