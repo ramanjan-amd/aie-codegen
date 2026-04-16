@@ -770,6 +770,54 @@ static int _XAie_ControlCodeSeekAndOverwrite(XAie_ControlCodeIO *ControlCodeInst
 	size_t rep_len = strlen(Replacement);
 	int result = 0;
 
+	/* Redirect to LoadCores context buffers if active */
+	if (ControlCodeInst->IsLoadCoresActive && !ControlCodeInst->IsLoadCoresReused &&
+	    ControlCodeInst->LoadCoresContext != NULL) {
+		XAie_MemBuffer *buf = NULL;
+
+		switch(FileTarget) {
+			case XAIE_FILE_TARGET_CONTROLCODE:
+				buf = ControlCodeInst->LoadCoresContext->InstructionBuffer;
+				break;
+			case XAIE_FILE_TARGET_CONTROLCODEDATA:
+				buf = ControlCodeInst->LoadCoresContext->DataBuffer;
+				break;
+			case XAIE_FILE_TARGET_CONTROLCODEDATA2:
+				buf = ControlCodeInst->LoadCoresContext->DataBuffer2;
+				break;
+			case XAIE_FILE_TARGET_DEBUGASM:
+				buf = ControlCodeInst->LoadCoresContext->DebugInstructionBuffer;
+				break;
+			case XAIE_FILE_TARGET_DEBUGASMDATA0:
+				buf = ControlCodeInst->LoadCoresContext->DebugDataBuffer0;
+				break;
+			case XAIE_FILE_TARGET_DEBUGASMDATA1:
+				buf = ControlCodeInst->LoadCoresContext->DebugDataBuffer1;
+				break;
+			default: return -1;
+		}
+
+		if (!buf || !buf->Data) {
+			return -1;
+		}
+
+		ssize_t overwrite_pos = (ssize_t)buf->Size + Offset;
+		if (overwrite_pos < 0 || overwrite_pos >= (ssize_t)buf->Size) {
+			XAIE_ERROR("Invalid seek position: %zd (buf size: %zu)\n", overwrite_pos, buf->Size);
+			return -1;
+		}
+
+		size_t bytes_to_write = rep_len;
+		size_t available = buf->Size - overwrite_pos;
+		if (bytes_to_write > available) {
+			XAIE_WARN("Replacement string longer than available space, truncating\n");
+			bytes_to_write = available;
+		}
+
+		memcpy(buf->Data + overwrite_pos, Replacement, bytes_to_write);
+		return (int)bytes_to_write;
+	}
+
 	/* Write to buffer if in memory mode */
 	if (ControlCodeInst->UseInMemoryBuffers) {
 		XAie_MemBuffer *buf = NULL;
@@ -1055,6 +1103,61 @@ AieRC XAie_ControlCodeAddAnnotation(XAie_DevInst *DevInst,
 *******************************************************************************/
 static AieRC _XAie_UpdateDataLengthDmaBd(XAie_ControlCodeIO *ControlCodeInst, u32 Datalength)
 {
+	/* When LoadCores is active, data lives in context buffers regardless of
+	 * UseInMemoryBuffers — _XAie_ControlCodePrintf always redirects there.
+	 * Handle this case first and return early since file pointers are not
+	 * involved in LoadCores data output. */
+	if (ControlCodeInst->IsLoadCoresActive && !ControlCodeInst->IsLoadCoresReused &&
+	    ControlCodeInst->LoadCoresContext != NULL) {
+		XAie_MemBuffer *bufs[2] = {
+			ControlCodeInst->LoadCoresContext->DataBuffer,
+			ControlCodeInst->LoadCoresContext->DebugDataBuffer0
+		};
+
+		for (int i = 0; i < 2; i++) {
+			XAie_MemBuffer *buf = bufs[i];
+			if (!buf || !buf->Data) continue;
+
+			char *data = buf->Data;
+			size_t size = buf->Size;
+			long Position = size - 1;
+			int Count = 0;
+
+			while (Position >= 0) {
+				if (data[Position] == ',')
+					Count++;
+
+				if (Count == 3) {
+					char new_ending[64];
+					snprintf(new_ending, sizeof(new_ending), " 0x%x, 0, 0\n", Datalength);
+
+					size_t newline_pos = Position + 1;
+					while (newline_pos < size && data[newline_pos] != '\n') {
+						newline_pos++;
+					}
+
+					if (newline_pos < size) {
+						size_t new_size = Position + 1 + strlen(new_ending);
+						data[Position + 1] = '\0';
+
+						if (new_size <= buf->Capacity) {
+							strcpy(data + Position + 1, new_ending);
+							buf->Size = new_size;
+						}
+					}
+					break;
+				}
+
+				if (data[Position] == '\n' && Position != (long)(size - 1))
+					break;
+
+				Position--;
+			}
+		}
+
+		return XAIE_OK;
+	}
+
 	/* Handle in-memory mode (if buffers are available) */
 	if (ControlCodeInst->UseInMemoryBuffers) {
 		/* Update ControlCodeDataBuf */
@@ -1641,28 +1744,36 @@ AieRC XAie_ControlCodeIO_Write32(void *IOInst, u64 RegOff, u32 Value)
 			}
 
 			if(ControlCodeInst->CombineCommands) {
-				/* Modify buffers if in memory mode */
-				if (ControlCodeInst->UseInMemoryBuffers) {
-					/* In memory mode, modify the last " 0" to " 1" in the buffers */
-					XAie_MemBuffer *buf1 = ControlCodeInst->ControlCodeDataBuf;
-					XAie_MemBuffer *buf4 = ControlCodeInst->DebugAsmDataBuf0;
+				/* When LoadCores is active, data always lives in context
+				 * buffers regardless of UseInMemoryBuffers.
+				 * SeekAndOverwrite already handles this redirect. */
+				if (ControlCodeInst->IsLoadCoresActive && !ControlCodeInst->IsLoadCoresReused &&
+				    ControlCodeInst->LoadCoresContext != NULL) {
+					_XAie_ControlCodeSeekAndOverwrite(ControlCodeInst, XAIE_FILE_TARGET_CONTROLCODEDATA, -3, " 1\n");
+					_XAie_ControlCodeSeekAndOverwrite(ControlCodeInst, XAIE_FILE_TARGET_DEBUGASMDATA0, -3, " 1\n");
+				} else {
+					/* Modify buffers if in memory mode */
+					if (ControlCodeInst->UseInMemoryBuffers) {
+						XAie_MemBuffer *buf1 = ControlCodeInst->ControlCodeDataBuf;
+						XAie_MemBuffer *buf4 = ControlCodeInst->DebugAsmDataBuf0;
 
-					/* Find and replace the last " 0\n" with " 1\n" */
-					if (buf1 && buf1->Size >= 3) {
-						if (buf1->Data[buf1->Size - 2] == '0' && buf1->Data[buf1->Size - 1] == '\n') {
-							buf1->Data[buf1->Size - 2] = '1';
+						/* Find and replace the last " 0\n" with " 1\n" */
+						if (buf1 && buf1->Size >= 3) {
+							if (buf1->Data[buf1->Size - 2] == '0' && buf1->Data[buf1->Size - 1] == '\n') {
+								buf1->Data[buf1->Size - 2] = '1';
+							}
+						}
+						if (buf4 && buf4->Size >= 3) {
+							if (buf4->Data[buf4->Size - 2] == '0' && buf4->Data[buf4->Size - 1] == '\n') {
+								buf4->Data[buf4->Size - 2] = '1';
+							}
 						}
 					}
-					if (buf4 && buf4->Size >= 3) {
-						if (buf4->Data[buf4->Size - 2] == '0' && buf4->Data[buf4->Size - 1] == '\n') {
-							buf4->Data[buf4->Size - 2] = '1';
-						}
+					/* ALWAYS handle files if available (parallel flow) */
+					if (ControlCodeInst->ControlCodedatafp || ControlCodeInst->DebugAsmFileData0) {
+						_XAie_ControlCodeSeekAndOverwrite(ControlCodeInst, 1, -3, " 1\n");
+						_XAie_ControlCodeSeekAndOverwrite(ControlCodeInst, 4, -3, " 1\n");
 					}
-				}
-				/* ALWAYS handle files if available (parallel flow) */
-				if (ControlCodeInst->ControlCodedatafp || ControlCodeInst->DebugAsmFileData0) {
-					_XAie_ControlCodeSeekAndOverwrite(ControlCodeInst, 1, -3, " 1\n");
-					_XAie_ControlCodeSeekAndOverwrite(ControlCodeInst, 4, -3, " 1\n");
 				}
 			}
 			else {
